@@ -1,8 +1,10 @@
 use std::{
     borrow::Cow,
+    error::Error,
     fmt::{Display, Formatter},
 };
 
+#[derive(Debug)]
 pub struct WechatError {
     pub code: i32,
     pub message: Cow<'static, str>,
@@ -22,6 +24,8 @@ impl From<reqwest::Error> for WechatError {
         WechatError { code: -200, message: Cow::Owned(error.to_string()) }
     }
 }
+
+impl Error for WechatError {}
 
 impl Display for WechatError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
