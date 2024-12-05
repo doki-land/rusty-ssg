@@ -30,38 +30,8 @@ impl MiniProgram {
             .body(Value::Object(body).to_string())
             .send()
             .await?
-            .json::<WechatPhoneNumber>()
+            .json::<WechatPhoneVisitor>()
             .await?;
-        Ok(response)
-    }
-}
-
-#[derive(Deserialize)]
-struct WechatPhoneVisitor {
-    errcode: Option<i32>,
-    errmsg: String,
-    phone_info: PhoneInfo,
-}
-#[derive(Deserialize)]
-struct PhoneInfo {
-    phoneNumber: String,
-    purePhoneNumber: String,
-    countryCode: String,
-    watermark: PhoneWatermark,
-}
-
-#[derive(Deserialize)]
-struct PhoneWatermark {
-    timestamp: f64,
-    appid: String,
-}
-
-impl<'de> Deserialize<'de> for WechatPhoneNumber {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let response = WechatPhoneVisitor::deserialize(deserializer)?;
         match response.errcode {
             Some(0) | None => Ok(WechatPhoneNumber {
                 app_id: response.phone_info.watermark.appid,
@@ -82,4 +52,25 @@ impl<'de> Deserialize<'de> for WechatPhoneNumber {
             Some(i) => Err(Error::custom(format!("[WechatError={}] {}", i, response.errmsg))),
         }
     }
+}
+
+#[derive(Deserialize)]
+struct WechatPhoneVisitor {
+    errcode: Option<i32>,
+    errmsg: String,
+    phone_info: PhoneInfo,
+}
+
+#[derive(Deserialize)]
+struct PhoneInfo {
+    phoneNumber: String,
+    purePhoneNumber: String,
+    countryCode: String,
+    watermark: PhoneWatermark,
+}
+
+#[derive(Deserialize)]
+struct PhoneWatermark {
+    timestamp: f64,
+    appid: String,
 }

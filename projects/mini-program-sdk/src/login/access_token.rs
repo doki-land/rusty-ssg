@@ -25,9 +25,12 @@ impl MiniProgram {
             // .header(USER_AGENT, "your-app-name")
             .send()
             .await?
-            .json::<WechatAccessToken>()
+            .json::<AccessTokenVisitor>()
             .await?;
-        Ok(response)
+        Ok(WechatAccessToken {
+            access_token: response.access_token,
+            expiration_time: SystemTime::now() + std::time::Duration::from_secs(response.expires_in),
+        })
     }
 }
 
@@ -51,17 +54,4 @@ impl WechatAccessToken {
 struct AccessTokenVisitor {
     access_token: String,
     expires_in: u64,
-}
-
-impl<'de> Deserialize<'de> for WechatAccessToken {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let response = AccessTokenVisitor::deserialize(deserializer)?;
-        Ok(WechatAccessToken {
-            access_token: response.access_token,
-            expiration_time: SystemTime::now() + std::time::Duration::from_secs(response.expires_in),
-        })
-    }
 }
