@@ -1,52 +1,33 @@
 use super::*;
-use serde::{Deserialize, Deserializer, Serialize, de::Error};
+use serde::{Deserialize, Deserializer, de::Error};
 
 #[derive(Clone, Debug)]
 pub struct WechatPhoneNumber {
     /// 用户绑定的手机号（国外手机号会有区号）
-    #[serde(rename = "phoneNumber")]
     pub phone_number: String,
     /// 没有区号的手机号
-    #[serde(rename = "purePhoneNumber")]
     pub phone_number_pure: String,
     /// 区号
-    #[serde(rename = "countryCode")]
     pub country_code: String,
-    /// 数据水印
-    pub watermark: WechatPhoneWatermark,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct WechatPhoneWatermark {
     /// 用户获取手机号操作的时间戳
-    timestamp: f64,
+    pub timestamp: f64,
     /// 小程序 app_id
-    #[serde(rename = "appid")]
-    app_id: String,
-}
-
-#[derive(Deserialize)]
-pub struct WechatPhoneVisitor {
-    #[serde(rename = "errcode")]
-    pub error_code: Option<i32>,
-    #[serde(default, rename = "errmsg")]
-    pub error_message: String,
-    pub phone_info: WechatPhoneNumber,
+    pub app_id: String,
 }
 
 impl MiniProgram {
-    /// <https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/miniapp/openapi/getaccesstoken.html>
-    pub async fn get_access_token(&self) -> Result<WechatAccessToken, reqwest::Error> {
+    /// <https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-login/code2Session.html>
+    pub async fn get_phone_number(&self, code: &str, access_token: &str) -> Result<WechatPhoneNumber, reqwest::Error> {
         let mut params = HashMap::new();
-        params.insert("appid", self.app_id.as_ref());
-        params.insert("secret", self.secret.as_ref());
-        params.insert("grant_type", "client_credential");
+        params.insert("access_token", access_token);
+        let mut body = Map::with_capacity(1);
+        body.insert("code".to_string(), Value::String(code.to_string()));
         let client = reqwest::Client::new();
         let response = client
-            .get("https://api.weixin.qq.com/cgi-bin/token")
+            .post("https://api.weixin.qq.com/wxa/business/getuserphonenumber")
             .query(&params)
             .header(CONTENT_TYPE, "application/json")
-            // .header(USER_AGENT, "your-app-name")
+            .body(Value::Object(body).to_string())
             .send()
             .await?
             .json::<WechatPhoneNumber>()
@@ -55,14 +36,40 @@ impl MiniProgram {
     }
 }
 
+#[derive(Deserialize)]
+struct WechatPhoneVisitor {
+    errcode: Option<i32>,
+    errmsg: String,
+    phone_info: PhoneInfo,
+}
+#[derive(Deserialize)]
+struct PhoneInfo {
+    phoneNumber: String,
+    purePhoneNumber: String,
+    countryCode: String,
+    watermark: PhoneWatermark,
+}
+
+#[derive(Deserialize)]
+struct PhoneWatermark {
+    timestamp: f64,
+    appid: String,
+}
+
 impl<'de> Deserialize<'de> for WechatPhoneNumber {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let response = WechatPhoneVisitor::deserialize(deserializer)?;
-        match response.error_code {
-            Some(0) | None => Ok(response.phone_info),
+        match response.errcode {
+            Some(0) | None => Ok(WechatPhoneNumber {
+                app_id: response.phone_info.watermark.appid,
+                phone_number: response.phone_info.phoneNumber,
+                country_code: response.phone_info.countryCode,
+                phone_number_pure: response.phone_info.purePhoneNumber,
+                timestamp: response.phone_info.watermark.timestamp,
+            }),
             Some(-1) => {
                 Err(Error::custom("[WechatError=-1] The wechat server system is busy, please try again later.".to_string()))
             }
@@ -72,7 +79,7 @@ impl<'de> Deserialize<'de> for WechatPhoneNumber {
             Some(45011) => {
                 Err(Error::custom("[WechatError=45011] Rate limit, up to 100 attempts per minute per user.".to_string()))
             }
-            Some(i) => Err(Error::custom(format!("[WechatError={}] {}", i, response.error_message))),
+            Some(i) => Err(Error::custom(format!("[WechatError={}] {}", i, response.errmsg))),
         }
     }
 }

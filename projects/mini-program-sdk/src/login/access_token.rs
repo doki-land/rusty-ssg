@@ -10,14 +10,6 @@ pub struct WechatAccessToken {
     pub expiration_time: SystemTime,
 }
 
-#[derive(Default, Deserialize)]
-struct AccessTokenVisitor {
-    /// 获取到的凭证
-    access_token: String,
-    /// 凭证有效时间，单位：秒。目前是7200秒之内的值。
-    expires_in: u64,
-}
-
 impl MiniProgram {
     /// <https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/miniapp/openapi/getaccesstoken.html>
     pub async fn get_access_token(&self) -> Result<WechatAccessToken, reqwest::Error> {
@@ -40,13 +32,25 @@ impl MiniProgram {
 }
 
 impl WechatAccessToken {
+    pub async fn update(&mut self, app: MiniProgram) -> Result<(), reqwest::Error> {
+        if self.needs_update() {
+            *self = app.get_access_token().await?;
+        }
+        Ok(())
+    }
     pub fn needs_update(&self) -> bool {
         self.expiration_time < SystemTime::now()
     }
-    pub async fn update(&mut self, app: MiniProgram) -> Result<(), reqwest::Error> {
+    pub async fn force_update(&mut self, app: MiniProgram) -> Result<(), reqwest::Error> {
         *self = app.get_access_token().await?;
         Ok(())
     }
+}
+
+#[derive(Default, Deserialize)]
+struct AccessTokenVisitor {
+    access_token: String,
+    expires_in: u64,
 }
 
 impl<'de> Deserialize<'de> for WechatAccessToken {

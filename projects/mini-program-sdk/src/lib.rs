@@ -35,8 +35,6 @@ pub struct WechatSession {
     pub session_key: String,
 }
 
-
-
 impl WechatSessionResponse {
     pub fn as_result(&self) -> Result<WechatSession, (i32, &str)> {
         match self.error_code {
