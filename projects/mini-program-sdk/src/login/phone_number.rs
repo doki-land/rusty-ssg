@@ -1,21 +1,37 @@
 use super::*;
-use serde::{Deserialize, Deserializer};
-use std::time::SystemTime;
+use serde::{Deserialize, Deserializer, Serialize, de::Error};
 
 #[derive(Clone, Debug)]
-pub struct WechatAccessToken {
-    /// 获取到的凭证
-    pub access_token: String,
-    /// 凭证过期时间
-    pub expiration_time: SystemTime,
+pub struct WechatPhoneNumber {
+    /// 用户绑定的手机号（国外手机号会有区号）
+    #[serde(rename = "phoneNumber")]
+    pub phone_number: String,
+    /// 没有区号的手机号
+    #[serde(rename = "purePhoneNumber")]
+    pub phone_number_pure: String,
+    /// 区号
+    #[serde(rename = "countryCode")]
+    pub country_code: String,
+    /// 数据水印
+    pub watermark: WechatPhoneWatermark,
 }
 
-#[derive(Default, Deserialize)]
-struct AccessTokenVisitor {
-    /// 获取到的凭证
-    access_token: String,
-    /// 凭证有效时间，单位：秒。目前是7200秒之内的值。
-    expires_in: u64,
+#[derive(Clone, Debug, Deserialize)]
+pub struct WechatPhoneWatermark {
+    /// 用户获取手机号操作的时间戳
+    timestamp: f64,
+    /// 小程序 app_id
+    #[serde(rename = "appid")]
+    app_id: String,
+}
+
+#[derive(Deserialize)]
+pub struct WechatPhoneVisitor {
+    #[serde(rename = "errcode")]
+    pub error_code: Option<i32>,
+    #[serde(default, rename = "errmsg")]
+    pub error_message: String,
+    pub phone_info: WechatPhoneNumber,
 }
 
 impl MiniProgram {
@@ -33,31 +49,30 @@ impl MiniProgram {
             // .header(USER_AGENT, "your-app-name")
             .send()
             .await?
-            .json::<WechatAccessToken>()
+            .json::<WechatPhoneNumber>()
             .await?;
         Ok(response)
     }
 }
 
-impl WechatAccessToken {
-    pub fn needs_update(&self) -> bool {
-        self.expiration_time < SystemTime::now()
-    }
-    pub async fn update(&mut self, app: MiniProgram) -> Result<(), reqwest::Error> {
-        *self = app.get_access_token().await?;
-        Ok(())
-    }
-}
-
-impl<'de> Deserialize<'de> for WechatAccessToken {
+impl<'de> Deserialize<'de> for WechatPhoneNumber {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        let response = AccessTokenVisitor::deserialize(deserializer)?;
-        Ok(WechatAccessToken {
-            access_token: response.access_token,
-            expiration_time: SystemTime::now() + std::time::Duration::from_secs(response.expires_in),
-        })
+        let response = WechatPhoneVisitor::deserialize(deserializer)?;
+        match response.error_code {
+            Some(0) | None => Ok(response.phone_info),
+            Some(-1) => {
+                Err(Error::custom("[WechatError=-1] The wechat server system is busy, please try again later.".to_string()))
+            }
+            Some(40029) => Err(Error::custom("[WechatError=40029] Invalid `phone_code`.".to_string())),
+            Some(40163) => Err(Error::custom("[WechatError=40163] The login code has been used.".to_string())),
+            Some(40226) => Err(Error::custom("[WechatError=40226] High-risk user, has been banned by wechat.".to_string())),
+            Some(45011) => {
+                Err(Error::custom("[WechatError=45011] Rate limit, up to 100 attempts per minute per user.".to_string()))
+            }
+            Some(i) => Err(Error::custom(format!("[WechatError={}] {}", i, response.error_message))),
+        }
     }
 }
