@@ -1,10 +1,13 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use std::borrow::Cow;
 
+mod error;
 mod login;
 
-pub use crate::login::{access_token::WechatAccessToken, phone_number::WechatPhoneNumber, session_key::WechatSession};
-
+pub use crate::{
+    error::WechatError,
+    login::{access_token::WechatAccessToken, phone_number::WechatPhoneNumber, session_key::WechatSession},
+};
 #[derive(Clone, Debug, Deserialize)]
 pub struct MiniProgram {
     /// 小程序的 `app_id`

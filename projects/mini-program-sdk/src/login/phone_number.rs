@@ -1,5 +1,5 @@
 use super::*;
-use serde::{Deserialize, Deserializer, de::Error};
+
 
 #[derive(Clone, Debug)]
 pub struct WechatPhoneNumber {
@@ -17,7 +17,7 @@ pub struct WechatPhoneNumber {
 
 impl MiniProgram {
     /// <https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-login/code2Session.html>
-    pub async fn get_phone_number(&self, code: &str, access_token: &str) -> Result<WechatPhoneNumber, reqwest::Error> {
+    pub async fn get_phone_number(&self, code: &str, access_token: &str) -> Result<WechatPhoneNumber, WechatError> {
         let mut params = HashMap::new();
         params.insert("access_token", access_token);
         let mut body = Map::with_capacity(1);
@@ -40,16 +40,12 @@ impl MiniProgram {
                 phone_number_pure: response.phone_info.purePhoneNumber,
                 timestamp: response.phone_info.watermark.timestamp,
             }),
-            Some(-1) => {
-                Err(Error::custom("[WechatError=-1] The wechat server system is busy, please try again later.".to_string()))
-            }
-            Some(40029) => Err(Error::custom("[WechatError=40029] Invalid `phone_code`.".to_string())),
-            Some(40163) => Err(Error::custom("[WechatError=40163] The login code has been used.".to_string())),
-            Some(40226) => Err(Error::custom("[WechatError=40226] High-risk user, has been banned by wechat.".to_string())),
-            Some(45011) => {
-                Err(Error::custom("[WechatError=45011] Rate limit, up to 100 attempts per minute per user.".to_string()))
-            }
-            Some(i) => Err(Error::custom(format!("[WechatError={}] {}", i, response.errmsg))),
+            Some(-1) => WechatError::builtin(-1, "The wechat server system is busy, please try again later."),
+            Some(40029) => WechatError::builtin(40029, "Invalid `phone_code`."),
+            Some(40163) => WechatError::builtin(40163, "The login code has been used."),
+            Some(40226) => WechatError::builtin(40226, "High-risk user, has been banned by wechat."),
+            Some(45011) => WechatError::builtin(45011, "Rate limit, up to 100 attempts per minute per user."),
+            Some(i) => WechatError::unknown(i, response.errmsg),
         }
     }
 }

@@ -1,6 +1,4 @@
 use super::*;
-use serde::{Deserialize, Deserializer};
-use std::time::SystemTime;
 
 #[derive(Clone, Debug)]
 pub struct WechatAccessToken {
@@ -12,7 +10,7 @@ pub struct WechatAccessToken {
 
 impl MiniProgram {
     /// <https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/miniapp/openapi/getaccesstoken.html>
-    pub async fn get_access_token(&self) -> Result<WechatAccessToken, reqwest::Error> {
+    pub async fn get_access_token(&self) -> Result<WechatAccessToken, WechatError> {
         let mut params = HashMap::new();
         params.insert("appid", self.app_id.as_ref());
         params.insert("secret", self.secret.as_ref());
@@ -35,7 +33,7 @@ impl MiniProgram {
 }
 
 impl WechatAccessToken {
-    pub async fn update(&mut self, app: MiniProgram) -> Result<(), reqwest::Error> {
+    pub async fn update(&mut self, app: MiniProgram) -> Result<(), WechatError> {
         if self.needs_update() {
             *self = app.get_access_token().await?;
         }
@@ -44,7 +42,7 @@ impl WechatAccessToken {
     pub fn needs_update(&self) -> bool {
         self.expiration_time < SystemTime::now()
     }
-    pub async fn force_update(&mut self, app: MiniProgram) -> Result<(), reqwest::Error> {
+    pub async fn force_update(&mut self, app: MiniProgram) -> Result<(), WechatError> {
         *self = app.get_access_token().await?;
         Ok(())
     }
