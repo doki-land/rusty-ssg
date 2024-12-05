@@ -27,24 +27,29 @@ impl MiniProgram {
             .json::<SessionVisitor>()
             .await?;
         match response.errcode {
-            Some(0) | None => {
+            0 => {
                 Ok(WechatSession { open_id: response.openid, union_id: response.unionid, session_key: response.session_key })
             }
-            Some(-1) => WechatError::builtin(-1, "The wechat server system is busy, please try again later."),
-            Some(40029) => WechatError::builtin(40029, "Invalid `phone_code`."),
-            Some(40163) => WechatError::builtin(40163, "The login code has been used."),
-            Some(40226) => WechatError::builtin(40226, "High-risk user, has been banned by wechat."),
-            Some(45011) => WechatError::builtin(45011, "Rate limit, up to 100 attempts per minute per user."),
-            Some(i) => WechatError::unknown(i, response.errmsg),
+            -1 => WechatError::builtin(-1, "The wechat server system is busy, please try again later."),
+            40029 => WechatError::builtin(40029, "Invalid `phone_code`."),
+            40163 => WechatError::builtin(40163, "The login code has been used."),
+            40226 => WechatError::builtin(40226, "High-risk user, has been banned by wechat."),
+            45011 => WechatError::builtin(45011, "Rate limit, up to 100 attempts per minute per user."),
+            i => WechatError::unknown(i, response.errmsg),
         }
     }
 }
 
 #[derive(Deserialize)]
 struct SessionVisitor {
-    errcode: Option<i32>,
+    #[serde(default)]
+    errcode: i32,
+    #[serde(default)]
     errmsg: String,
+    #[serde(default)]
     openid: String,
+    #[serde(default)]
     unionid: String,
+    #[serde(default)]
     session_key: String,
 }
