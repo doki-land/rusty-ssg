@@ -1,0 +1,21 @@
+{
+    "name": "@vutex/benchmarks",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "VuTeX 性能基准测试",
+    "scripts": {
+        "bench": "tsx src/benchmark-full.ts",
+        "bench:simple": "tsx src/benchmark-simple.ts",
+        "bench:original": "tsx src/benchmark.ts",
+        "build": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "typescript": "^5.6.3",
+        "tsx": "^4.21.0"
+    },
+    "dependencies": {
+        "katex": "^0.16.11",
+        "mermaid": "^10.9.1"
+    }
+}

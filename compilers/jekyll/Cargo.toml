@@ -1,0 +1,56 @@
+[package]
+name = "jekyll"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Rusty Jekyll 博客框架核心编译器"
+keywords = ["jekyll", "cli", "compiler", "markdown", "blog"]
+categories = ["command-line-utilities", "compilers"]
+
+[dependencies]
+oak-core = { workspace = true }
+oak-yaml = { workspace = true, features = ["serde"] }
+oak-toml = { workspace = true, features = ["serde"] }
+oak-vfs = { workspace = true }
+oak-markdown = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+walkdir = { workspace = true }
+chrono = { workspace = true }
+nargo-types = { workspace = true }
+nargo-parser = { workspace = true }
+nargo-template = { workspace = true }
+nargo-document = { workspace = true }
+
+
+regex = { workspace = true }
+lazy_static = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "net", "macros"] }
+console = { workspace = true }
+indicatif = { workspace = true }
+slug = { workspace = true }
+fs_extra = { workspace = true }
+notify = { workspace = true, optional = true }
+wae-https = { workspace = true }
+http = { workspace = true }
+
+[dev-dependencies]
+ntest = "0.9.5"
+criterion = "0.8.2"
+tempfile = "3.26.0"
+
+[[bench]]
+name = "compiler_bench"
+harness = false
+
+[features]
+default = ["dev"]
+dev = ["notify"]
+
+[[bin]]
+name = "jekyll"
+path = "src/bin/jekyll.rs"

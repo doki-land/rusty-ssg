@@ -1,0 +1,51 @@
+[package]
+name = "mkdocs"
+version.workspace = true
+description = "MkDocs static site generator compiler in Rust"
+homepage = "https://github.com/rusty-ssg/rusty-ssg"
+repository = "https://github.com/rusty-ssg/rusty-ssg"
+license.workspace = true
+authors.workspace = true
+edition.workspace = true
+keywords = ["mkdocs", "cli", "compiler", "markdown", "documentation"]
+categories = ["command-line-utilities", "compilers"]
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+toml = { workspace = true }
+walkdir = { workspace = true }
+
+console = { workspace = true }
+indicatif = { workspace = true }
+slug = { workspace = true }
+fs_extra = { workspace = true }
+chrono = { workspace = true }
+mime_guess = { workspace = true }
+wae-https = { workspace = true }
+oak-core = { workspace = true }
+oak-vfs = { workspace = true }
+oak-yaml = { workspace = true, features = ["serde"] }
+oak-toml = { workspace = true, features = ["serde"] }
+oak-markdown = { workspace = true }
+regex = { workspace = true }
+lazy_static = { workspace = true }
+http = { workspace = true }
+
+nargo-types = { workspace = true }
+nargo-parser = { workspace = true }
+nargo-document = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4.4"
+
+[features]
+default = []
+dev = []
+
+[[bin]]
+name = "mkdocs"
+path = "bin/mkdocs.rs"
+

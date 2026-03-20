@@ -1,0 +1,21 @@
+[package]
+name = "gatsby"
+version.workspace = true
+description = "Gatsby static site generator compiler in Rust"
+homepage = "https://github.com/rusty-ssg/rusty-ssg"
+repository = "https://github.com/rusty-ssg/rusty-ssg"
+license.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tokio-test = "0.4.4"
+
+[[bin]]
+name = "gatsby"
+path = "bin/gatsby.rs"

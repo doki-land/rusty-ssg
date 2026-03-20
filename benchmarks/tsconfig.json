@@ -1,0 +1,22 @@
+{
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "strict": true,
+        "baseUrl": ".",
+        "paths": {
+            "vutex-plugin": ["../runtimes/vutex-plugin/src/index.ts"],
+            "@vutex/plugin-katex": ["../plugins/vutex-plugin-katex/src/index.ts"],
+            "@vutex/plugin-mermaid": ["../plugins/vutex-plugin-mermaid/src/index.ts"]
+        }
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules"]
+}

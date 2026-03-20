@@ -1,0 +1,23 @@
+baseURL = "http://example.com/"
+languageCode = "en-us"
+title = "Hugo MVP Example"
+description = "A minimal Hugo site for testing"
+
+[params]
+  author = "Test User"
+  description = "Hugo MVP Test Site"
+
+[menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 2
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

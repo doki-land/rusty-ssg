@@ -1,12 +1,89 @@
 [workspace]
-members = ["compilers/*"]
-default-members = [
-    "compilers/hexo",
+resolver = "2"
+members = [
+    "compilers/*",
 ]
-exclude = [
-    "compilers/.DS_Store",
+default-members = [
+    "compilers/*",
 ]
 
+[workspace.package]
+version = "0.0.0"
+authors = ["Aster <192607617@qq.com&gt;"]
+edition = "2024"
+license = "AGPL-3.0"
+homepage = "https://github.com/oovm/RustTemplate"
+repository = "https://github.com/oovm/RustTemplate"
+readme = "readme.md"
+
+[workspace.dependencies]
+walkdir = { version = "2.5.0" }
+serde = { version = "1.0.228", features = ["derive", "rc"] }
+serde_json = { version = "1.0.149" }
+serde_yaml = { version = "0.9.34" }
+schemars = { version = "1.2.1", features = ["derive"] }
+toml = "0.8"
+
+tracing = { version = "0.1.44" }
+unicode-ident = { version = "1.0.24" }
+url = { version = "2.5.8", features = ["serde"] }
+triomphe = { version = "0.1.15", default-features = false, features = ["serde"] }
+smallvec = { version = "1.15", features = ["union", "const_generics", "const_new"] }
+proc-macro2 = { version = "1.0.106" }
+quote = { version = "1.0.45" }
+syn = { version = "2.0.117", features = ["full"] }
+tokio = { version = "1.50.0", features = ["full"] }
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+futures = { version = "0.3.32" }
+dashmap = { version = "6.1.0" }
+lazy_static = "1.5.0"
+itertools = "0.14.0"
+notify = { version = "6.1.1", default-features = false, features = ["crossbeam-channel"] }
+crossterm = "0.29.0"
+unicode-width = "0.2.2"
+clap = { version = "4.5.60", features = ["derive"] }
+arcstr = { version = "1.2.0", features = ["serde"] }
+indexmap = { version = "2.13.0", features = ["serde"] }
+im-rc = "15.1.0"
+num = "0.4.3"
+bigdecimal = "0.4.10"
+ordered-float = "5.1.0"
+twox-hash = "2.1.2"
+regex = "1.12"
+base64 = "0.22"
+http = "1.3.1"
+tower = "0.5.2"
+tower-http = { version = "0.6.2", features = ["cors", "trace", "fs"] }
+semantic-id = { version = "0.0.0", features = ["serde"]}
+limbo = { version = "0.0.22", features = ["index_experimental"] }
+chrono = "0.4"
+console = "0.16.2"
+indicatif = "0.18.4"
+slug = "0.1.5"
+fs_extra = "1.3.0"
+mime_guess = "2.0.4"
+
+# Hexo internal dependencies
+hexo = { path = "compilers/hexo" }
+
+# Oak parsers
+oak-core = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
+oak-toml = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
+oak-yaml = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
+oak-json = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
+oak-vfs = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
+oak-markdown = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
+# Nargo compilers
+nargo-types = { path = "../nargo/compilers/nargo-types", version = "0.0.0" }
+nargo-parser = { path = "../nargo/compilers/nargo-parser", version = "0.0.0" }
+nargo-template = { path = "../nargo/compilers/nargo-template", version = "0.0.0" }
+nargo-document = { path = "../nargo/compilers/nargo-document", version = "0.0.0" }
+# Wae server
+wae-https = { path = "../wae/backends/wae-https", version = "0.0.2" }
+
 [profile.release]
-lto = true
 panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

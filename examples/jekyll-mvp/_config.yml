@@ -1,0 +1,27 @@
+# Jekyll Configuration
+# Docs: https://jekyllrb.com/docs/configuration/
+
+# Site settings
+title: Jekyll MVP Example
+description: A minimal Jekyll site for testing
+baseurl: ""
+url: "http://example.com"
+author:
+  name: "Test User"
+  email: "test@example.com"
+
+# Build settings
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+
+# Exclude from processing.
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
