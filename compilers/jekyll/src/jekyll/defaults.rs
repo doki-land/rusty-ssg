@@ -256,4 +256,169 @@ impl DefaultsManager {
         if let Some(defaults) = &amp;config.defaults {
             for default_map in defaults {
                 let default_config = DefaultConfig::from_map(default_map)?;
-                manager.add_default(default_config
+                manager.add_default(default_config);
+            }
+        }
+
+        Ok(manager)
+    }
+
+    /// 添加一个默认值配置项
+    ///
+    /// # Arguments
+    ///
+    /// * `default` - 要添加的默认值配置项
+    pub fn add_default(&amp;mut self, default: DefaultConfig) {
+        self.defaults.push(default);
+    }
+
+    /// 为文档应用所有匹配的默认值
+    ///
+    /// 默认值按配置顺序应用，后面的配置会覆盖前面的配置
+    ///
+    /// # Arguments
+    ///
+    /// * `document_path` - 文档的相对路径
+    /// * `collection` - 文档所属的集合（如果有）
+    /// * `front_matter` - 要应用默认值的 Front Matter（会被修改）
+    pub fn apply_defaults(
+        &amp;self,
+        document_path: &amp;Path,
+        collection: Option&lt;&amp;str&gt;,
+        front_matter: &amp;mut FrontMatter,
+    ) {
+        let current_layout = front_matter.get_str("layout");
+
+        for default_config in &amp;self.defaults {
+            if default_config.scope.matches(document_path, collection, current_layout) {
+                Self::merge_values(&amp;mut front_matter.variables, &amp;default_config.values);
+            }
+        }
+    }
+
+    /// 合并两个值映射
+    ///
+    /// 源映射中的值会合并到目标映射中，源映射中的值不会覆盖目标映射中已存在的值
+    ///
+    /// # Arguments
+    ///
+    /// * `target` - 目标映射（会被修改）
+    /// * `source` - 源映射
+    fn merge_values(target: &amp;mut HashMap&lt;String, Value&gt;, source: &amp;HashMap&lt;String, Value&gt;) {
+        for (key, value) in source {
+            if !target.contains_key(key) {
+                target.insert(key.clone(), value.clone());
+            }
+        }
+    }
+
+    /// 获取所有默认值配置项
+    pub fn defaults(&amp;self) -&gt; &amp;[DefaultConfig] {
+        &amp;self.defaults
+    }
+}
+
+impl Default for DefaultsManager {
+    fn default() -&gt; Self {
+        Self::new()
+    }
+}
+
+/// 默认值配置相关的错误类型
+#[derive(Debug)]
+pub enum DefaultsError {
+    /// 无效的默认值配置格式
+    InvalidFormat(String),
+    /// 路径匹配错误
+    PathMatchError(String),
+}
+
+impl std::fmt::Display for DefaultsError {
+    fn fmt(&amp;self, f: &amp;mut std::fmt::Formatter&lt;'_&gt;) -&gt; std::fmt::Result {
+        match self {
+            DefaultsError::InvalidFormat(msg) =&gt; write!(f, "Invalid defaults format: {}", msg),
+            DefaultsError::PathMatchError(msg) =&gt; write!(f, "Path match error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for DefaultsError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_scope_from_map() {
+        let map = serde_json::Map::from_iter(vec![
+            ("path".to_string(), json!("posts/")),
+            ("collection".to_string(), json!("posts")),
+            ("layout".to_string(), json!("post")),
+        ]);
+
+        let scope = Scope::from_map(&amp;map).unwrap();
+        assert_eq!(scope.path, Some("posts/".to_string()));
+        assert_eq!(scope.collection, Some("posts".to_string()));
+        assert_eq!(scope.layout, Some("post".to_string()));
+    }
+
+    #[test]
+    fn test_scope_matches_path() {
+        let scope = Scope::new().with_path("posts/".to_string());
+        let path = Path::new("posts/2024-01-01-test.md");
+        assert!(scope.matches(path, None, None));
+    }
+
+    #[test]
+    fn test_scope_matches_collection() {
+        let scope = Scope::new().with_collection("posts".to_string());
+        let path = Path::new("any/path.md");
+        assert!(scope.matches(path, Some("posts"), None));
+        assert!(!scope.matches(path, Some("drafts"), None));
+    }
+
+    #[test]
+    fn test_apply_defaults() {
+        let mut manager = DefaultsManager::new();
+
+        let values = HashMap::from_iter(vec![
+            ("layout".to_string(), json!("default")),
+            ("author".to_string(), json!("Test Author")),
+        ]);
+
+        manager.add_default(DefaultConfig::new(Scope::new(), values));
+
+        let mut front_matter = FrontMatter::new(
+            String::new(),
+            HashMap::new(),
+            String::new(),
+        );
+
+        manager.apply_defaults(Path::new("test.md"), None, &amp;mut front_matter);
+
+        assert_eq!(front_matter.get_str("layout"), Some("default"));
+        assert_eq!(front_matter.get_str("author"), Some("Test Author"));
+    }
+
+    #[test]
+    fn test_apply_defaults_no_override() {
+        let mut manager = DefaultsManager::new();
+
+        let values = HashMap::from_iter(vec![
+            ("layout".to_string(), json!("default")),
+        ]);
+
+        manager.add_default(DefaultConfig::new(Scope::new(), values));
+
+        let mut front_matter = FrontMatter::new(
+            String::new(),
+            HashMap::from_iter(vec![
+                ("layout".to_string(), json!("custom")),
+            ]),
+            String::new(),
+        );
+
+        manager.apply_defaults(Path::new("test.md"), None, &amp;mut front_matter);
+
+        assert_eq!(front_matter.get_str("layout"), Some("

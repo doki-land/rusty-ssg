@@ -2,7 +2,7 @@
 ///
 /// 该模块负责处理 Jekyll 项目中的静态文件，包括收集、过滤
 /// 和复制静态文件到输出目录。支持 exclude 和 include 配置。
-use super::{JekyllConfig, JekyllError, JekyllStructure, StaticFileError};
+use super::{JekyllConfig, JekyllStructure, StaticFileError};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 

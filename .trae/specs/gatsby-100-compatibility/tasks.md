@@ -103,7 +103,7 @@
   - `human-judgement` TR-7.3: 所有 public API 都有完整的文档注释
 - **Notes**: 参考 Gatsby 默认主题的设计
 
-## [ ] Task 8: 集成测试和全面验证
+## [/] Task 8: 集成测试和全面验证
 - **Priority**: P2
 - **Depends On**: Task 6, Task 7
 - **Description**: 

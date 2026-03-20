@@ -64,7 +64,8 @@ impl Parser {
 
         // 解析表达式
         let mut expression = String::new();
-        while self.current_token != Token::InterpolationEnd(interpolation_type) {
+        let end_token = Token::InterpolationEnd(interpolation_type);
+        while self.current_token != end_token {
             match &self.current_token {
                 Token::Text(text) => expression.push_str(text),
                 Token::Identifier(id) => expression.push_str(id),
