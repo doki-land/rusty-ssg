@@ -2,19 +2,42 @@
 name = "gatsby"
 version.workspace = true
 description = "Gatsby static site generator compiler in Rust"
-homepage = "https://github.com/rusty-ssg/rusty-ssg"
-repository = "https://github.com/rusty-ssg/rusty-ssg"
+homepage.workspace = true
+repository.workspace = true
 license.workspace = true
 authors.workspace = true
 edition.workspace = true
 
 [dependencies]
 tokio.workspace = true
-serde.workspace = true
+serde = { version = "1.0", features = ["derive"] }
 serde_json.workspace = true
+toml.workspace = true
+oak-core.workspace = true
+oak-json.workspace = true
+oak-yaml.workspace = true
+oak-toml.workspace = true
+oak-markdown.workspace = true
+clap.workspace = true
+console.workspace = true
+chrono.workspace = true
+walkdir.workspace = true
+regex.workspace = true
+nargo-types.workspace = true
+nargo-parser.workspace = true
+nargo-document.workspace = true
+nargo-template.workspace = true
+async-graphql = "7.0"
+async-graphql-value = "7.0"
+thiserror = "1.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
 tokio-test = "0.4.4"
+
+[features]
+default = ["dev"]
+dev = []
 
 [[bin]]
 name = "gatsby"

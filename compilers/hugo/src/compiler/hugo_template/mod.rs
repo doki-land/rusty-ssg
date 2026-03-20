@@ -3,11 +3,16 @@
 
 use std::{collections::HashMap, error::Error, fmt, path::Path};
 
+use handlebars::Handlebars;
+use serde_json::Value;
+
 pub mod context;
 pub mod resolver;
+pub mod functions;
 
 pub use context::{HugoPage, HugoSite, HugoTemplateContext, LanguageConfig, PageParams, SiteParams};
 pub use resolver::{TemplateResolver, TemplateResolverError};
+pub use functions::register_hugo_functions;
 
 /// Hugo 模板引擎错误类型
 #[derive(Debug)]
@@ -98,8 +103,8 @@ impl From<std::io::Error> for HugoTemplateError {
 pub struct HugoTemplateEngine {
     /// 模板解析器
     resolver: TemplateResolver,
-    /// 已加载的模板
-    templates: HashMap<String, String>,
+    /// Handlebars 模板引擎实例
+    handlebars: Handlebars<'static>,
     /// 站点配置
     site: HugoSite,
 }
@@ -113,8 +118,12 @@ impl HugoTemplateEngine {
     /// * `site` - 站点配置
     pub fn new(root_dir: impl AsRef<Path>, site: HugoSite) -> Result<Self, HugoTemplateError> {
         let resolver = TemplateResolver::new(root_dir);
+        let mut handlebars = Handlebars::new();
+        
+        register_hugo_functions(&mut handlebars);
+        handlebars.set_strict_mode(false);
 
-        Ok(Self { resolver, templates: HashMap::new(), site })
+        Ok(Self { resolver, handlebars, site })
     }
 
     /// 设置主题
@@ -134,7 +143,8 @@ impl HugoTemplateEngine {
     /// * `template_name` - 模板名称（如 "baseof.html" 或 "partials/header.html"）
     pub fn load_template(&mut self, template_name: &str) -> Result<(), HugoTemplateError> {
         let (name, content) = self.resolver.resolve_template(template_name)?;
-        self.templates.insert(name, content);
+        self.handlebars.register_template_string(&name, content)
+            .map_err(|e| HugoTemplateError::ParseError { message: e.to_string() })?;
         Ok(())
     }
 
@@ -157,11 +167,12 @@ impl HugoTemplateEngine {
     /// * `name` - 模板名称
     /// * `content` - 模板内容
     pub fn add_template(&mut self, name: &str, content: &str) -> Result<(), HugoTemplateError> {
-        self.templates.insert(name.to_string(), content.to_string());
+        self.handlebars.register_template_string(name, content)
+            .map_err(|e| HugoTemplateError::ParseError { message: e.to_string() })?;
         Ok(())
     }
 
-    /// 简单的模板渲染（使用字符串替换）
+    /// 模板渲染
     ///
     /// # Arguments
     ///
@@ -172,37 +183,12 @@ impl HugoTemplateEngine {
     ///
     /// 渲染后的 HTML 字符串
     pub fn render(&self, template_name: &str, page: HugoPage) -> Result<String, HugoTemplateError> {
-        let template = self
-            .templates
-            .get(template_name)
-            .ok_or_else(|| HugoTemplateError::ParseError { message: format!("Template not found: {}", template_name) })?;
-
         let context = HugoTemplateContext { site: self.site.clone(), page };
-
-        Self::render_simple(template, &context)
-    }
-
-    /// 简单的模板渲染函数
-    fn render_simple(template: &str, context: &HugoTemplateContext) -> Result<String, HugoTemplateError> {
-        let mut result = template.to_string();
-
-        if let Some(title) = &context.site.title {
-            result = result.replace("{site.title}", title);
-        }
-
-        if let Some(base_url) = &context.site.base_url {
-            result = result.replace("{site.base_url}", base_url);
-        }
-
-        if let Some(page_title) = &context.page.title {
-            result = result.replace("{page.title}", page_title);
-        }
-
-        if let Some(page_content) = &context.page.content {
-            result = result.replace("{page.content}", page_content);
-        }
-
-        Ok(result)
+        let json_value = serde_json::to_value(context)
+            .map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })?;
+        
+        self.handlebars.render(template_name, &json_value)
+            .map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })
     }
 
     /// 获取站点配置的引用
@@ -223,5 +209,15 @@ impl HugoTemplateEngine {
     /// 获取可变的模板解析器引用
     pub fn resolver_mut(&mut self) -> &mut TemplateResolver {
         &mut self.resolver
+    }
+
+    /// 获取 Handlebars 模板引擎的引用
+    pub fn handlebars(&self) -> &Handlebars<'static> {
+        &self.handlebars
+    }
+
+    /// 获取可变的 Handlebars 模板引擎引用
+    pub fn handlebars_mut(&mut self) -> &mut Handlebars<'static> {
+        &mut self.handlebars
     }
 }

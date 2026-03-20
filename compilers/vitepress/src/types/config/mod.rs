@@ -1,7 +1,6 @@
 //! VuTeX 配置模块
 //! 定义 VuTeX 兼容 VitePress 的配置结构，支持从 TOML、YAML 和 JSON 文件加载配置
 
-use oak_toml;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -540,7 +539,7 @@ pub struct CodeBlockVPreOptions {
 }
 
 /// Markdown配置
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MarkdownConfig {
     /// 锚点插件配置
     pub anchor: Option<AnchorPluginOptions>,
@@ -575,7 +574,7 @@ pub struct MarkdownConfig {
 }
 
 /// 构建配置
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BuildConfig {
     /// 源目录
     pub src_dir: Option<String>,
@@ -675,7 +674,8 @@ pub struct VutexConfig {
     /// 是否启用最后更新时间
     pub last_updated: Option<bool>,
     /// 主题配置
-    pub theme_config: Option<ThemeConfig>,
+    #[serde(alias = "theme_config")]
+    pub theme: Option<ThemeConfig>,
     /// 插件配置
     pub plugins: Option<Vec<PluginConfig>>,
     /// Markdown 配置
@@ -874,16 +874,9 @@ impl VutexConfig {
     ///
     /// 返回 `ConfigError::JsonParseError` 如果 JSON 解析失败
     pub fn load_from_json_str(json_str: &str) -> Result<Self, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            let config: Self = serde_json::from_str(json_str).map_err(|e| ConfigError::json_parse_error(e.to_string()))?;
-            config.validate()?;
-            Ok(config)
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::json_parse_error("serde feature not enabled".to_string()))
-        }
+        let config: Self = serde_json::from_str(json_str).map_err(|e| ConfigError::json_parse_error(e.to_string()))?;
+        config.validate()?;
+        Ok(config)
     }
 
     /// 从 TOML 字符串加载配置
@@ -896,25 +889,22 @@ impl VutexConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
     pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            let config: Self = oak_toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
-            config.validate()?;
-            Ok(config)
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::toml_parse_error("serde feature not enabled".to_string()))
-        }
+        let config: Self = toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        config.validate()?;
+        Ok(config)
     }
 
     /// 从目录中查找并加载配置文件
     ///
     /// 按以下顺序查找配置文件：
-    /// 1. vutex.toml
-    /// 2. vutex.json
-    /// 3. config.toml
-    /// 4. config.json
+    /// 1. .vitepress/vitepress.config.toml
+    /// 2. .vitepress/vitepress.config.json
+    /// 3. vitepress.config.toml
+    /// 4. vitepress.config.json
+    /// 5. vutex.toml
+    /// 6. vutex.json
+    /// 7. config.toml
+    /// 8. config.json
     ///
     /// # Arguments
     ///
@@ -926,10 +916,18 @@ impl VutexConfig {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self, ConfigError> {
         let dir = dir.as_ref();
 
-        let filenames = ["vutex.toml", "vutex.json", "config.toml", "config.json"];
+        let paths = [
+            dir.join(".vitepress").join("vitepress.config.toml"),
+            dir.join(".vitepress").join("vitepress.config.json"),
+            dir.join("vitepress.config.toml"),
+            dir.join("vitepress.config.json"),
+            dir.join("vutex.toml"),
+            dir.join("vutex.json"),
+            dir.join("config.toml"),
+            dir.join("config.json"),
+        ];
 
-        for filename in filenames {
-            let path = dir.join(filename);
+        for path in paths {
             if path.exists() {
                 return Self::load_from_file(path);
             }
@@ -944,14 +942,7 @@ impl VutexConfig {
     ///
     /// 返回 `ConfigError::JsonParseError` 如果序列化失败
     pub fn to_json(&self) -> Result<String, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            serde_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::json_parse_error("serde feature not enabled".to_string()))
-        }
+        serde_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
     }
 
     /// 将配置序列化为 TOML 字符串
@@ -960,14 +951,7 @@ impl VutexConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果序列化失败
     pub fn to_toml(&self) -> Result<String, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            oak_toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::toml_parse_error("serde feature not enabled".to_string()))
-        }
+        toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
     }
 }
 
@@ -995,7 +979,7 @@ impl ConfigValidation for VutexConfig {
         }
 
         if let Some(port) = &self.port {
-            if *port == 0 || *port > 65535 {
+            if *port == 0 {
                 return Err(ConfigError::validation_error("Port must be between 1 and 65535".to_string()));
             }
         }

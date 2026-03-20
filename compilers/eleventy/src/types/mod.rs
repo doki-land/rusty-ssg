@@ -54,14 +54,72 @@ pub struct BuildResult {
 
 /// 命令行参数
 #[derive(Debug, clap::Parser)]
+#[clap(disable_help_flag = true)]
 pub struct Cli {
+    /// 显示版本信息
+    #[clap(short, long)]
+    pub version: bool,
+    
+    /// 显示帮助信息
+    #[clap(short, long)]
+    pub help: bool,
+    
+    /// 配置文件路径
+    #[clap(short, long, default_value = ".eleventy.js")]
+    pub config: String,
+    
+    /// 输入目录
+    #[clap(long, default_value = ".")]
+    pub input: String,
+    
+    /// 输出目录
+    #[clap(long, default_value = "_site")]
+    pub output: String,
+    
+    /// 模板格式
+    #[clap(long)]
+    pub formats: Option<String>,
+    
+    /// 启动开发服务器
+    #[clap(long)]
+    pub serve: bool,
+    
+    /// 服务器端口
+    #[clap(long, default_value = "8080")]
+    pub port: u16,
+    
+    /// 监视文件变化
+    #[clap(long)]
+    pub watch: bool,
+    
+    /// 减少控制台输出
+    #[clap(long)]
+    pub quiet: bool,
+    
+    /// 运行但不写入文件系统
+    #[clap(long)]
+    pub dryrun: bool,
+    
+    /// 输出格式 (fs, json, ndjson)
+    #[clap(long, default_value = "fs")]
+    pub to: String,
+    
+    /// 增量构建
+    #[clap(long)]
+    pub incremental: bool,
+    
+    /// 启动时不进行初始构建
+    #[clap(long)]
+    pub ignore_initial: bool,
+    
     /// 命令
     #[clap(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
 }
 
 /// 命令
 #[derive(Debug, clap::Subcommand)]
+#[clap(disable_help_subcommand = true)]
 pub enum Command {
     /// 构建站点
     Build {
@@ -72,6 +130,10 @@ pub enum Command {
         /// 输出目录
         #[clap(short, long)]
         output: Option<String>,
+        
+        /// 详细输出
+        #[clap(short, long)]
+        verbose: bool,
     },
     
     /// 启动开发服务器
@@ -83,6 +145,14 @@ pub enum Command {
         /// 输入目录
         #[clap(short, long)]
         input: Option<String>,
+        
+        /// 输出目录
+        #[clap(short, long)]
+        output: Option<String>,
+        
+        /// 详细输出
+        #[clap(short, long)]
+        verbose: bool,
     },
     
     /// 监视文件变更
@@ -90,5 +160,19 @@ pub enum Command {
         /// 输入目录
         #[clap(short, long)]
         input: Option<String>,
+        
+        /// 输出目录
+        #[clap(short, long)]
+        output: Option<String>,
+        
+        /// 详细输出
+        #[clap(short, long)]
+        verbose: bool,
     },
+    
+    /// 显示帮助信息
+    Help,
+    
+    /// 显示版本信息
+    Version,
 }

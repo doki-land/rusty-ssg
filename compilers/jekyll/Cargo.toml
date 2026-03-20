@@ -24,6 +24,8 @@ nargo-types = { workspace = true }
 nargo-parser = { workspace = true }
 nargo-template = { workspace = true }
 nargo-document = { workspace = true }
+csv = { workspace = true }
+liquid = { workspace = true }
 
 
 regex = { workspace = true }

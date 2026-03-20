@@ -19,6 +19,25 @@ pub fn register_builtins(registry: &mut ShortcodeRegistry) {
     registry.register("twitter", handle_twitter);
     registry.register("youtube", handle_youtube);
     registry.register("vimeo", handle_vimeo);
+    registry.register("ref", handle_ref);
+    registry.register("relref", handle_relref);
+    registry.register("alert", handle_alert);
+    registry.register("notice", handle_notice);
+    registry.register("tip", handle_tip);
+    registry.register("warning", handle_warning);
+    registry.register("error", handle_error);
+    registry.register("info", handle_info);
+    registry.register("details", handle_details);
+    registry.register("blockquote", handle_blockquote);
+    registry.register("tabs", handle_tabs);
+    registry.register("tab", handle_tab);
+    registry.register("code", handle_code);
+    registry.register("gist", handle_gist);
+    registry.register("instagram", handle_instagram);
+    registry.register("tiktok", handle_tiktok);
+    registry.register("twitter", handle_twitter);
+    registry.register("vimeo", handle_vimeo);
+    registry.register("youtube", handle_youtube);
 }
 
 /// 处理 highlight 短代码
@@ -245,4 +264,338 @@ fn escape_html(s: &str) -> String {
 /// 属性值转义函数
 fn escape_attr(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;").replace('\'', "&#39;")
+}
+
+/// 处理 ref 短代码
+///
+/// 用于创建内部文档链接，生成绝对 URL
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_ref(shortcode: &Shortcode, context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let path = shortcode
+        .params
+        .get("path", 0)
+        .or_else(|| shortcode.params.get_positional(0))
+        .ok_or_else(|| ShortcodeError::ParameterError { message: "Path parameter is required".to_string() })?;
+
+    let anchor = shortcode.params.get_named("anchor").unwrap_or("");
+    let text = shortcode.inner.as_deref().unwrap_or(path);
+
+    let mut url = format!("/{}", path.trim_start_matches('/'));
+    if !anchor.is_empty() {
+        url.push_str(&format!("#{}", anchor));
+    }
+
+    Ok(format!("<a href=\"{}\">{}</a>", escape_attr(&url), escape_html(text)))
+}
+
+/// 处理 relref 短代码
+///
+/// 用于创建内部文档链接，生成相对 URL
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_relref(shortcode: &Shortcode, context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let path = shortcode
+        .params
+        .get("path", 0)
+        .or_else(|| shortcode.params.get_positional(0))
+        .ok_or_else(|| ShortcodeError::ParameterError { message: "Path parameter is required".to_string() })?;
+
+    let anchor = shortcode.params.get_named("anchor").unwrap_or("");
+    let text = shortcode.inner.as_deref().unwrap_or(path);
+
+    let mut url = path.to_string();
+    if !anchor.is_empty() {
+        url.push_str(&format!("#{}", anchor));
+    }
+
+    Ok(format!("<a href=\"{}\">{}</a>", escape_attr(&url), escape_html(text)))
+}
+
+/// 处理 alert 短代码
+///
+/// 用于显示警告信息
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_alert(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let title = shortcode.params.get_named("title").unwrap_or("Alert");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!(
+        "<div class=\"alert alert-warning\"><strong>{}</strong>{}</div>",
+        escape_html(title),
+        content
+    ))
+}
+
+/// 处理 notice 短代码
+///
+/// 用于显示通知信息
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_notice(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let title = shortcode.params.get_named("title").unwrap_or("Notice");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!(
+        "<div class=\"alert alert-info\"><strong>{}</strong>{}</div>",
+        escape_html(title),
+        content
+    ))
+}
+
+/// 处理 tip 短代码
+///
+/// 用于显示提示信息
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_tip(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let title = shortcode.params.get_named("title").unwrap_or("Tip");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!(
+        "<div class=\"alert alert-success\"><strong>{}</strong>{}</div>",
+        escape_html(title),
+        content
+    ))
+}
+
+/// 处理 warning 短代码
+///
+/// 用于显示警告信息
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_warning(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let title = shortcode.params.get_named("title").unwrap_or("Warning");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!(
+        "<div class=\"alert alert-warning\"><strong>{}</strong>{}</div>",
+        escape_html(title),
+        content
+    ))
+}
+
+/// 处理 error 短代码
+///
+/// 用于显示错误信息
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_error(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let title = shortcode.params.get_named("title").unwrap_or("Error");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!(
+        "<div class=\"alert alert-danger\"><strong>{}</strong>{}</div>",
+        escape_html(title),
+        content
+    ))
+}
+
+/// 处理 info 短代码
+///
+/// 用于显示信息提示
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_info(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let title = shortcode.params.get_named("title").unwrap_or("Info");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!(
+        "<div class=\"alert alert-info\"><strong>{}</strong>{}</div>",
+        escape_html(title),
+        content
+    ))
+}
+
+/// 处理 details 短代码
+///
+/// 用于创建可折叠的内容块
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_details(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let summary = shortcode.params.get_named("summary").unwrap_or("Details");
+    let open = shortcode.params.get_named("open").unwrap_or("false");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    let open_attr = if open == "true" { " open" } else { "" };
+
+    Ok(format!(
+        "<details{}><summary>{}</summary>{}</details>",
+        open_attr,
+        escape_html(summary),
+        content
+    ))
+}
+
+/// 处理 blockquote 短代码
+///
+/// 用于创建引用块
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_blockquote(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let author = shortcode.params.get_named("author");
+    let source = shortcode.params.get_named("source");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    let mut html = format!("<blockquote>{}</blockquote>", content);
+
+    if author.is_some() || source.is_some() {
+        let mut cite = String::new();
+        if let Some(a) = author {
+            cite.push_str(&format!("— {}", escape_html(a)));
+        }
+        if let Some(s) = source {
+            if !cite.is_empty() {
+                cite.push_str(", ");
+            }
+            cite.push_str(&format!("<cite>{}</cite>", escape_html(s)));
+        }
+        html = format!("<blockquote>{}<footer>{}</footer></blockquote>", content, cite);
+    }
+
+    Ok(html)
+}
+
+/// 处理 tabs 短代码
+///
+/// 用于创建标签页容器
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_tabs(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let id = shortcode.params.get_named("id").unwrap_or("tabs");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    Ok(format!("<div class=\"tabs\" id=\"{}\">{}</div>", escape_attr(id), content))
+}
+
+/// 处理 tab 短代码
+///
+/// 用于创建单个标签页
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_tab(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let name = shortcode
+        .params
+        .get("name", 0)
+        .or_else(|| shortcode.params.get_positional(0))
+        .ok_or_else(|| ShortcodeError::ParameterError { message: "Name parameter is required".to_string() })?;
+    let active = shortcode.params.get_named("active").unwrap_or("false");
+    let content = shortcode.inner.as_deref().unwrap_or("");
+
+    let active_class = if active == "true" { " active" } else { "" };
+
+    Ok(format!(
+        "<div class=\"tab{}\" data-tab-name=\"{}\">{}</div>",
+        active_class,
+        escape_attr(name),
+        content
+    ))
+}
+
+/// 处理 code 短代码
+///
+/// 用于显示代码块
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_code(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let language = shortcode.params.get("lang", 0).unwrap_or("");
+    let linenos = shortcode.params.get_named("linenos").unwrap_or("false");
+    let code = shortcode.inner.as_deref().unwrap_or("");
+
+    let mut class = if !language.is_empty() { format!("language-{}", language) } else { String::new() };
+    if linenos == "true" || linenos == "1" {
+        if !class.is_empty() {
+            class.push(' ');
+        }
+        class.push_str("line-numbers");
+    }
+
+    if class.is_empty() {
+        Ok(format!("<pre><code>{}</code></pre>", escape_html(code)))
+    } else {
+        Ok(format!("<pre><code class=\"{}\">{}</code></pre>", class, escape_html(code)))
+    }
+}
+
+/// 处理 instagram 短代码
+///
+/// 用于嵌入 Instagram 帖子
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_instagram(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let post_id = shortcode
+        .params
+        .get("id", 0)
+        .or_else(|| shortcode.params.get_positional(0))
+        .ok_or_else(|| ShortcodeError::ParameterError { message: "Post ID parameter is required".to_string() })?;
+
+    Ok(format!(
+        "<blockquote class=\"instagram-media\" data-instgrm-permalink=\"https://www.instagram.com/p/{}/\" data-instgrm-version=\"13\"></blockquote><script async src=\"//www.instagram.com/embed.js\"></script>",
+        post_id
+    ))
+}
+
+/// 处理 tiktok 短代码
+///
+/// 用于嵌入 TikTok 视频
+///
+/// # Arguments
+///
+/// * `shortcode` - 短代码定义
+/// * `context` - 短代码上下文
+fn handle_tiktok(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeResult<String> {
+    let video_id = shortcode
+        .params
+        .get("id", 0)
+        .or_else(|| shortcode.params.get_positional(0))
+        .ok_or_else(|| ShortcodeError::ParameterError { message: "Video ID parameter is required".to_string() })?;
+
+    Ok(format!(
+        "<blockquote class=\"tiktok-embed\" cite=\"https://www.tiktok.com/@{}\" data-video-id=\"{}\"><section></section></blockquote><script async src=\"https://www.tiktok.com/embed.js\"></script>",
+        video_id,
+        video_id
+    ))
 }

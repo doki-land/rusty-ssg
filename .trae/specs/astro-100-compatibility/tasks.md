@@ -1,6 +1,6 @@
 # Astro 编译器 100% 兼容性 - 实现计划
 
-## [/] 任务 1: 增强 HTML 渲染器功能
+## [x] 任务 1: 增强 HTML 渲染器功能
 - **Priority**: P0
 - **Depends On**: None
 - **Description**: 
@@ -12,7 +12,7 @@
   - `programmatic` TR-1.2: 验证渲染输出与预期 HTML 一致
 - **Notes**: 从现有的简单实现开始，逐步增强功能
 
-## [ ] 任务 2: 实现 Astro 语法解析器
+## [/] 任务 2: 实现 Astro 语法解析器
 - **Priority**: P0
 - **Depends On**: 任务 1
 - **Description**:

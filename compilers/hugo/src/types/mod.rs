@@ -4,6 +4,7 @@ pub mod document;
 pub mod errors;
 pub mod ipc;
 pub mod language;
+pub mod taxonomies;
 
 pub use nargo_types::{
     CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span,

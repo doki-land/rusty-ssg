@@ -3,11 +3,9 @@
 
 pub mod cmd;
 pub mod site_generator;
-pub mod theme;
 
 pub use crate::types::Document;
-pub use site_generator::{ConfigLoader, StaticSiteGenerator};
-pub use theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink};
+pub use site_generator::{ConfigLoader, StaticSiteGenerator, LanguageDocuments};
 pub use crate::compiler::{CompileResult, CompileSession, PluginHost, VutexCompiler};
 pub use crate::types::{Result, VutexConfig, VutexError};
 

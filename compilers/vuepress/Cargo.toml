@@ -19,6 +19,7 @@ serde_json = { workspace = true }
 walkdir = { workspace = true }
 nargo-types = { workspace = true }
 nargo-document = { workspace = true }
+nargo-parser = { workspace = true }
 
 
 regex = { workspace = true }

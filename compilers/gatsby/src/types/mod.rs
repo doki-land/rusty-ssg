@@ -1,5 +1,8 @@
-//! Gatsby 配置模块
-//! 定义 Gatsby 兼容的配置结构，支持从 JSON、YAML 和 TOML 文件加载配置
+//! Gatsby 类型模块
+//! 定义 Gatsby 兼容的配置结构、GraphQL 数据类型，支持从 JSON、YAML 和 TOML 文件加载配置
+
+/// GraphQL 数据类型
+pub mod graphql;
 
 use std::{
     collections::HashMap,
@@ -9,6 +12,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use nargo_types::Document;
 
 /// 配置加载和验证相关的错误类型
 #[derive(Debug, Clone)]
@@ -142,7 +146,7 @@ pub trait ConfigValidation {
     /// # Errors
     ///
     /// 返回 `ConfigError::ValidationError` 如果配置无效
-    fn validate(&self) -> Result<(), ConfigError>;
+    fn validate(&self) -> std::result::Result<(), ConfigError>;
 }
 
 /// Gatsby 主配置
@@ -204,7 +208,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError` 如果文件读取或解析失败
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
+    pub fn load_from_file<P: AsRef<Path>>(path: P) -> std::result::Result<Self, ConfigError> {
         let path = path.as_ref();
         let content = std::fs::read_to_string(path)?;
 
@@ -226,7 +230,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError::JsonParseError` 如果 JSON 解析失败
-    pub fn load_from_json_str(json_str: &str) -> Result<Self, ConfigError> {
+    pub fn load_from_json_str(json_str: &str) -> std::result::Result<Self, ConfigError> {
         let config: Self = oak_json::from_str(json_str).map_err(|e| ConfigError::json_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
@@ -241,7 +245,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError::YamlParseError` 如果 YAML 解析失败
-    pub fn load_from_yaml_str(yaml_str: &str) -> Result<Self, ConfigError> {
+    pub fn load_from_yaml_str(yaml_str: &str) -> std::result::Result<Self, ConfigError> {
         let config: Self = oak_yaml::language::from_str(yaml_str).map_err(|e| ConfigError::yaml_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
@@ -256,7 +260,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
-    pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
+    pub fn load_from_toml_str(toml_str: &str) -> std::result::Result<Self, ConfigError> {
         let config: Self = oak_toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
@@ -278,7 +282,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError` 如果配置文件读取或解析失败
-    pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> Result<Self, ConfigError> {
+    pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> std::result::Result<Self, ConfigError> {
         let dir = dir.as_ref();
 
         let filenames = [
@@ -308,7 +312,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError::JsonParseError` 如果序列化失败
-    pub fn to_json(&self) -> Result<String, ConfigError> {
+    pub fn to_json(&self) -> std::result::Result<String, ConfigError> {
         oak_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
     }
 
@@ -317,7 +321,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError::YamlParseError` 如果序列化失败
-    pub fn to_yaml(&self) -> Result<String, ConfigError> {
+    pub fn to_yaml(&self) -> std::result::Result<String, ConfigError> {
         oak_yaml::language::to_string(self).map_err(|e| ConfigError::yaml_parse_error(e.to_string()))
     }
 
@@ -326,7 +330,7 @@ impl GatsbyConfig {
     /// # Errors
     ///
     /// 返回 `ConfigError::TomlParseError` 如果序列化失败
-    pub fn to_toml(&self) -> Result<String, ConfigError> {
+    pub fn to_toml(&self) -> std::result::Result<String, ConfigError> {
         toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
     }
 
@@ -357,7 +361,7 @@ impl GatsbyConfig {
 }
 
 impl ConfigValidation for GatsbyConfig {
-    fn validate(&self) -> Result<(), ConfigError> {
+    fn validate(&self) -> std::result::Result<(), ConfigError> {
         if let Some(path_prefix) = &self.path_prefix {
             if path_prefix.is_empty() {
                 return Err(ConfigError::validation_error("Path prefix cannot be empty".to_string()));
@@ -451,7 +455,7 @@ pub enum PluginConfig {
 }
 
 impl ConfigValidation for PluginConfig {
-    fn validate(&self) -> Result<(), ConfigError> {
+    fn validate(&self) -> std::result::Result<(), ConfigError> {
         match self {
             PluginConfig::Name(name) => {
                 if name.is_empty() {
@@ -496,7 +500,7 @@ pub struct DevelopConfig {
 }
 
 impl ConfigValidation for DevelopConfig {
-    fn validate(&self) -> Result<(), ConfigError> {
+    fn validate(&self) -> std::result::Result<(), ConfigError> {
         if let Some(port) = self.port {
             if port == 0 || port > 65535 {
                 return Err(ConfigError::validation_error(format!("Invalid port number: {}", port)));
@@ -523,7 +527,7 @@ pub struct FlagsConfig {
 }
 
 impl ConfigValidation for FlagsConfig {
-    fn validate(&self) -> Result<(), ConfigError> {
+    fn validate(&self) -> std::result::Result<(), ConfigError> {
         Ok(())
     }
 }
@@ -572,23 +576,66 @@ impl Default for TrailingSlash {
 }
 
 /// 编译结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompileResult {
-    /// 成功状态
-    pub success: bool,
-
+    /// 编译后的文档
+    pub documents: HashMap<String, Document>,
     /// 编译时间（毫秒）
     pub compile_time_ms: u64,
+    /// 是否成功
+    pub success: bool,
+    /// 错误信息（字符串形式）
+    pub errors: Vec<String>,
 }
 
 impl CompileResult {
     /// 创建成功的编译结果
-    pub fn success(compile_time_ms: u64) -> Self {
-        Self { success: true, compile_time_ms }
+    ///
+    /// # Arguments
+    ///
+    /// * `documents` - 编译后的文档映射
+    /// * `compile_time_ms` - 编译时间（毫秒）
+    pub fn success(documents: HashMap<String, Document>, compile_time_ms: u64) -> Self {
+        Self { documents, compile_time_ms, success: true, errors: Vec::new() }
     }
 
     /// 创建失败的编译结果
-    pub fn failure(compile_time_ms: u64) -> Self {
-        Self { success: false, compile_time_ms }
+    ///
+    /// # Arguments
+    ///
+    /// * `errors` - 错误信息列表
+    /// * `compile_time_ms` - 编译时间（毫秒）
+    pub fn failure(errors: Vec<String>, compile_time_ms: u64) -> Self {
+        Self { documents: HashMap::new(), compile_time_ms, success: false, errors }
+    }
+
+    /// 从 GatsbyError 创建失败的编译结果
+    ///
+    /// # Arguments
+    ///
+    /// * `errors` - GatsbyError 列表
+    /// * `compile_time_ms` - 编译时间（毫秒）
+    pub fn from_errors(errors: Vec<GatsbyError>, compile_time_ms: u64) -> Self {
+        let error_strings = errors.iter().map(|e| format!("{}", e)).collect();
+        Self::failure(error_strings, compile_time_ms)
+    }
+
+    /// 序列化为 JSON
+    ///
+    /// # Errors
+    ///
+    /// 返回 `serde_json::Error` 如果序列化失败
+    pub fn to_json(&self) -> serde_json::Result<String> {
+        serde_json::to_string(self)
+    }
+
+    /// 序列化为美化的 JSON
+    ///
+    /// # Errors
+    ///
+    /// 返回 `serde_json::Error` 如果序列化失败
+    pub fn to_json_pretty(&self) -> serde_json::Result<String> {
+        serde_json::to_string_pretty(self)
     }
 }
 
@@ -662,6 +709,18 @@ impl From<std::io::Error> for GatsbyError {
 impl From<serde_json::Error> for GatsbyError {
     fn from(source: serde_json::Error) -> Self {
         GatsbyError::SerializeError { source }
+    }
+}
+
+impl From<ConfigError> for GatsbyError {
+    fn from(error: ConfigError) -> Self {
+        GatsbyError::ConfigError { message: error.to_string() }
+    }
+}
+
+impl From<nargo_types::Error> for GatsbyError {
+    fn from(error: nargo_types::Error) -> Self {
+        GatsbyError::CompileError { message: error.to_string() }
     }
 }
 

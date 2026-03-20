@@ -2,8 +2,8 @@
 name = "astro"
 version.workspace = true
 description = "Astro static site generator compiler in Rust"
-homepage = "https://github.com/rusty-ssg/rusty-ssg"
-repository = "https://github.com/rusty-ssg/rusty-ssg"
+homepage.workspace = true
+repository.workspace = true
 license.workspace = true
 authors.workspace = true
 edition.workspace = true

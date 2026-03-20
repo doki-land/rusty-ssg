@@ -1,11 +1,17 @@
 #![warn(missing_docs)]
 #![doc = "Hugo 兼容静态站点生成器"]
 
+/// 编译器模块
 pub mod compiler;
+/// 插件模块
 pub mod plugin;
+/// 插件主机模块
 pub mod plugin_host;
+/// 编译会话模块
 pub mod session;
+/// 工具模块
 pub mod tools;
+/// 类型定义模块
 pub mod types;
 
 pub use types::{ast, config, document, errors, ipc, language};

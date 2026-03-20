@@ -1,10 +1,9 @@
 //! Build 命令实现
 
-use crate::{BuildArgs, ConfigLoader, StaticSiteGenerator, VutexCompiler};
+use crate::{types::Result, compiler::{PluginHost, VutexCompiler}};
+use crate::tools::{BuildArgs, ConfigLoader, StaticSiteGenerator};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::compiler::PluginHost;
-use crate::types::Result;
 use walkdir::WalkDir;
 
 /// Build 命令
@@ -110,7 +109,7 @@ impl BuildCommand {
 
             println!("  {} Generating static site...", style("→").blue());
 
-            let mut site_generator = StaticSiteGenerator::new(config)?;
+            let mut site_generator = StaticSiteGenerator::with_source_dir(config, source_dir)?;
             site_generator.generate(&result.documents, &output_dir)?;
 
             println!("  {} Static site generated successfully", style("✓").green());

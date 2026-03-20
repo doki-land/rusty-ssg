@@ -1,11 +1,12 @@
 //! 命令行工具模块
 
-/// 构建命令
-pub fn build() {
-    // 构建实现
-}
+pub mod build;
+pub mod check;
+pub mod dev;
+pub mod init;
 
-/// 开发命令
-pub fn dev() {
-    // 开发实现
-}
+pub use build::BuildCommand;
+pub use check::CheckCommand;
+#[cfg(feature = "dev")]
+pub use dev::DevCommand;
+pub use init::InitCommand;

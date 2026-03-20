@@ -264,6 +264,132 @@ pub enum PostError {
     FileSystemError(std::io::Error),
 }
 
+/// 静态文件处理相关错误
+#[derive(Debug)]
+pub enum StaticFileError {
+    /// 文件复制错误
+    CopyError(String),
+
+    /// 目录创建错误
+    DirectoryCreateError(String),
+
+    /// 路径匹配错误
+    PathMatchError(String),
+
+    /// Jekyll 相关错误
+    JekyllError(JekyllError),
+
+    /// 文件系统错误
+    FileSystemError(std::io::Error),
+}
+
+impl StaticFileError {
+    /// 获取错误的 i18n 键
+    pub fn i18n_key(&self) -> &'static str {
+        match self {
+            StaticFileError::CopyError(_) => "jekyll.static_file.error.copy",
+            StaticFileError::DirectoryCreateError(_) => "jekyll.static_file.error.directory_create",
+            StaticFileError::PathMatchError(_) => "jekyll.static_file.error.path_match",
+            StaticFileError::JekyllError(error) => error.i18n_key(),
+            StaticFileError::FileSystemError(_) => "jekyll.static_file.error.file_system",
+        }
+    }
+}
+
+impl std::fmt::Display for StaticFileError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StaticFileError::CopyError(message) => write!(f, "Static file copy error: {}", message),
+            StaticFileError::DirectoryCreateError(message) => write!(f, "Directory creation error: {}", message),
+            StaticFileError::PathMatchError(message) => write!(f, "Path match error: {}", message),
+            StaticFileError::JekyllError(error) => write!(f, "Jekyll error: {}", error),
+            StaticFileError::FileSystemError(error) => write!(f, "File system error: {}", error),
+        }
+    }
+}
+
+impl From<JekyllError> for StaticFileError {
+    fn from(error: JekyllError) -> Self {
+        StaticFileError::JekyllError(error)
+    }
+}
+
+impl From<std::io::Error> for StaticFileError {
+    fn from(error: std::io::Error) -> Self {
+        StaticFileError::FileSystemError(error)
+    }
+}
+
+impl std::error::Error for StaticFileError {}
+
+/// 数据文件相关错误
+#[derive(Debug)]
+pub enum DataError {
+    /// 不支持的数据文件格式
+    UnsupportedFormat(String),
+
+    /// JSON 解析错误
+    JsonParseError(String),
+
+    /// YAML 解析错误
+    YamlParseError(String),
+
+    /// CSV 解析错误
+    CsvParseError(String),
+
+    /// 数据文件读取错误
+    ReadError(String),
+
+    /// Jekyll 相关错误
+    JekyllError(JekyllError),
+
+    /// 文件系统错误
+    FileSystemError(std::io::Error),
+}
+
+impl DataError {
+    /// 获取错误的 i18n 键
+    pub fn i18n_key(&self) -> &'static str {
+        match self {
+            DataError::UnsupportedFormat(_) => "jekyll.data.error.unsupported_format",
+            DataError::JsonParseError(_) => "jekyll.data.error.json_parse",
+            DataError::YamlParseError(_) => "jekyll.data.error.yaml_parse",
+            DataError::CsvParseError(_) => "jekyll.data.error.csv_parse",
+            DataError::ReadError(_) => "jekyll.data.error.read",
+            DataError::JekyllError(error) => error.i18n_key(),
+            DataError::FileSystemError(_) => "jekyll.data.error.file_system",
+        }
+    }
+}
+
+impl std::fmt::Display for DataError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DataError::UnsupportedFormat(format) => write!(f, "Unsupported data file format: {}", format),
+            DataError::JsonParseError(error) => write!(f, "JSON parse error: {}", error),
+            DataError::YamlParseError(error) => write!(f, "YAML parse error: {}", error),
+            DataError::CsvParseError(error) => write!(f, "CSV parse error: {}", error),
+            DataError::ReadError(error) => write!(f, "Failed to read data file: {}", error),
+            DataError::JekyllError(error) => write!(f, "Jekyll error: {}", error),
+            DataError::FileSystemError(error) => write!(f, "File system error: {}", error),
+        }
+    }
+}
+
+impl From<JekyllError> for DataError {
+    fn from(error: JekyllError) -> Self {
+        DataError::JekyllError(error)
+    }
+}
+
+impl From<std::io::Error> for DataError {
+    fn from(error: std::io::Error) -> Self {
+        DataError::FileSystemError(error)
+    }
+}
+
+impl std::error::Error for DataError {}
+
 impl PostError {
     /// 获取错误的 i18n 键
     pub fn i18n_key(&self) -> &'static str {

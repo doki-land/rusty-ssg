@@ -5,28 +5,122 @@
 //! - Jekyll 特有的 Liquid 扩展（site、page、post 等变量）
 //! - 模板继承（layout）和包含（include）
 //! - Jekyll 风格的模板上下文
+//! - Jekyll 特有的 Liquid 过滤器
 
 use crate::{
     errors::LiquidError,
-    jekyll::{FrontMatter, JekyllConfig, JekyllError, JekyllStructure},
+    jekyll::{FrontMatter, JekyllConfig, JekyllStructure},
 };
-use nargo_template::{TemplateEngine, TemplateManager};
-use serde_json::{Value, json};
+use chrono::{DateTime, Local, Utc};
+use liquid::{
+    partials::{EagerCompiler, PartialSource},
+    value::{Object, Value},
+    Compiler, Renderable, Template,
+};
+use serde_json;
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf},
+    fs,
+    path::Path,
 };
 
+/// Jekyll 专用的 PartialSource，用于从 Jekyll 目录结构中加载模板
+#[derive(Debug, Clone)]
+struct JekyllPartialSource {
+    /// Jekyll 目录结构
+    structure: JekyllStructure,
+}
+
+impl JekyllPartialSource {
+    /// 创建新的 JekyllPartialSource
+    ///
+    /// # Arguments
+    ///
+    /// * `structure` - Jekyll 目录结构
+    ///
+    /// # Returns
+    ///
+    /// 返回新创建的 JekyllPartialSource 实例
+    fn new(structure: JekyllStructure) -> Self {
+        Self { structure }
+    }
+}
+
+impl PartialSource for JekyllPartialSource {
+    fn contains(&self, name: &str) -> bool {
+        let Some(includes_dir) = self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes) else {
+            return false;
+        };
+        let Some(layouts_dir) = self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts) else {
+            return false;
+        };
+
+        let possible_paths = vec![
+            includes_dir.join(name),
+            includes_dir.join(format!("{}.html", name)),
+            includes_dir.join(format!("{}.liquid", name)),
+            layouts_dir.join(name),
+            layouts_dir.join(format!("{}.html", name)),
+            layouts_dir.join(format!("{}.liquid", name)),
+        ];
+
+        possible_paths.iter().any(|path| path.exists() && path.is_file())
+    }
+
+    fn names(&self) -> Vec<&str> {
+        Vec::new()
+    }
+
+    fn try_get<'a>(&'a self, name: &str) -> Option<liquid::Cow<'a, str>> {
+        let includes_dir = self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes)?;
+        let layouts_dir = self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts)?;
+
+        let possible_paths = vec![
+            includes_dir.join(name),
+            includes_dir.join(format!("{}.html", name)),
+            includes_dir.join(format!("{}.liquid", name)),
+            layouts_dir.join(name),
+            layouts_dir.join(format!("{}.html", name)),
+            layouts_dir.join(format!("{}.liquid", name)),
+        ];
+
+        for path in possible_paths {
+            if path.exists() && path.is_file() {
+                if let Ok(content) = fs::read_to_string(path) {
+                    return Some(liquid::Cow::Owned(content));
+                }
+            }
+        }
+
+        None
+    }
+
+    fn partial(&self, name: &str) -> Option<liquid::Cow<'_, str>> {
+        self.try_get(name)
+    }
+
+    fn name(&self) -> &str {
+        "jekyll"
+    }
+}
+
 /// Liquid 模板引擎核心
+///
+/// 该结构体是 Jekyll Liquid 模板引擎的核心实现，负责：
+/// - 编译和渲染 Liquid 模板
+/// - 管理模板缓存
+/// - 提供 Jekyll 风格的上下文对象
+/// - 处理模板继承和包含
+#[derive(Clone)]
 pub struct LiquidEngine {
     /// Jekyll 目录结构
     structure: JekyllStructure,
     /// Jekyll 配置
     config: JekyllConfig,
-    /// 模板管理器
-    template_manager: TemplateManager,
-    /// 已注册的模板
-    registered_templates: HashMap<String, String>,
+    /// Liquid 编译器
+    compiler: Compiler<'static>,
+    /// 已编译的模板缓存
+    template_cache: HashMap<String, Template>,
 }
 
 impl LiquidEngine {
@@ -41,8 +135,18 @@ impl LiquidEngine {
     ///
     /// 返回新创建的 LiquidEngine 实例
     pub fn new(structure: JekyllStructure, config: JekyllConfig) -> Self {
-        let template_manager = TemplateManager::new();
-        Self { structure, config, template_manager, registered_templates: HashMap::new() }
+        let partial_source = JekyllPartialSource::new(structure.clone());
+        let partial_compiler = EagerCompiler::new(partial_source);
+
+        let mut compiler = Compiler::new();
+        compiler = compiler.partials(partial_compiler);
+
+        Self {
+            structure,
+            config,
+            compiler,
+            template_cache: HashMap::new(),
+        }
     }
 
     /// 渲染 Liquid 模板
@@ -59,16 +163,17 @@ impl LiquidEngine {
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果解析或渲染失败
-    pub fn render_template(&mut self, template: &str, context: &Value) -> Result<String, LiquidError> {
-        // 注册临时模板
-        self.template_manager
-            .register_template(TemplateEngine::Handlebars, "temp", template)
-            .map_err(|e| LiquidError::ParseError(e.to_string()))?;
+    pub fn render_template(&self, template: &str, context: &Object) -> Result<String, LiquidError> {
+        let compiled = self
+            .compiler
+            .parse(template)
+            .map_err(|e| LiquidError::ParseError(format!("Failed to parse template: {}", e)))?;
 
-        // 渲染模板
-        self.template_manager
-            .render(TemplateEngine::Handlebars, "temp", context)
-            .map_err(|e| LiquidError::RenderError(e.to_string()))
+        let output = compiled
+            .render(context)
+            .map_err(|e| LiquidError::RenderError(format!("Failed to render template: {}", e)))?;
+
+        Ok(output)
     }
 
     /// 从文件加载并渲染模板
@@ -85,46 +190,47 @@ impl LiquidEngine {
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果文件读取、解析或渲染失败
-    pub fn render_template_file(&mut self, template_path: &Path, context: &Value) -> Result<String, LiquidError> {
+    pub fn render_template_file(&mut self, template_path: &Path, context: &Object) -> Result<String, LiquidError> {
         let template_key = template_path.to_string_lossy().to_string();
 
-        // 检查是否已注册
-        if !self.registered_templates.contains_key(&template_key) {
-            // 读取模板文件
-            let template_content = std::fs::read_to_string(template_path)?;
+        let template = if let Some(t) = self.template_cache.get(&template_key) {
+            t
+        } else {
+            let template_content = fs::read_to_string(template_path)?;
+            let compiled = self
+                .compiler
+                .parse(&template_content)
+                .map_err(|e| LiquidError::ParseError(format!("Failed to parse template file {}: {}", template_path.display(), e)))?;
+            self.template_cache.insert(template_key.clone(), compiled);
+            self.template_cache.get(&template_key).unwrap()
+        };
 
-            // 注册模板
-            self.template_manager
-                .register_template(TemplateEngine::Handlebars, &template_key, &template_content)
-                .map_err(|e| LiquidError::ParseError(e.to_string()))?;
+        let output = template
+            .render(context)
+            .map_err(|e| LiquidError::RenderError(format!("Failed to render template file {}: {}", template_path.display(), e)))?;
 
-            // 记录已注册
-            self.registered_templates.insert(template_key.clone(), template_content);
-        }
-
-        // 渲染模板
-        self.template_manager
-            .render(TemplateEngine::Handlebars, &template_key, context)
-            .map_err(|e| LiquidError::RenderError(e.to_string()))
+        Ok(output)
     }
 
     /// 渲染布局模板
     ///
+    /// 该方法用于 Jekyll 的模板继承机制，将内容包装在指定的布局中。
+    /// 布局文件中使用 `{{ content }}` 来放置实际内容。
+    ///
     /// # Arguments
     ///
-    /// * `layout_name` - 布局名称
-    /// * `content` - 内容
+    /// * `layout_name` - 布局名称（不含扩展名）
+    /// * `content` - 要放入布局的内容
     /// * `context` - 模板上下文对象
     ///
     /// # Returns
     ///
-    /// 返回渲染后的字符串
+    /// 返回渲染后的完整 HTML 字符串
     ///
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果布局未找到或渲染失败
-    pub fn render_layout(&mut self, layout_name: &str, content: &str, context: &Value) -> Result<String, LiquidError> {
-        // 构建布局文件路径
+    pub fn render_layout(&mut self, layout_name: &str, content: &str, context: &Object) -> Result<String, LiquidError> {
         let layout_path = match self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts) {
             Some(layouts_dir) => {
                 let mut path = layouts_dir.to_path_buf();
@@ -141,31 +247,29 @@ impl LiquidEngine {
             None => return Err(LiquidError::TemplateNotFound("Layouts directory not found".to_string())),
         };
 
-        // 创建包含 content 的上下文
-        let mut context_map = context.as_object().unwrap_or(&serde_json::Map::new()).clone();
-        context_map.insert("content".to_string(), Value::String(content.to_string()));
-        let layout_context = Value::Object(context_map);
+        let mut context_with_content = context.clone();
+        context_with_content.insert("content".into(), Value::scalar(content.to_string()));
 
-        // 渲染布局
-        self.render_template_file(&layout_path, &layout_context)
+        self.render_template_file(&layout_path, &context_with_content)
     }
 
     /// 渲染包含文件
     ///
+    /// 该方法用于 Jekyll 的 include 机制，加载并渲染 _includes 目录中的模板片段。
+    ///
     /// # Arguments
     ///
-    /// * `include_name` - 包含文件名称
+    /// * `include_name` - 包含文件名称（可以含扩展名）
     /// * `context` - 模板上下文对象
     ///
     /// # Returns
     ///
-    /// 返回渲染后的字符串
+    /// 返回渲染后的包含内容
     ///
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果包含文件未找到或渲染失败
-    pub fn render_include(&mut self, include_name: &str, context: &Value) -> Result<String, LiquidError> {
-        // 构建包含文件路径
+    pub fn render_include(&mut self, include_name: &str, context: &Object) -> Result<String, LiquidError> {
         let include_path = match self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes) {
             Some(includes_dir) => {
                 let mut path = includes_dir.to_path_buf();
@@ -185,62 +289,230 @@ impl LiquidEngine {
             None => return Err(LiquidError::TemplateNotFound("Includes directory not found".to_string())),
         };
 
-        // 渲染包含文件
         self.render_template_file(&include_path, context)
     }
 
     /// 创建 Jekyll 风格的模板上下文
     ///
+    /// 该方法构建一个完整的 Jekyll 模板上下文，包含：
+    /// - site 对象：来自 _config.yml 的配置
+    /// - page 对象：来自页面的 Front Matter
+    /// - now 变量：当前时间
+    ///
     /// # Arguments
     ///
-    /// * `front_matter` - 前置内容
-    /// * `page_path` - 页面路径
+    /// * `front_matter` - 页面的 Front Matter
+    /// * `page_path` - 页面文件路径
     ///
     /// # Returns
     ///
-    /// 返回构建的上下文对象
-    pub fn create_jekyll_context(&self, front_matter: &FrontMatter, page_path: &str) -> Value {
-        let mut context = serde_json::Map::new();
+    /// 返回构建好的 Liquid 上下文对象
+    pub fn create_jekyll_context(&self, front_matter: &FrontMatter, page_path: &str) -> Object {
+        let mut context = Object::new();
 
-        // 构建 site 变量
-        let mut site = serde_json::Map::new();
+        context.insert("site".into(), self.build_site_object());
+        context.insert("page".into(), self.build_page_object(front_matter, page_path));
+
+        let now: DateTime<Local> = Local::now();
+        context.insert("now".into(), Value::scalar(now.format("%Y-%m-%d %H:%M:%S").to_string()));
+
+        context
+    }
+
+    /// 构建 site 对象
+    ///
+    /// site 对象包含 Jekyll 配置中的所有信息，以及一些额外的元数据。
+    ///
+    /// # Returns
+    ///
+    /// 返回包含站点信息的 Liquid Value
+    fn build_site_object(&self) -> Value {
+        let mut site = Object::new();
+
         if let Some(title) = &self.config.title {
-            site.insert("title".to_string(), Value::String(title.clone()));
+            site.insert("title".into(), Value::scalar(title.clone()));
         }
         if let Some(description) = &self.config.description {
-            site.insert("description".to_string(), Value::String(description.clone()));
+            site.insert("description".into(), Value::scalar(description.clone()));
+        }
+        if let Some(author) = &self.config.author {
+            site.insert("author".into(), Value::scalar(author.clone()));
         }
         if let Some(url) = &self.config.url {
-            site.insert("url".to_string(), Value::String(url.clone()));
+            site.insert("url".into(), Value::scalar(url.clone()));
         }
         if let Some(baseurl) = &self.config.baseurl {
-            site.insert("baseurl".to_string(), Value::String(baseurl.clone()));
+            site.insert("baseurl".into(), Value::scalar(baseurl.clone()));
         }
-        context.insert("site".to_string(), Value::Object(site));
+        if let Some(permalink) = &self.config.permalink {
+            site.insert("permalink".into(), Value::scalar(permalink.clone()));
+        }
+        if let Some(timezone) = &self.config.timezone {
+            site.insert("timezone".into(), Value::scalar(timezone.clone()));
+        }
+        if let Some(markdown) = &self.config.markdown {
+            site.insert("markdown".into(), Value::scalar(markdown.clone()));
+        }
+        if let Some(highlighter) = &self.config.highlighter {
+            site.insert("highlighter".into(), Value::scalar(highlighter.clone()));
+        }
 
-        // 构建 page 变量
-        let mut page = serde_json::Map::new();
+        let now: DateTime<Utc> = Utc::now();
+        site.insert("time".into(), Value::scalar(now.to_rfc3339()));
+
+        let mut empty_array = Vec::new();
+        site.insert("posts".into(), Value::Array(empty_array.clone()));
+        site.insert("pages".into(), Value::Array(empty_array.clone()));
+        site.insert("static_files".into(), Value::Array(empty_array.clone()));
+        site.insert("html_pages".into(), Value::Array(empty_array.clone()));
+        site.insert("collections".into(), Value::Object(Object::new()));
+        site.insert("data".into(), Value::Object(Object::new()));
+
+        for (key, value) in &self.config.custom {
+            let liquid_value = self.serde_json_to_liquid_value(value);
+            site.insert(key.clone().into(), liquid_value);
+        }
+
+        Value::Object(site)
+    }
+
+    /// 构建 page 对象
+    ///
+    /// page 对象包含页面的 Front Matter 信息以及一些额外的元数据。
+    ///
+    /// # Arguments
+    ///
+    /// * `front_matter` - 页面的 Front Matter
+    /// * `page_path` - 页面文件路径
+    ///
+    /// # Returns
+    ///
+    /// 返回包含页面信息的 Liquid Value
+    fn build_page_object(&self, front_matter: &FrontMatter, page_path: &str) -> Value {
+        let mut page = Object::new();
+
         for (key, value) in &front_matter.variables {
-            page.insert(key.clone(), value.clone());
+            let liquid_value = self.serde_json_to_liquid_value(value);
+            page.insert(key.clone().into(), liquid_value);
         }
-        page.insert("path".to_string(), Value::String(page_path.to_string()));
-        context.insert("page".to_string(), Value::Object(page));
 
-        Value::Object(context)
+        page.insert("path".into(), Value::scalar(page_path.to_string()));
+
+        let path = Path::new(page_path);
+        if let Some(file_name) = path.file_name() {
+            if let Some(file_name_str) = file_name.to_str() {
+                page.insert("name".into(), Value::scalar(file_name_str.to_string()));
+            }
+        }
+        if let Some(dir) = path.parent() {
+            if let Some(dir_str) = dir.to_str() {
+                page.insert("dir".into(), Value::scalar(dir_str.to_string()));
+            }
+        }
+
+        if let Some(url) = self.build_page_url(page_path) {
+            page.insert("url".into(), Value::scalar(url));
+        }
+
+        Value::Object(page)
+    }
+
+    /// 构建页面 URL
+    ///
+    /// 根据页面路径和配置构建页面的 URL。
+    ///
+    /// # Arguments
+    ///
+    /// * `page_path` - 页面文件路径
+    ///
+    /// # Returns
+    ///
+    /// 返回页面的 URL 字符串
+    fn build_page_url(&self, page_path: &str) -> Option<String> {
+        let path = Path::new(page_path);
+        let mut url = String::new();
+
+        if let Some(baseurl) = &self.config.baseurl {
+            url.push_str(baseurl);
+        }
+
+        if let Some(stem) = path.file_stem() {
+            if let Some(stem_str) = stem.to_str() {
+                if stem_str != "index" {
+                    url.push('/');
+                    url.push_str(stem_str);
+                }
+            }
+        }
+
+        if url.is_empty() {
+            Some("/".to_string())
+        } else {
+            Some(url)
+        }
+    }
+
+    /// 将 serde_json::Value 转换为 liquid::Value
+    ///
+    /// 该方法用于将从 Front Matter 或配置中解析出的 JSON 值
+    /// 转换为 Liquid 模板引擎可以使用的 Value 类型。
+    ///
+    /// # Arguments
+    ///
+    /// * `json_value` - 要转换的 serde_json::Value
+    ///
+    /// # Returns
+    ///
+    /// 返回转换后的 liquid::Value
+    fn serde_json_to_liquid_value(&self, json_value: &serde_json::Value) -> Value {
+        match json_value {
+            serde_json::Value::Null => Value::Nil,
+            serde_json::Value::Bool(b) => Value::scalar(*b),
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    Value::scalar(i)
+                } else if let Some(f) = n.as_f64() {
+                    Value::scalar(f)
+                } else {
+                    Value::Nil
+                }
+            }
+            serde_json::Value::String(s) => Value::scalar(s.clone()),
+            serde_json::Value::Array(arr) => {
+                let liquid_arr: Vec<Value> = arr.iter().map(|v| self.serde_json_to_liquid_value(v)).collect();
+                Value::Array(liquid_arr)
+            }
+            serde_json::Value::Object(obj) => {
+                let mut liquid_obj = Object::new();
+                for (k, v) in obj {
+                    liquid_obj.insert(k.clone().into(), self.serde_json_to_liquid_value(v));
+                }
+                Value::Object(liquid_obj)
+            }
+        }
     }
 
     /// 清除模板缓存
+    ///
+    /// 清除所有已编译的模板缓存，下次渲染时会重新编译模板。
     pub fn clear_cache(&mut self) {
-        self.registered_templates.clear();
-        // 注意：nargo-template 的 TemplateManager 目前没有提供清除缓存的方法
+        self.template_cache.clear();
     }
 
     /// 获取 Jekyll 目录结构
+    ///
+    /// # Returns
+    ///
+    /// 返回 Jekyll 目录结构的引用
     pub fn structure(&self) -> &JekyllStructure {
         &self.structure
     }
 
     /// 获取 Jekyll 配置
+    ///
+    /// # Returns
+    ///
+    /// 返回 Jekyll 配置的引用
     pub fn config(&self) -> &JekyllConfig {
         &self.config
     }

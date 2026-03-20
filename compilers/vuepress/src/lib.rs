@@ -2,18 +2,19 @@
 #![doc = "VuTeX 文档编译器 - 将 Markdown 文档编译为元信息供 JS 运行时使用"]
 
 pub mod compiler;
+pub mod config;
 pub mod plugin;
 pub mod plugin_host;
 pub mod session;
 pub mod tools;
 pub mod types;
 
-pub use types::{ast, config, document, errors, ipc, language};
+pub use types::{ast, config as types_config, document, errors, ipc, language};
 
 pub use nargo_types::Error as NargoError;
 pub use types::{CodeWriter, CompileMode, CompileOptions, Cursor, ErrorKind, NargoValue, Position, Span};
 
-pub use types::{
+pub use types_config::{
     BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
     SocialLink, ThemeConfig, VutexConfig,
 };

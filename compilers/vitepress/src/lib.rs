@@ -27,7 +27,9 @@ pub use nargo_types::Document;
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 
-pub use tools::cmd;
+pub use tools::{cmd, site_generator};
+pub use tools::site_generator::{ConfigLoader, StaticSiteGenerator, LanguageDocuments};
+pub use tools::{BuildArgs, CheckArgs, Commands, DevArgs, InitArgs, VutexCli};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

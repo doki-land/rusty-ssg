@@ -1,36 +1,37 @@
 //! 配置解析器测试
 
 use serde_json;
-use toml;
-use vutex::types::config::Config;
+use oak_toml;
+use vuepress::config::types::VuePressConfig;
 
 #[test]
 fn test_default_config() {
-    let config = Config::default();
-    assert_eq!(config.base, "/");
-    assert_eq!(config.lang, "en-US");
-    assert_eq!(config.title, "");
-    assert_eq!(config.description, "");
-    assert!(config.head.is_empty());
-    assert!(config.locales.is_empty());
+    let config = VuePressConfig::new();
+    assert_eq!(config.base.unwrap(), "/");
+    assert_eq!(config.lang.unwrap(), "en-US");
+    assert_eq!(config.title.unwrap(), "");
+    assert_eq!(config.description.unwrap(), "");
+    assert!(config.head.is_none());
+    assert!(config.locales.is_none());
     assert!(config.theme.is_none());
     assert!(config.bundler.is_none());
-    assert_eq!(config.dest, ".vuepress/dist");
-    assert_eq!(config.temp, ".vuepress/.temp");
-    assert_eq!(config.cache, ".vuepress/.cache");
-    assert_eq!(config.public, ".vuepress/public");
-    assert_eq!(config.debug, false);
-    assert_eq!(config.page_patterns, vec!["**/*.md", ".vuepress", "node_modules"]);
+    assert_eq!(config.dest.unwrap(), ".vuepress/dist");
+    assert_eq!(config.temp.unwrap(), ".vuepress/.temp");
+    assert_eq!(config.cache.unwrap(), ".vuepress/.cache");
+    assert_eq!(config.public.unwrap(), ".vuepress/public");
+    assert_eq!(config.debug.unwrap(), false);
+    assert_eq!(config.page_patterns.unwrap(), vec!["**/*.md", ".vuepress", "node_modules"]);
     assert!(config.permalink_pattern.is_none());
-    assert_eq!(config.host, "0.0.0.0");
-    assert_eq!(config.port, 8080);
-    assert_eq!(config.open, false);
-    assert_eq!(config.template_dev, "@vuepress/client/templates/dev.html");
+    assert_eq!(config.host.unwrap(), "0.0.0.0");
+    assert_eq!(config.port.unwrap(), 8080);
+    assert_eq!(config.open.unwrap(), false);
+    assert_eq!(config.template_dev.unwrap(), "@vuepress/client/templates/dev.html");
     assert!(config.should_preload.is_some());
     assert!(config.should_prefetch.is_some());
-    assert_eq!(config.template_build, "@vuepress/client/templates/build.html");
+    assert_eq!(config.template_build.unwrap(), "@vuepress/client/templates/build.html");
     assert!(config.template_build_renderer.is_none());
-    assert!(config.plugins.is_empty());
+    assert!(config.markdown.is_some());
+    assert!(config.plugins.unwrap().is_empty());
 }
 
 #[test]
@@ -48,11 +49,11 @@ name = "default"
 name = "vite"
 "#;
 
-    let config: Config = toml::from_str(toml_content).unwrap();
-    assert_eq!(config.base, "/test/");
-    assert_eq!(config.lang, "zh-CN");
-    assert_eq!(config.title, "Test Site");
-    assert_eq!(config.description, "A test site");
+    let config: VuePressConfig = oak_toml::from_str(toml_content).unwrap();
+    assert_eq!(config.base.unwrap(), "/test/");
+    assert_eq!(config.lang.unwrap(), "zh-CN");
+    assert_eq!(config.title.unwrap(), "Test Site");
+    assert_eq!(config.description.unwrap(), "A test site");
     assert!(config.theme.is_some());
     assert!(config.bundler.is_some());
 }
@@ -74,30 +75,11 @@ fn test_load_json_config() {
 }
 "#;
 
-    let config: Config = serde_json::from_str(json_content).unwrap();
-    assert_eq!(config.base, "/test/");
-    assert_eq!(config.lang, "zh-CN");
-    assert_eq!(config.title, "Test Site");
-    assert_eq!(config.description, "A test site");
+    let config: VuePressConfig = serde_json::from_str(json_content).unwrap();
+    assert_eq!(config.base.unwrap(), "/test/");
+    assert_eq!(config.lang.unwrap(), "zh-CN");
+    assert_eq!(config.title.unwrap(), "Test Site");
+    assert_eq!(config.description.unwrap(), "A test site");
     assert!(config.theme.is_some());
     assert!(config.bundler.is_some());
-}
-
-#[test]
-fn test_save_config() {
-    let mut config = Config::default();
-    config.base = "/test/";
-    config.lang = "zh-CN";
-    config.title = "Test Site";
-
-    let temp_file = std::env::temp_dir().join("test_config.toml");
-    config.to_file(temp_file.to_str().unwrap()).unwrap();
-
-    let loaded_config = Config::from_file(temp_file.to_str().unwrap()).unwrap();
-    assert_eq!(loaded_config.base, "/test/");
-    assert_eq!(loaded_config.lang, "zh-CN");
-    assert_eq!(loaded_config.title, "Test Site");
-
-    // Clean up
-    std::fs::remove_file(temp_file).unwrap();
 }

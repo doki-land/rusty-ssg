@@ -1,22 +1,19 @@
-use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
-use lazy_static::lazy_static;
 /// Jekyll 目录结构识别和处理模块
 ///
 /// 该模块提供 Jekyll 标准目录结构的识别、文件收集和遍历功能，
 /// 并集成 oak-vfs 作为虚拟文件系统。同时提供 YAML Front Matter 解析功能和
 /// _config.yml 配置文件处理功能。此外，还提供完整的帖子（Posts）处理功能。
-use oak_vfs::{DiskVfs, Vfs};
+use oak_vfs::DiskVfs;
 use oak_yaml;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::HashMap,
     path::{Path, PathBuf},
 };
 
 /// 导入错误类型
-pub use super::errors::{CollectionError, JekyllError, LiquidError, MarkdownError, PostError};
+pub use super::errors::{CollectionError, DataError, JekyllError, LiquidError, MarkdownError, PostError, StaticFileError};
 
 /// Jekyll 标准目录类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -280,11 +277,13 @@ impl JekyllStructure {
 }
 
 /// YAML Front Matter 解析结果
+///
+/// 包含从 Markdown 文件头部解析出的 YAML Front Matter 信息
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FrontMatter {
-    /// 原始的 YAML 内容
+    /// 原始的 YAML 内容（不包括开头和结尾的 ---）
     pub raw_yaml: String,
-    /// 解析后的变量（JSON 格式存储，支持任意 YAML 结构
+    /// 解析后的变量（JSON 格式存储，支持任意 YAML 结构）
     pub variables: HashMap<String, Value>,
     /// 剩余的内容（去除 Front Matter 后的 Markdown 内容）
     pub content: String,
@@ -292,46 +291,226 @@ pub struct FrontMatter {
 
 impl FrontMatter {
     /// 创建一个新的 FrontMatter 实例
+    ///
+    /// # Arguments
+    ///
+    /// * `raw_yaml` - 原始 YAML 内容
+    /// * `variables` - 解析后的变量
+    /// * `content` - 剩余的 Markdown 内容
     pub fn new(raw_yaml: String, variables: HashMap<String, Value>, content: String) -> Self {
         Self { raw_yaml, variables, content }
     }
 
     /// 获取指定的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回变量值的引用（如果存在）
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.variables.get(key)
     }
 
+    /// 获取字符串类型的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回字符串值的引用（如果变量存在且为字符串类型）
+    pub fn get_str(&self, key: &str) -> Option<&str> {
+        self.get(key).and_then(|v| v.as_str())
+    }
+
+    /// 获取布尔类型的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回布尔值（如果变量存在且为布尔类型）
+    pub fn get_bool(&self, key: &str) -> Option<bool> {
+        self.get(key).and_then(|v| v.as_bool())
+    }
+
+    /// 获取整数类型的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回整数值（如果变量存在且为整数类型）
+    pub fn get_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_i64())
+    }
+
+    /// 获取浮点数类型的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回浮点数值（如果变量存在且为浮点数类型）
+    pub fn get_f64(&self, key: &str) -> Option<f64> {
+        self.get(key).and_then(|v| v.as_f64())
+    }
+
+    /// 获取数组类型的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回数组值的引用（如果变量存在且为数组类型）
+    pub fn get_array(&self, key: &str) -> Option<&Vec<Value>> {
+        self.get(key).and_then(|v| v.as_array())
+    }
+
+    /// 获取对象类型的变量值
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回对象值的引用（如果变量存在且为对象类型）
+    pub fn get_object(&self, key: &str) -> Option<&serde_json::Map<String, Value>> {
+        self.get(key).and_then(|v| v.as_object())
+    }
+
     /// 检查是否包含指定的变量
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 如果变量存在返回 true，否则返回 false
     pub fn has(&self, key: &str) -> bool {
         self.variables.contains_key(key)
     }
 
     /// 获取所有变量的引用
+    ///
+    /// # Returns
+    ///
+    /// 返回所有变量的不可变引用
     pub fn variables(&self) -> &HashMap<String, Value> {
         &self.variables
     }
 
     /// 获取变量的可变引用
+    ///
+    /// # Returns
+    ///
+    /// 返回所有变量的可变引用
     pub fn variables_mut(&mut self) -> &mut HashMap<String, Value> {
         &mut self.variables
     }
 
+    /// 插入或更新变量
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    /// * `value` - 变量值
+    pub fn insert(&mut self, key: String, value: Value) {
+        self.variables.insert(key, value);
+    }
+
+    /// 删除指定的变量
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - 变量键名
+    ///
+    /// # Returns
+    ///
+    /// 返回被删除的变量值（如果存在）
+    pub fn remove(&mut self, key: &str) -> Option<Value> {
+        self.variables.remove(key)
+    }
+
     /// 获取去除 Front Matter 后的内容
+    ///
+    /// # Returns
+    ///
+    /// 返回 Markdown 内容的不可变引用
     pub fn content(&self) -> &str {
         &self.content
     }
 
+    /// 获取内容的可变引用
+    ///
+    /// # Returns
+    ///
+    /// 返回 Markdown 内容的可变引用
+    pub fn content_mut(&mut self) -> &mut String {
+        &mut self.content
+    }
+
     /// 获取原始 YAML 内容
+    ///
+    /// # Returns
+    ///
+    /// 返回原始 YAML 内容的不可变引用
     pub fn raw_yaml(&self) -> &str {
         &self.raw_yaml
+    }
+
+    /// 检查 Front Matter 是否为空（不包含任何变量）
+    ///
+    /// # Returns
+    ///
+    /// 如果没有变量返回 true，否则返回 false
+    pub fn is_empty(&self) -> bool {
+        self.variables.is_empty()
+    }
+
+    /// 获取变量数量
+    ///
+    /// # Returns
+    ///
+    /// 返回变量的数量
+    pub fn len(&self) -> usize {
+        self.variables.len()
     }
 }
 
 /// Front Matter 解析器
+///
+/// 用于从 Markdown 文件中解析 YAML Front Matter
 pub struct FrontMatterParser;
 
 impl FrontMatterParser {
     /// 从 Markdown 内容中解析 Front Matter
+    ///
+    /// Front Matter 必须位于文件开头，并用 `---` 包围。
+    /// 如果没有 Front Matter，返回一个包含空变量和完整内容的 FrontMatter。
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - Markdown 内容
+    ///
+    /// # Errors
+    ///
+    /// 返回 `JekyllError::InvalidFrontMatterFormat` 如果 Front Matter 格式无效
+    /// 返回 `JekyllError::YamlParseError` 如果 YAML 解析失败
     pub fn parse(content: &str) -> Result<FrontMatter, JekyllError> {
         let trimmed = content.trim_start();
 
@@ -362,7 +541,7 @@ impl FrontMatterParser {
             }
 
             if in_front_matter {
-                yaml_lines.push(line);
+                yaml_lines.push(*line);
             }
         }
 
@@ -370,29 +549,98 @@ impl FrontMatterParser {
             return Err(JekyllError::InvalidFrontMatterFormat);
         }
 
-        let raw_yaml: String = yaml_lines.iter().map(|&&line| line).collect::<Vec<&str>>().join("\n");
-        let content = if content_start < lines.len() { lines[content_start..].join("\n") } else { String::new() };
+        let raw_yaml: String = yaml_lines.join("\n");
+        let content = if content_start < lines.len() { 
+            lines[content_start..].join("\n") 
+        } else { 
+            String::new() 
+        };
 
-        let variables = if raw_yaml.trim().is_empty() { HashMap::new() } else { Self::parse_yaml(&raw_yaml)? };
+        let variables = if raw_yaml.trim().is_empty() { 
+            HashMap::new() 
+        } else { 
+            Self::parse_yaml(&raw_yaml)? 
+        };
 
         Ok(FrontMatter::new(raw_yaml, variables, content))
     }
 
     /// 使用 oak_yaml 解析 YAML 内容
+    ///
+    /// YAML 必须以对象（键值对）作为根元素。
+    /// 支持所有 YAML 数据类型，包括字符串、数字、布尔值、日期、数组、嵌套对象等。
+    ///
+    /// # Arguments
+    ///
+    /// * `yaml_content` - YAML 格式的字符串
+    ///
+    /// # Errors
+    ///
+    /// 返回 `JekyllError::YamlParseError` 如果 YAML 解析失败或根元素不是对象
     fn parse_yaml(yaml_content: &str) -> Result<HashMap<String, Value>, JekyllError> {
         let value: serde_json::Value =
-            oak_yaml::from_str(yaml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
+            oak_yaml::from_str(yaml_content).map_err(|e| {
+                JekyllError::YamlParseError(format!("Failed to parse YAML: {}", e))
+            })?;
 
         match value {
             Value::Object(map) => Ok(map.into_iter().collect()),
-            _ => Err(JekyllError::YamlParseError("YAML root must be an object".to_string())),
+            _ => Err(JekyllError::YamlParseError(
+                "YAML root must be an object (key-value pairs)".to_string()
+            )),
         }
     }
 
     /// 从文件路径中读取并解析 Front Matter
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - 文件路径
+    ///
+    /// # Errors
+    ///
+    /// 返回 `JekyllError::FileSystemError` 如果文件读取失败
+    /// 返回 `JekyllError::InvalidFrontMatterFormat` 如果 Front Matter 格式无效
+    /// 返回 `JekyllError::YamlParseError` 如果 YAML 解析失败
     pub fn parse_file<P: AsRef<Path>>(path: P) -> Result<FrontMatter, JekyllError> {
-        let content = std::fs::read_to_string(path)?;
+        let content = std::fs::read_to_string(path.as_ref()).map_err(|e| {
+            JekyllError::FileSystemError(e)
+        })?;
         Self::parse(&content)
+    }
+
+    /// 检查内容是否包含 Front Matter
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - 要检查的内容
+    ///
+    /// # Returns
+    ///
+    /// 如果内容包含有效的 Front Matter 标记返回 true
+    pub fn has_front_matter(content: &str) -> bool {
+        let trimmed = content.trim_start();
+        if !trimmed.starts_with("---") {
+            return false;
+        }
+
+        let lines: Vec<&str> = content.lines().collect();
+        let mut found_start = false;
+        let mut found_end = false;
+
+        for line in lines.iter() {
+            let trimmed_line = line.trim();
+            if trimmed_line == "---" {
+                if !found_start {
+                    found_start = true;
+                } else if found_start {
+                    found_end = true;
+                    break;
+                }
+            }
+        }
+
+        found_start && found_end
     }
 }
 
@@ -623,6 +871,306 @@ impl JekyllConfig {
         self
     }
 
+    /// 设置构建输出目录
+    pub fn with_destination(mut self, destination: String) -> Self {
+        self.destination = Some(destination);
+        self
+    }
+
+    /// 设置源文件目录
+    pub fn with_source(mut self, source: String) -> Self {
+        self.source = Some(source);
+        self
+    }
+
+    /// 设置插件目录
+    pub fn with_plugins_dir(mut self, plugins_dir: String) -> Self {
+        self.plugins_dir = Some(plugins_dir);
+        self
+    }
+
+    /// 设置布局目录
+    pub fn with_layouts_dir(mut self, layouts_dir: String) -> Self {
+        self.layouts_dir = Some(layouts_dir);
+        self
+    }
+
+    /// 设置包含目录
+    pub fn with_includes_dir(mut self, includes_dir: String) -> Self {
+        self.includes_dir = Some(includes_dir);
+        self
+    }
+
+    /// 设置数据目录
+    pub fn with_data_dir(mut self, data_dir: String) -> Self {
+        self.data_dir = Some(data_dir);
+        self
+    }
+
+    /// 设置文章目录
+    pub fn with_posts_dir(mut self, posts_dir: String) -> Self {
+        self.posts_dir = Some(posts_dir);
+        self
+    }
+
+    /// 设置草稿目录
+    pub fn with_drafts_dir(mut self, drafts_dir: String) -> Self {
+        self.drafts_dir = Some(drafts_dir);
+        self
+    }
+
+    /// 设置集合目录
+    pub fn with_collections_dir(mut self, collections_dir: String) -> Self {
+        self.collections_dir = Some(collections_dir);
+        self
+    }
+
+    /// 设置资源目录
+    pub fn with_assets_dir(mut self, assets_dir: String) -> Self {
+        self.assets_dir = Some(assets_dir);
+        self
+    }
+
+    /// 设置 Sass 目录
+    pub fn with_sass_dir(mut self, sass_dir: String) -> Self {
+        self.sass_dir = Some(sass_dir);
+        self
+    }
+
+    /// 设置排除的文件或目录
+    pub fn with_exclude(mut self, exclude: Vec<String>) -> Self {
+        self.exclude = Some(exclude);
+        self
+    }
+
+    /// 设置包含的文件或目录
+    pub fn with_include(mut self, include: Vec<String>) -> Self {
+        self.include = Some(include);
+        self
+    }
+
+    /// 设置保留的文件或目录
+    pub fn with_keep_files(mut self, keep_files: Vec<String>) -> Self {
+        self.keep_files = Some(keep_files);
+        self
+    }
+
+    /// 设置插件列表
+    pub fn with_plugins(mut self, plugins: Vec<String>) -> Self {
+        self.plugins = Some(plugins);
+        self
+    }
+
+    /// 设置集合配置
+    pub fn with_collections(mut self, collections: HashMap<String, Value>) -> Self {
+        self.collections = Some(collections);
+        self
+    }
+
+    /// 设置默认值配置
+    pub fn with_defaults(mut self, defaults: Vec<HashMap<String, Value>>) -> Self {
+        self.defaults = Some(defaults);
+        self
+    }
+
+    /// 设置安全模式
+    pub fn with_safe(mut self, safe: bool) -> Self {
+        self.safe = Some(safe);
+        self
+    }
+
+    /// 设置禁用磁盘缓存
+    pub fn with_disable_disk_cache(mut self, disable_disk_cache: bool) -> Self {
+        self.disable_disk_cache = Some(disable_disk_cache);
+        self
+    }
+
+    /// 设置忽略主题配置
+    pub fn with_ignore_theme_config(mut self, ignore_theme_config: bool) -> Self {
+        self.ignore_theme_config = Some(ignore_theme_config);
+        self
+    }
+
+    /// 设置时区
+    pub fn with_timezone(mut self, timezone: String) -> Self {
+        self.timezone = Some(timezone);
+        self
+    }
+
+    /// 设置文件编码
+    pub fn with_encoding(mut self, encoding: String) -> Self {
+        self.encoding = Some(encoding);
+        self
+    }
+
+    /// 设置显示草稿文章
+    pub fn with_show_drafts(mut self, show_drafts: bool) -> Self {
+        self.show_drafts = Some(show_drafts);
+        self
+    }
+
+    /// 设置发布未来日期的文章
+    pub fn with_future(mut self, future: bool) -> Self {
+        self.future = Some(future);
+        self
+    }
+
+    /// 设置渲染未发布的文章
+    pub fn with_unpublished(mut self, unpublished: bool) -> Self {
+        self.unpublished = Some(unpublished);
+        self
+    }
+
+    /// 设置生成相关文章索引
+    pub fn with_lsi(mut self, lsi: bool) -> Self {
+        self.lsi = Some(lsi);
+        self
+    }
+
+    /// 设置限制解析和发布的文章数量
+    pub fn with_limit_posts(mut self, limit_posts: u32) -> Self {
+        self.limit_posts = Some(limit_posts);
+        self
+    }
+
+    /// 设置强制文件监控使用轮询
+    pub fn with_force_polling(mut self, force_polling: bool) -> Self {
+        self.force_polling = Some(force_polling);
+        self
+    }
+
+    /// 设置详细输出
+    pub fn with_verbose(mut self, verbose: bool) -> Self {
+        self.verbose = Some(verbose);
+        self
+    }
+
+    /// 设置安静模式
+    pub fn with_quiet(mut self, quiet: bool) -> Self {
+        self.quiet = Some(quiet);
+        self
+    }
+
+    /// 设置增量构建
+    pub fn with_incremental(mut self, incremental: bool) -> Self {
+        self.incremental = Some(incremental);
+        self
+    }
+
+    /// 设置生成 Liquid 渲染分析
+    pub fn with_profile(mut self, profile: bool) -> Self {
+        self.profile = Some(profile);
+        self
+    }
+
+    /// 设置严格 Front Matter 模式
+    pub fn with_strict_front_matter(mut self, strict_front_matter: bool) -> Self {
+        self.strict_front_matter = Some(strict_front_matter);
+        self
+    }
+
+    /// 设置服务器端口
+    pub fn with_port(mut self, port: u16) -> Self {
+        self.port = Some(port);
+        self
+    }
+
+    /// 设置服务器主机名
+    pub fn with_host(mut self, host: String) -> Self {
+        self.host = Some(host);
+        self
+    }
+
+    /// 设置实时重载
+    pub fn with_livereload(mut self, livereload: bool) -> Self {
+        self.livereload = Some(livereload);
+        self
+    }
+
+    /// 设置实时重载忽略的文件模式
+    pub fn with_livereload_ignore(mut self, livereload_ignore: Vec<String>) -> Self {
+        self.livereload_ignore = Some(livereload_ignore);
+        self
+    }
+
+    /// 设置实时重载最小延迟
+    pub fn with_livereload_min_delay(mut self, livereload_min_delay: u32) -> Self {
+        self.livereload_min_delay = Some(livereload_min_delay);
+        self
+    }
+
+    /// 设置实时重载最大延迟
+    pub fn with_livereload_max_delay(mut self, livereload_max_delay: u32) -> Self {
+        self.livereload_max_delay = Some(livereload_max_delay);
+        self
+    }
+
+    /// 设置实时重载端口
+    pub fn with_livereload_port(mut self, livereload_port: u16) -> Self {
+        self.livereload_port = Some(livereload_port);
+        self
+    }
+
+    /// 设置打开浏览器访问网站
+    pub fn with_open_url(mut self, open_url: bool) -> Self {
+        self.open_url = Some(open_url);
+        self
+    }
+
+    /// 设置服务器后台运行
+    pub fn with_detach(mut self, detach: bool) -> Self {
+        self.detach = Some(detach);
+        self
+    }
+
+    /// 设置跳过初始构建
+    pub fn with_skip_initial_build(mut self, skip_initial_build: bool) -> Self {
+        self.skip_initial_build = Some(skip_initial_build);
+        self
+    }
+
+    /// 设置显示目录列表
+    pub fn with_show_dir_listing(mut self, show_dir_listing: bool) -> Self {
+        self.show_dir_listing = Some(show_dir_listing);
+        self
+    }
+
+    /// 设置语法高亮器
+    pub fn with_highlighter(mut self, highlighter: String) -> Self {
+        self.highlighter = Some(highlighter);
+        self
+    }
+
+    /// 设置摘要分隔符
+    pub fn with_excerpt_separator(mut self, excerpt_separator: String) -> Self {
+        self.excerpt_separator = Some(excerpt_separator);
+        self
+    }
+
+    /// 设置每页文章数
+    pub fn with_paginate(mut self, paginate: u32) -> Self {
+        self.paginate = Some(paginate);
+        self
+    }
+
+    /// 设置分页路径
+    pub fn with_paginate_path(mut self, paginate_path: String) -> Self {
+        self.paginate_path = Some(paginate_path);
+        self
+    }
+
+    /// 设置 Kramdown 配置
+    pub fn with_kramdown(mut self, kramdown: HashMap<String, Value>) -> Self {
+        self.kramdown = Some(kramdown);
+        self
+    }
+
+    /// 设置 Sass 配置
+    pub fn with_sass(mut self, sass: HashMap<String, Value>) -> Self {
+        self.sass = Some(sass);
+        self
+    }
+
     /// 从 YAML 字符串解析配置
     ///
     /// # Arguments
@@ -773,6 +1321,144 @@ impl JekyllConfig {
             merged.defaults = Some(new_defaults);
         }
 
+        if let Some(safe) = &other.safe {
+            merged.safe = Some(*safe);
+        }
+
+        if let Some(disable_disk_cache) = &other.disable_disk_cache {
+            merged.disable_disk_cache = Some(*disable_disk_cache);
+        }
+
+        if let Some(ignore_theme_config) = &other.ignore_theme_config {
+            merged.ignore_theme_config = Some(*ignore_theme_config);
+        }
+
+        if let Some(timezone) = &other.timezone {
+            merged.timezone = Some(timezone.clone());
+        }
+
+        if let Some(encoding) = &other.encoding {
+            merged.encoding = Some(encoding.clone());
+        }
+
+        if let Some(show_drafts) = &other.show_drafts {
+            merged.show_drafts = Some(*show_drafts);
+        }
+
+        if let Some(future) = &other.future {
+            merged.future = Some(*future);
+        }
+
+        if let Some(unpublished) = &other.unpublished {
+            merged.unpublished = Some(*unpublished);
+        }
+
+        if let Some(lsi) = &other.lsi {
+            merged.lsi = Some(*lsi);
+        }
+
+        if let Some(limit_posts) = &other.limit_posts {
+            merged.limit_posts = Some(*limit_posts);
+        }
+
+        if let Some(force_polling) = &other.force_polling {
+            merged.force_polling = Some(*force_polling);
+        }
+
+        if let Some(verbose) = &other.verbose {
+            merged.verbose = Some(*verbose);
+        }
+
+        if let Some(quiet) = &other.quiet {
+            merged.quiet = Some(*quiet);
+        }
+
+        if let Some(incremental) = &other.incremental {
+            merged.incremental = Some(*incremental);
+        }
+
+        if let Some(profile) = &other.profile {
+            merged.profile = Some(*profile);
+        }
+
+        if let Some(strict_front_matter) = &other.strict_front_matter {
+            merged.strict_front_matter = Some(*strict_front_matter);
+        }
+
+        if let Some(port) = &other.port {
+            merged.port = Some(*port);
+        }
+
+        if let Some(host) = &other.host {
+            merged.host = Some(host.clone());
+        }
+
+        if let Some(livereload) = &other.livereload {
+            merged.livereload = Some(*livereload);
+        }
+
+        if let Some(livereload_ignore) = &other.livereload_ignore {
+            let mut new_livereload_ignore = merged.livereload_ignore.unwrap_or_default();
+            new_livereload_ignore.extend(livereload_ignore.clone());
+            merged.livereload_ignore = Some(new_livereload_ignore);
+        }
+
+        if let Some(livereload_min_delay) = &other.livereload_min_delay {
+            merged.livereload_min_delay = Some(*livereload_min_delay);
+        }
+
+        if let Some(livereload_max_delay) = &other.livereload_max_delay {
+            merged.livereload_max_delay = Some(*livereload_max_delay);
+        }
+
+        if let Some(livereload_port) = &other.livereload_port {
+            merged.livereload_port = Some(*livereload_port);
+        }
+
+        if let Some(open_url) = &other.open_url {
+            merged.open_url = Some(*open_url);
+        }
+
+        if let Some(detach) = &other.detach {
+            merged.detach = Some(*detach);
+        }
+
+        if let Some(skip_initial_build) = &other.skip_initial_build {
+            merged.skip_initial_build = Some(*skip_initial_build);
+        }
+
+        if let Some(show_dir_listing) = &other.show_dir_listing {
+            merged.show_dir_listing = Some(*show_dir_listing);
+        }
+
+        if let Some(highlighter) = &other.highlighter {
+            merged.highlighter = Some(highlighter.clone());
+        }
+
+        if let Some(excerpt_separator) = &other.excerpt_separator {
+            merged.excerpt_separator = Some(excerpt_separator.clone());
+        }
+
+        if let Some(paginate) = &other.paginate {
+            merged.paginate = Some(*paginate);
+        }
+
+        if let Some(paginate_path) = &other.paginate_path {
+            merged.paginate_path = Some(paginate_path.clone());
+        }
+
+        if let Some(kramdown) = &other.kramdown {
+            let mut new_kramdown = merged.kramdown.unwrap_or_default();
+            new_kramdown.extend(kramdown.clone());
+            merged.kramdown = Some(new_kramdown);
+        }
+
+        if let Some(sass) = &other.sass {
+            let mut new_sass = merged.sass.unwrap_or_default();
+            new_sass.extend(sass.clone());
+            merged.sass = Some(new_sass);
+        }
+
         merged.custom.extend(other.custom.clone());
 
         merged
@@ -868,11 +1554,17 @@ impl JekyllConfigLoader {
 }
 
 pub mod collection;
+pub mod data;
+pub mod defaults;
 pub mod liquid;
 pub mod markdown;
 pub mod post;
+pub mod static_files;
 
 pub use collection::{Collection, CollectionConfig, CollectionItem, CollectionManager};
+pub use data::{DataFile, DataFormat, DataManager};
+pub use defaults::{DefaultConfig, DefaultsError, DefaultsManager, Scope};
 pub use liquid::LiquidEngine;
 pub use markdown::{MarkdownConverter, MarkdownOptions, MarkdownProcessor};
 pub use post::{Post, PostManager};
+pub use static_files::{StaticFile, StaticFileProcessor};

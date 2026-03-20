@@ -3,6 +3,7 @@
 
 pub mod cmd;
 pub mod site_generator;
+pub mod taxonomy_generator;
 pub mod template;
 pub mod theme;
 

@@ -3,7 +3,7 @@
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use std::collections::HashMap;
-use vutex::{VutexCompiler, compile_batch, compile_single};
+use vitepress::{VutexCompiler, compile_batch, compile_single};
 
 /// 简单测试文档
 const SIMPLE_DOC: &str = r#"
@@ -31,10 +31,10 @@ fn main() {
 "#;
 
 /// KaTeX 测试文档
-const KATEX_DOC: &str = include_str!("../../benchmarks/test-docs/katex-demo.md");
+const KATEX_DOC: &str = include_str!("../../benchmarks/documents/katex-demo.md");
 
 /// 综合测试文档
-const COMBINED_DOC: &str = include_str!("../../benchmarks/test-docs/combined-demo.md");
+const COMBINED_DOC: &str = include_str!("../../benchmarks/documents/combined-demo.md");
 
 /// 测试单个文档编译
 fn bench_compile_single(c: &mut Criterion) {

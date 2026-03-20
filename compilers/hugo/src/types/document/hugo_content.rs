@@ -239,6 +239,9 @@ pub struct HugoFrontMatter {
     pub toc: Option<bool>,
     /// 资源配置
     pub resources: Option<Vec<ResourceConfig>>,
+    /// 自定义分类法
+    #[serde(flatten)]
+    pub custom_taxonomies: HashMap<String, serde_json::Value>,
 }
 
 /// 菜单项

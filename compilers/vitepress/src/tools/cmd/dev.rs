@@ -1,7 +1,8 @@
 //! Dev 命令实现
 
-use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VutexCompiler};
-use wae_https::{Router, HttpsServerBuilder, static_files_router};
+use crate::{types::Result, compiler::{PluginHost, VutexCompiler}};
+use crate::tools::{ConfigLoader, DevArgs, StaticSiteGenerator};
+use wae_https::{HttpsServerBuilder, static_files_router};
 use console::style;
 use fs_extra::dir::{copy, CopyOptions};
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -12,8 +13,6 @@ use std::{
     sync::{Arc, Mutex},
     net::SocketAddr,
 };
-use crate::compiler::PluginHost;
-use crate::types::Result;
 use walkdir::WalkDir;
 
 /// Dev 命令
@@ -192,12 +191,14 @@ impl DevCommand {
             EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => {
                 for path in &event.paths {
                     if let Some(ext) = path.extension() {
-                        if ext == "md" || ext == "html" || ext == "css" || ext == "js" {
+                        if ext == "md" || ext == "html" || ext == "css" || ext == "js" || ext == "ts" || ext == "toml" || ext == "json" {
                             return true;
                         }
                     }
                     if let Some(file_name) = path.file_name() {
-                        if file_name == "vutex.config.ts" {
+                        if file_name == "vutex.config.toml" || file_name == "vutex.config.json" ||
+                           file_name == "vitepress.config.toml" || file_name == "vitepress.config.json" ||
+                           file_name == "vutex.config.ts" || file_name == "vitepress.config.ts" {
                             return true;
                         }
                     }
@@ -224,7 +225,7 @@ impl DevCommand {
             .router(router)
             .build();
 
-        server.serve().await.map_err(|e| crate::types::VutexError::Custom(e.to_string()))?
+        server.serve().await.map_err(|e| crate::types::VutexError::ConfigError { message: e.to_string() })?;
 
         Ok(())
     }

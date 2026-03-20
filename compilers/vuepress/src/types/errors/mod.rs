@@ -87,8 +87,8 @@ impl From<serde_json::Error> for VutexError {
     }
 }
 
-impl From<crate::config::ConfigError> for VutexError {
-    fn from(e: crate::config::ConfigError) -> Self {
+impl From<crate::types::config::ConfigError> for VutexError {
+    fn from(e: crate::types::config::ConfigError) -> Self {
         VutexError::ConfigError { message: e.to_string() }
     }
 }

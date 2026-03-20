@@ -2,21 +2,9 @@
 //! 提供完整的文档站点主题和样式
 
 use crate::Result;
-use askama::Template;
+use crate::types::VutexError;
 use crate::types::VutexConfig;
-use nargo_template::{TemplateEngine, TemplateManager, ToJsonValue};
-use serde_json::json;
 use std::collections::HashMap;
-
-/// 模板引擎类型
-/// 支持 Askama 和 Dejavu 两种模板引擎
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TemplateEngineType {
-    /// Askama 模板引擎
-    Askama,
-    /// Dejavu 模板引擎
-    Dejavu,
-}
 
 /// 语言信息
 #[derive(Debug, Clone)]
@@ -29,16 +17,6 @@ pub struct LocaleInfo {
     pub is_current: bool,
 }
 
-impl ToJsonValue for LocaleInfo {
-    fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("code", self.code.clone());
-        map.insert("label", self.label.clone());
-        map.insert("is_current", self.is_current);
-        json!(map)
-    }
-}
-
 /// 侧边栏组
 #[derive(Debug, Clone)]
 pub struct SidebarGroup {
@@ -46,15 +24,6 @@ pub struct SidebarGroup {
     pub text: String,
     /// 组内项目
     pub items: Vec<SidebarLink>,
-}
-
-impl ToJsonValue for SidebarGroup {
-    fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("items", self.items.to_json_value());
-        json!(map)
-    }
 }
 
 /// 侧边栏链接
@@ -66,15 +35,6 @@ pub struct SidebarLink {
     pub link: String,
 }
 
-impl ToJsonValue for SidebarLink {
-    fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("link", self.link.clone());
-        json!(map)
-    }
-}
-
 /// 导航栏项
 #[derive(Debug, Clone)]
 pub struct NavItem {
@@ -84,18 +44,17 @@ pub struct NavItem {
     pub link: String,
 }
 
-impl ToJsonValue for NavItem {
-    fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("link", self.link.clone());
-        json!(map)
-    }
+/// 社交链接
+#[derive(Debug, Clone)]
+pub struct SocialLink {
+    /// 图标名称
+    pub icon: String,
+    /// 链接地址
+    pub link: String,
 }
 
 /// 页面模板上下文
-#[derive(Debug, Clone, Template)]
-#[template(path = "page.html")]
+#[derive(Debug, Clone)]
 pub struct PageContext {
     /// 页面标题
     pub page_title: String,
@@ -107,6 +66,8 @@ pub struct PageContext {
     pub nav_items: Vec<NavItem>,
     /// 侧边栏组
     pub sidebar_groups: Vec<SidebarGroup>,
+    /// 社交链接
+    pub social_links: Vec<SocialLink>,
     /// 当前页面路径
     pub current_path: String,
     /// 是否有页脚
@@ -127,68 +88,24 @@ pub struct PageContext {
     pub root_path: String,
 }
 
-impl ToJsonValue for PageContext {
-    fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("page_title", self.page_title.clone());
-        map.insert("site_title", self.site_title.clone());
-        map.insert("content", self.content.clone());
-        map.insert("nav_items", self.nav_items.to_json_value());
-        map.insert("sidebar_groups", self.sidebar_groups.to_json_value());
-        map.insert("current_path", self.current_path.clone());
-        map.insert("has_footer", self.has_footer);
-        map.insert("has_footer_message", self.has_footer_message);
-        map.insert("footer_message", self.footer_message.clone());
-        map.insert("has_footer_copyright", self.has_footer_copyright);
-        map.insert("footer_copyright", self.footer_copyright.clone());
-        map.insert("current_lang", self.current_lang.clone());
-        map.insert("available_locales", self.available_locales.to_json_value());
-        map.insert("root_path", self.root_path.clone());
-        json!(map)
-    }
-}
-
 /// 默认主题
 pub struct DefaultTheme {
     /// 主题配置
     config: VutexConfig,
-    /// 模板引擎类型
-    engine_type: TemplateEngineType,
-    /// 模板管理器
-    template_manager: TemplateManager,
 }
 
 impl DefaultTheme {
-    /// 创建新的默认主题实例（使用 Askama 引擎）
-    pub fn new(config: VutexConfig) -> Result<Self> {
-        Self::with_engine(config, TemplateEngineType::Askama)
-    }
-
-    /// 创建指定模板引擎的默认主题实例
+    /// 创建新的默认主题实例
     ///
     /// # Arguments
     ///
     /// * `config` - 主题配置
-    /// * `engine_type` - 模板引擎类型
     ///
     /// # Returns
     ///
     /// 新的默认主题实例
-    pub fn with_engine(config: VutexConfig, engine_type: TemplateEngineType) -> Result<Self> {
-        let mut template_manager = TemplateManager::new();
-        
-        // 注册模板
-        match engine_type {
-            TemplateEngineType::Askama => {
-                // Askama 使用内置模板，不需要注册
-            }
-            TemplateEngineType::Dejavu => {
-                let template_content = include_str!("../templates/page.dejavu");
-                template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
-            }
-        }
-        
-        Ok(Self { config, engine_type, template_manager })
+    pub fn new(config: VutexConfig) -> Result<Self> {
+        Ok(Self { config })
     }
 
     /// 渲染页面
@@ -201,16 +118,53 @@ impl DefaultTheme {
     ///
     /// 渲染后的 HTML 字符串
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
-        match self.engine_type {
-            TemplateEngineType::Askama => {
-                // 使用 Askama 内置渲染
-                context.render().map_err(|e| crate::tools::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
-            }
-            TemplateEngineType::Dejavu => {
-                let json_context = context.to_json_value();
-                self.template_manager.render(TemplateEngine::DejaVu, "page", &json_context)
+        let template = include_str!("../templates/page.html");
+        
+        let mut html = template.to_string();
+        
+        html = html.replace("{{ page_title }}", &context.page_title);
+        html = html.replace("{{ site_title }}", &context.site_title);
+        
+        let nav_html = context.nav_items.iter()
+            .map(|item| format!("<li><a href=\"{}\">{}</a></li>", item.link, item.text))
+            .collect::<Vec<_>>()
+            .join("\n");
+        html = html.replace("{% for item in &nav_items %}\n                    <li><a href=\"{{ item.link }}\">{{ item.text }}</a></li>\n                    {% endfor %}", &nav_html);
+        
+        let mut sidebar_html = String::new();
+        for group in &context.sidebar_groups {
+            if !group.items.is_empty() {
+                sidebar_html.push_str(&format!("<li class=\"group-title\">{}</li>\n", group.text));
+                for item in &group.items {
+                    let active_class = if item.link == context.current_path { " class=\"active\"" } else { "" };
+                    sidebar_html.push_str(&format!("<li><a href=\"{}\"{active_class}>{}</a></li>\n", item.link, item.text));
+                }
             }
         }
+        html = html.replace("{% for group in &sidebar_groups %}\n                    {% if !group.items.is_empty() %}\n                    <li class=\"group-title\">{{ group.text }}</li>\n                    {% for item in &group.items %}\n                    <li>\n                        <a href=\"{{ item.link }}\"{% if item.link == current_path %} class=\"active\"{% endif %}>{{ item.text }}</a>\n                    </li>\n                    {% endfor %}\n                    {% endif %}\n                    {% endfor %}", &sidebar_html);
+        
+        let social_html = context.social_links.iter()
+            .map(|link| format!("<a href=\"{}\" class=\"social-link\">{}</a>", link.link, link.icon))
+            .collect::<Vec<_>>()
+            .join("\n");
+        html = html.replace("{% for link in &social_links %}\n                    <a href=\"{{ link.link }}\" class=\"social-link\">{{ link.icon }}</a>\n                    {% endfor %}", &social_html);
+        
+        html = html.replace("{{ content|safe }}", &context.content);
+        
+        let mut footer_html = String::new();
+        if context.has_footer {
+            footer_html.push_str("<footer class=\"footer\">\n");
+            if context.has_footer_message {
+                footer_html.push_str(&format!("<p>{}</p>\n", context.footer_message));
+            }
+            if context.has_footer_copyright {
+                footer_html.push_str(&format!("<p>{}</p>\n", context.footer_copyright));
+            }
+            footer_html.push_str("</footer>");
+        }
+        html = html.replace("{% if has_footer %}\n                <footer class=\"footer\">\n                    {% if has_footer_message %}\n                    <p>{{ footer_message }}</p>\n                    {% endif %}\n                    {% if has_footer_copyright %}\n                    <p>{{ footer_copyright }}</p>\n                    {% endif %}\n                </footer>\n                {% endif %}", &footer_html);
+        
+        Ok(html)
     }
 
     /// 获取站点标题
@@ -219,15 +173,15 @@ impl DefaultTheme {
     ///
     /// 站点标题字符串
     pub fn site_title(&self) -> &str {
-        self.config.title.as_deref().unwrap_or("VuTeX Documentation")
+        self.config.title.as_deref().unwrap_or("VitePress Documentation")
     }
-    
-    /// 获取当前使用的模板引擎类型
+
+    /// 获取主题配置
     ///
     /// # Returns
     ///
-    /// 模板引擎类型
-    pub fn engine_type(&self) -> &TemplateEngineType {
-        &self.engine_type
+    /// 主题配置引用
+    pub fn config(&self) -> &VutexConfig {
+        &self.config
     }
 }

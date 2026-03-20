@@ -17,7 +17,7 @@ pub mod tools;
 pub mod types;
 
 /// 导出错误类型
-pub use errors::{CollectionError, JekyllError, LiquidError, MarkdownError, PostError};
+pub use errors::{CollectionError, DataError, JekyllError, LiquidError, MarkdownError, PostError};
 
 /// 导出核心功能
 pub use jekyll::*;

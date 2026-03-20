@@ -1,9 +1,9 @@
 //! 配置解析器测试
 
 use serde_json;
+use std::io::Write;
 use tempfile::NamedTempFile;
-use toml;
-use vutex::config::{ConfigParser, VuePressConfig};
+use vuepress::config::{ConfigParser, VuePressConfig};
 
 #[test]
 fn test_parse_json_config() {

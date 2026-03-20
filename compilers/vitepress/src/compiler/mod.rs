@@ -1,11 +1,11 @@
 //! 编译器模块
 //! 提供 VuTeX 文档编译器的核心功能
 
-// use nargo_parser::parse_document;
 use crate::types::{
     Result, VutexConfig,
     ipc::{InvokePluginRequest, PluginContext},
 };
+use nargo_parser::parse_document;
 use nargo_types::Document;
 use std::{
     collections::HashMap,
@@ -15,7 +15,7 @@ use std::{
 mod html_renderer;
 pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
 
-use crate::plugin_host::PluginHost;
+pub use crate::plugin_host::PluginHost;
 
 /// VuTeX 文档编译器
 ///
@@ -119,9 +119,26 @@ impl VutexCompiler {
     /// # Arguments
     ///
     /// * `doc` - 文档对象
-    fn convert_frontmatter_to_map(&self, _doc: &nargo_types::Document) -> HashMap<String, String> {
+    fn convert_frontmatter_to_map(&self, doc: &nargo_types::Document) -> HashMap<String, String> {
         let mut map = HashMap::new();
-        // 暂时返回空 map，因为新的 Document 结构没有 frontmatter 字段
+        
+        if let Some(title) = &doc.frontmatter.title {
+            map.insert("title".to_string(), title.clone());
+        }
+        if let Some(description) = &doc.frontmatter.description {
+            map.insert("description".to_string(), description.clone());
+        }
+        if let Some(layout) = &doc.frontmatter.layout {
+            map.insert("layout".to_string(), layout.clone());
+        }
+        if !doc.frontmatter.tags.is_empty() {
+            map.insert("tags".to_string(), doc.frontmatter.tags.join(","));
+        }
+        
+        for (key, value) in &doc.frontmatter.custom {
+            map.insert(key.clone(), format!("{:?}", value));
+        }
+        
         map
     }
 
@@ -140,24 +157,11 @@ impl VutexCompiler {
             return Ok(cached.clone());
         }
 
-        // 暂时使用空文档作为替代，因为我们注释掉了 parse_document
-        let doc = nargo_types::Document {
-            meta: nargo_types::DocumentMeta {
-                path: path.to_string(),
-                title: None,
-                lang: None,
-                last_updated: None,
-                extra: std::collections::HashMap::new(),
-            },
-            frontmatter: nargo_types::FrontMatter::default(),
-            content: source.to_string(),
-            rendered_content: None,
-            span: nargo_types::Span::default(),
-        };
+        let mut doc = parse_document(source, path)?;
 
         let frontmatter_map = self.convert_frontmatter_to_map(&doc);
 
-        let mut content = source.to_string();
+        let mut content = doc.content.clone();
 
         if let Some(ref mut plugin_host) = self.plugin_host {
             let context = PluginContext::new(content.clone(), frontmatter_map.clone(), path.to_string());
@@ -165,7 +169,7 @@ impl VutexCompiler {
             content = Self::invoke_hook(plugin_host, "before_render", context)?;
         }
 
-        // doc.content = content;
+        doc.content = content.clone();
         let rendered_html = self.html_renderer.render(&content);
         let mut final_html = rendered_html;
 
@@ -175,8 +179,8 @@ impl VutexCompiler {
             final_html = Self::invoke_hook(plugin_host, "after_render", context)?;
         }
 
-        // doc.rendered_content = Some(final_html);
-        // self.cache.insert(path.to_string(), doc.clone());
+        doc.rendered_content = Some(final_html);
+        self.cache.insert(path.to_string(), doc.clone());
 
         Ok(doc)
     }

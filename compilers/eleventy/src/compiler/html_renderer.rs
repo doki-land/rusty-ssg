@@ -1,7 +1,5 @@
 //! HTML renderer for Eleventy
 
-use std::path::Path;
-
 /// Render HTML from content
 pub fn render_html(content: &str, template: &str) -> String {
     template.replace("{{ content }}", content)

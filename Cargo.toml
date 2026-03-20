@@ -1,10 +1,26 @@
 [workspace]
 resolver = "2"
 members = [
-    "compilers/*",
+    "compilers/astro",
+    "compilers/eleventy",
+    "compilers/gatsby",
+    "compilers/hexo",
+    "compilers/hugo",
+    "compilers/jekyll",
+    "compilers/mkdocs",
+    "compilers/vitepress",
+    "compilers/vuepress",
 ]
 default-members = [
-    "compilers/*",
+    "compilers/astro",
+    "compilers/eleventy",
+    "compilers/gatsby",
+    "compilers/hexo",
+    "compilers/hugo",
+    "compilers/jekyll",
+    "compilers/mkdocs",
+    "compilers/vitepress",
+    "compilers/vuepress",
 ]
 
 [workspace.package]
@@ -12,8 +28,8 @@ version = "0.0.0"
 authors = ["Aster <192607617@qq.com&gt;"]
 edition = "2024"
 license = "AGPL-3.0"
-homepage = "https://github.com/oovm/RustTemplate"
-repository = "https://github.com/oovm/RustTemplate"
+homepage = "https://github.com/doki-land/rusty-ssg"
+repository = "https://github.com/doki-land/rusty-ssg"
 readme = "readme.md"
 
 [workspace.dependencies]
@@ -62,6 +78,9 @@ indicatif = "0.18.4"
 slug = "0.1.5"
 fs_extra = "1.3.0"
 mime_guess = "2.0.4"
+liquid = "0.26"
+handlebars = "6.4.0"
+csv = "1.3.10"
 
 # Hexo internal dependencies
 hexo = { path = "compilers/hexo" }

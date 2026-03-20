@@ -172,6 +172,14 @@ pub struct HugoConfig {
     pub data_dir: Option<String>,
     /// 资源目录
     pub assets_dir: Option<String>,
+    /// 缓存目录
+    pub cache_dir: Option<String>,
+    /// 资源目录（旧名）
+    pub resource_dir: Option<String>,
+    /// i18n 目录
+    pub i18n_dir: Option<String>,
+    /// 归档目录
+    pub archetypes_dir: Option<String>,
     /// 构建未来日期的内容
     pub build_future: Option<bool>,
     /// 构建过期内容
@@ -182,12 +190,22 @@ pub struct HugoConfig {
     pub ugly_urls: Option<bool>,
     /// 是否禁用分类
     pub disable_kinds: Option<Vec<String>>,
+    /// 是否禁用 RSS
+    pub disable_rss: Option<bool>,
+    /// 是否禁用分类列表
+    pub disable_taxonomies: Option<bool>,
+    /// 是否禁用分类项列表
+    pub disable_terms: Option<bool>,
+    /// 是否禁用 sitemap
+    pub disable_sitemap: Option<bool>,
+    /// 是否禁用 robots.txt
+    pub disable_robots_t_txt: Option<bool>,
     /// 分类配置
     pub taxonomies: Option<Vec<TaxonomyConfig>>,
     /// 菜单配置
     pub menus: Option<HashMap<String, Vec<MenuItem>>>,
     /// 参数配置
-    pub params: Option<HashMap<String, String>>,
+    pub params: Option<HashMap<String, serde_json::Value>>,
     /// 语言配置
     pub languages: Option<HashMap<String, LanguageConfig>>,
     /// 标记配置
@@ -204,6 +222,34 @@ pub struct HugoConfig {
     pub related: Option<RelatedConfig>,
     /// 服务配置
     pub server: Option<ServerConfig>,
+    /// 永久链接配置
+    pub permalinks: Option<HashMap<String, String>>,
+    /// 分页配置
+    pub pagination: Option<PaginationConfig>,
+    /// Sitemap 配置
+    pub sitemap: Option<SitemapConfig>,
+    /// RSS 配置
+    pub rss: Option<RssConfig>,
+    /// 日期配置
+    pub date: Option<DateConfig>,
+    /// 作者配置
+    pub author: Option<AuthorConfig>,
+    /// 社交配置
+    pub social: Option<HashMap<String, String>>,
+    /// 是否启用 Git 信息
+    pub enable_git_info: Option<bool>,
+    /// 是否启用 Emoji
+    pub enable_emoji: Option<bool>,
+    /// 是否启用 Robots TXT
+    pub enable_robots_t_txt: Option<bool>,
+    /// 是否启用缩短的永久链接
+    pub enable_missing_translations: Option<bool>,
+    /// 是否在多语言模式下回退到默认语言
+    pub default_content_language_in_subdir: Option<bool>,
+    /// 是否忽略内容文件
+    pub ignore_files: Option<Vec<String>>,
+    /// 超时时间
+    pub timeout: Option<u64>,
 }
 
 impl HugoConfig {
@@ -270,7 +316,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
     pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
-        let config: Self = oak_toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        let config: Self = toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
     }
@@ -316,14 +362,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::JsonParseError` 如果序列化失败
     pub fn to_json(&self) -> Result<String, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            oak_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::json_parse_error("serde feature not enabled".to_string()))
-        }
+        oak_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
     }
 
     /// 将配置序列化为 YAML 字符串
@@ -332,14 +371,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::YamlParseError` 如果序列化失败
     pub fn to_yaml(&self) -> Result<String, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            oak_yaml::language::to_string(self).map_err(|e| ConfigError::yaml_parse_error(e.to_string()))
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::yaml_parse_error("serde feature not enabled".to_string()))
-        }
+        oak_yaml::language::to_string(self).map_err(|e| ConfigError::yaml_parse_error(e.to_string()))
     }
 
     /// 将配置序列化为 TOML 字符串
@@ -348,14 +380,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果序列化失败
     pub fn to_toml(&self) -> Result<String, ConfigError> {
-        #[cfg(feature = "serde")]
-        {
-            toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
-        }
-        #[cfg(not(feature = "serde"))]
-        {
-            Err(ConfigError::toml_parse_error("serde feature not enabled".to_string()))
-        }
+        toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
     }
 }
 
@@ -430,6 +455,26 @@ impl ConfigValidation for HugoConfig {
 
         if let Some(server) = &self.server {
             server.validate()?;
+        }
+
+        if let Some(pagination) = &self.pagination {
+            pagination.validate()?;
+        }
+
+        if let Some(sitemap) = &self.sitemap {
+            sitemap.validate()?;
+        }
+
+        if let Some(rss) = &self.rss {
+            rss.validate()?;
+        }
+
+        if let Some(date) = &self.date {
+            date.validate()?;
+        }
+
+        if let Some(author) = &self.author {
+            author.validate()?;
         }
 
         Ok(())
@@ -509,7 +554,7 @@ impl MenuItem {
 
 impl ConfigValidation for MenuItem {
     fn validate(&self) -> Result<(), ConfigError> {
-        if self.name.as_ref().map_or(false, |n| n.is_empty()) && self.url.as_ref().map_or(false, |u| u.is_empty()) {
+        if self.name.is_none() && self.url.is_none() {
             return Err(ConfigError::validation_error("Menu item must have either name or url".to_string()));
         }
 
@@ -864,10 +909,87 @@ pub struct ServerConfig {
 impl ConfigValidation for ServerConfig {
     fn validate(&self) -> Result<(), ConfigError> {
         if let Some(port) = self.port {
-            if port == 0 || port > 65535 {
+            if port == 0 {
                 return Err(ConfigError::validation_error(format!("Invalid port number: {}", port)));
             }
         }
+        Ok(())
+    }
+}
+
+/// 分页配置
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct PaginationConfig {
+    /// 每页显示的项目数
+    pub pager_size: Option<u32>,
+    /// 路径
+    pub path: Option<String>,
+}
+
+impl ConfigValidation for PaginationConfig {
+    fn validate(&self) -> Result<(), ConfigError> {
+        Ok(())
+    }
+}
+
+/// Sitemap 配置
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct SitemapConfig {
+    /// 文件名
+    pub filename: Option<String>,
+    /// 优先级
+    pub priority: Option<f64>,
+    /// 变更频率
+    pub changefreq: Option<String>,
+}
+
+impl ConfigValidation for SitemapConfig {
+    fn validate(&self) -> Result<(), ConfigError> {
+        Ok(())
+    }
+}
+
+/// RSS 配置
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct RssConfig {
+    /// 项目数量限制
+    pub limit: Option<u32>,
+}
+
+impl ConfigValidation for RssConfig {
+    fn validate(&self) -> Result<(), ConfigError> {
+        Ok(())
+    }
+}
+
+/// 日期配置
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct DateConfig {
+    /// 日期格式
+    pub format: Option<String>,
+    /// 时间戳格式
+    pub timestamp_format: Option<String>,
+}
+
+impl ConfigValidation for DateConfig {
+    fn validate(&self) -> Result<(), ConfigError> {
+        Ok(())
+    }
+}
+
+/// 作者配置
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct AuthorConfig {
+    /// 作者名称
+    pub name: Option<String>,
+    /// 作者邮箱
+    pub email: Option<String>,
+    /// 作者主页
+    pub homepage: Option<String>,
+}
+
+impl ConfigValidation for AuthorConfig {
+    fn validate(&self) -> Result<(), ConfigError> {
         Ok(())
     }
 }

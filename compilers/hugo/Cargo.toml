@@ -21,6 +21,7 @@ serde_json = { workspace = true }
 walkdir = { workspace = true }
 http = { workspace = true }
 nargo-template = { workspace = true }
+handlebars = { workspace = true }
 
 
 regex = { workspace = true }

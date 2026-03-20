@@ -2,7 +2,7 @@
 
 use std::{fs::File, io::Write, path::Path};
 
-use vutex::config::{ConfigParser, VuePressConfig};
+use vuepress::config::{ConfigParser, VuePressConfig};
 
 fn main() {
     // 测试默认配置

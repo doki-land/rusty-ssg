@@ -1,9 +1,9 @@
 //! Check 命令实现
 
-use crate::{CheckArgs, ConfigLoader, VutexCompiler};
+use crate::{types::Result, compiler::VutexCompiler};
+use crate::tools::{CheckArgs, ConfigLoader};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::types::Result;
 use walkdir::WalkDir;
 
 /// Check 命令
@@ -48,10 +48,20 @@ impl CheckCommand {
     fn check_config(source_dir: &PathBuf, errors: &mut Vec<String>, warnings: &mut Vec<String>) -> Result<()> {
         println!("  {} Checking configuration...", style("→").blue());
 
-        let config_path = source_dir.join(".vutex/vutex.config.toml");
-        if !config_path.exists() {
+        let config_paths = [
+            source_dir.join(".vitepress").join("vitepress.config.toml"),
+            source_dir.join(".vitepress").join("vitepress.config.json"),
+            source_dir.join("vitepress.config.toml"),
+            source_dir.join("vitepress.config.json"),
+            source_dir.join("vutex.toml"),
+            source_dir.join("vutex.json"),
+            source_dir.join("config.toml"),
+            source_dir.join("config.json"),
+        ];
+
+        let config_exists = config_paths.iter().any(|p| p.exists());
+        if !config_exists {
             warnings.push("Configuration file not found, using defaults".to_string());
-            return Ok(());
         }
 
         match ConfigLoader::load_from_dir(source_dir) {

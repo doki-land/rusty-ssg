@@ -12,7 +12,7 @@
   - `programmatic` TR-1.1: 运行 cargo test 并记录所有测试结果
 - **Notes**: 所有测试均因编译错误失败，主要问题是包名引用错误（从 vutex 改为 vuepress）、类型不匹配（Option 类型）等
 
-## [/] Task 2: 修复配置系统相关的测试和代码
+## [x] Task 2: 修复配置系统相关的测试和代码
 - **Priority**: P0
 - **Depends On**: Task 1
 - **Description**: 
@@ -24,8 +24,9 @@
 - **Test Requirements**:
   - `programmatic` TR-2.1: 所有配置相关测试通过
   - `programmatic` TR-2.2: 可以从文件加载 TOML 和 JSON 配置
+- **Notes**: 已修复包引用问题、类型不匹配问题、模块导入问题，配置相关代码和测试现在可以正常工作
 
-## [ ] Task 3: 修复编译器核心功能
+## [/] Task 3: 修复编译器核心功能
 - **Priority**: P0
 - **Depends On**: Task 2
 - **Description**: 

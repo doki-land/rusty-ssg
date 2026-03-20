@@ -1,15 +1,15 @@
 //! 站点生成模块
 //! 提供静态站点生成的核心功能，支持多语言文档
 
-use crate::{
-    theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    Result,
-};
-use crate::types::Document;
-use std::{collections::HashMap, fs, path::PathBuf};
+use crate::Result;
+use std::{collections::HashMap, fs, path::PathBuf, path::Path};
 use crate::types::{LocaleConfig, VutexConfig};
+use crate::tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, SocialLink};
+use walkdir::WalkDir;
+use crate::Document;
 
 /// 语言分组的文档映射
+/// 键为语言代码，值为该语言下的文档映射（路径 -> 文档）
 pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
 
 /// 静态站点生成器
@@ -18,17 +18,52 @@ pub struct StaticSiteGenerator {
     config: VutexConfig,
     /// 默认主题
     theme: DefaultTheme,
+    /// 源目录路径
+    source_dir: Option<PathBuf>,
 }
 
 impl StaticSiteGenerator {
     /// 创建新的静态站点生成器
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - 站点配置
+    ///
+    /// # Returns
+    ///
+    /// 新的静态站点生成器实例
     pub fn new(config: VutexConfig) -> Result<Self> {
         let theme = DefaultTheme::new(config.clone())?;
 
-        Ok(Self { config, theme })
+        Ok(Self { config, theme, source_dir: None })
+    }
+
+    /// 创建带源目录的新的静态站点生成器
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - 站点配置
+    /// * `source_dir` - 源目录路径
+    ///
+    /// # Returns
+    ///
+    /// 新的静态站点生成器实例
+    pub fn with_source_dir(config: VutexConfig, source_dir: PathBuf) -> Result<Self> {
+        let theme = DefaultTheme::new(config.clone())?;
+
+        Ok(Self { config, theme, source_dir: Some(source_dir) })
     }
 
     /// 生成静态站点
+    ///
+    /// # Arguments
+    ///
+    /// * `documents` - 文档映射（路径 -> 文档）
+    /// * `output_dir` - 输出目录路径
+    ///
+    /// # Errors
+    ///
+    /// 返回错误如果文件系统操作失败
     pub fn generate(&mut self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
@@ -103,6 +138,10 @@ impl StaticSiteGenerator {
 
         self.generate_root_index(output_dir)?;
 
+        if let Some(ref source_dir) = self.source_dir {
+            self.copy_resources(source_dir, output_dir)?;
+        }
+
         Ok(())
     }
 
@@ -133,20 +172,6 @@ impl StaticSiteGenerator {
         Ok(())
     }
 
-    /// 按语言分组文档
-    fn group_documents_by_language(&self, documents: &HashMap<String, Document>) -> LanguageDocuments {
-        let mut result = LanguageDocuments::new();
-        let default_lang = self.get_default_language();
-
-        for (path, document) in documents {
-            let (lang, normalized_path) = self.extract_language_from_path(path, &default_lang);
-
-            result.entry(lang).or_insert_with(HashMap::new).insert(normalized_path, document.clone());
-        }
-
-        result
-    }
-
     /// 从路径中提取语言代码
     fn extract_language_from_path(&self, path: &str, default_lang: &str) -> (String, String) {
         let parts: Vec<&str> = path.split('/').collect();
@@ -156,8 +181,9 @@ impl StaticSiteGenerator {
         }
 
         let first_part = parts[0];
-
-        if self.config.locales.contains_key(first_part) || first_part.contains('-') || first_part.len() == 2 {
+        let locales = self.config.locales.as_ref().map(|l| l.keys().collect::<Vec<_>>()).unwrap_or_default();
+        
+        if locales.contains(&&first_part.to_string()) || first_part.contains('-') || first_part.len() == 2 {
             let normalized_path = parts[1..].join("/");
             (first_part.to_string(), if normalized_path.is_empty() { "index.md".to_string() } else { normalized_path })
         }
@@ -168,176 +194,23 @@ impl StaticSiteGenerator {
 
     /// 获取默认语言
     fn get_default_language(&self) -> String {
-        if let Some((lang, _)) = self.config.locales.iter().find(|(_, cfg)| cfg.default.unwrap_or(false)) {
-            return lang.to_string();
+        if let Some(locales) = &self.config.locales {
+            if let Some((lang, _)) = locales.iter().find(|(_, cfg)| cfg.default.unwrap_or(false)) {
+                return lang.to_string();
+            }
+            locales.keys().next().cloned().unwrap_or_else(|| "zh-hans".to_string())
+        } else {
+            "zh-hans".to_string()
         }
-
-        self.config.locales.keys().next().cloned().unwrap_or_else(|| "zh-hans".to_string())
     }
 
     /// 获取可用的语言列表
     fn get_available_locales(&self) -> Vec<(String, LocaleConfig)> {
-        self.config.locales.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
-    }
-
-    /// 渲染单个页面
-    fn render_page(
-        &self,
-        document: &Document,
-        current_lang: &str,
-        nav_items: &[NavItem],
-        sidebar_groups: &[SidebarGroup],
-        locales: &[(String, LocaleConfig)],
-        current_path: String,
-    ) -> Result<String> {
-        let doc_title = document.title().unwrap_or("");
-        let site_title = self.theme.site_title();
-
-        let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
-
-        let content = document.rendered_content.as_deref().unwrap_or("");
-
-        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
-            if let Some(footer) = &self.config.theme.footer {
-                (
-                    true,
-                    footer.message.is_some(),
-                    footer.message.as_deref().unwrap_or("").to_string(),
-                    footer.copyright.is_some(),
-                    footer.copyright.as_deref().unwrap_or("").to_string(),
-                )
-            }
-            else {
-                (false, false, String::new(), false, String::new())
-            };
-
-        let locale_infos: Vec<LocaleInfo> = locales
-            .iter()
-            .map(|(code, config)| LocaleInfo {
-                code: code.to_string(),
-                label: config.label.clone(),
-                is_current: code == current_lang,
-            })
-            .collect();
-
-        let depth = current_path.matches('/').count();
-        let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
-
-        let context = PageContext {
-            page_title,
-            site_title: site_title.to_string(),
-            content: content.to_string(),
-            nav_items: nav_items.to_vec(),
-            sidebar_groups: sidebar_groups.to_vec(),
-            current_path,
-            has_footer,
-            has_footer_message,
-            footer_message,
-            has_footer_copyright,
-            footer_copyright,
-            current_lang: current_lang.to_string(),
-            available_locales: locale_infos,
-            root_path: root_path.clone(),
-        };
-
-        self.theme.render_page(&context)
-    }
-
-    /// 生成导航栏项目
-    fn generate_nav_items(&self, lang: &str) -> Vec<NavItem> {
-        let nav_source = if let Some(locale_config) = self.config.locales.get(lang) {
-            if let Some(ref nav) = locale_config.nav {
-                nav
-            }
-            else {
-                &self.config.theme.nav
-            }
+        if let Some(locales) = &self.config.locales {
+            locales.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
+        } else {
+            Vec::new()
         }
-        else {
-            &self.config.theme.nav
-        };
-
-        nav_source
-            .iter()
-            .map(|item| NavItem { text: item.text.clone(), link: item.link.as_deref().unwrap_or("#").to_string() })
-            .collect()
-    }
-
-    /// 生成侧边栏组
-    fn generate_sidebar_groups(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
-        let mut groups = Vec::new();
-
-        let sidebar_source = if let Some(locale_config) = self.config.locales.get(lang) {
-            if let Some(ref sidebar) = locale_config.sidebar {
-                sidebar
-            }
-            else {
-                &self.config.theme.sidebar
-            }
-        }
-        else {
-            &self.config.theme.sidebar
-        };
-
-        if let Some(sidebar_config) = sidebar_source.get("/") {
-            for item in sidebar_config {
-                let mut group = SidebarGroup { text: item.text.clone(), items: Vec::new() };
-
-                if let Some(items) = &item.items {
-                    for sub_item in items {
-                        if let Some(link) = &sub_item.link {
-                            let normalized_link =
-                                if link.starts_with('/') { format!("{}{}", lang, link) } else { format!("{}/{}", lang, link) }
-                                    .replace(".md", ".html");
-
-                            group.items.push(SidebarLink { text: sub_item.text.clone(), link: normalized_link });
-                        }
-                    }
-                }
-
-                groups.push(group);
-            }
-        }
-
-        if groups.is_empty() {
-            let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
-
-            for (path, doc) in documents {
-                let title = doc.title().unwrap_or(path).to_string();
-                let full_path = format!("{}/{}", lang, path).replace(".md", ".html");
-                default_group.items.push(SidebarLink { text: title, link: full_path });
-            }
-
-            groups.push(default_group);
-        }
-
-        groups
-    }
-
-    /// 获取输出文件路径
-    fn get_output_path(&self, source_path: &str, output_dir: &PathBuf, lang: &str) -> PathBuf {
-        let html_path = self.get_html_path(source_path);
-        output_dir.join(lang).join(html_path.trim_start_matches('/'))
-    }
-
-    /// 获取 HTML 文件路径（相对路径）
-    fn get_html_path(&self, source_path: &str) -> String {
-        source_path.replace(".md", ".html")
-    }
-
-    /// 简单版本的侧边栏生成
-    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
-        let mut groups = Vec::new();
-        let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
-
-        for (path, doc) in documents {
-            let title = doc.title().unwrap_or(path).to_string();
-            let link = format!("{}/{}", lang, path).replace(".md", ".html");
-            default_group.items.push(SidebarLink { text: title, link });
-        }
-
-        groups.push(default_group);
-        groups
     }
 
     /// 为单个文件渲染页面
@@ -349,7 +222,7 @@ impl StaticSiteGenerator {
         sidebar_groups: &[SidebarGroup],
         locales: &[(String, LocaleConfig)],
         current_full_path: String,
-        current_html_path: String,
+        _current_html_path: String,
     ) -> Result<String> {
         let doc_title = document.title().unwrap_or("");
         let site_title = self.theme.site_title();
@@ -357,20 +230,6 @@ impl StaticSiteGenerator {
         let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
         let content = document.rendered_content.as_deref().unwrap_or("");
-
-        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
-            if let Some(footer) = &self.config.theme.footer {
-                (
-                    true,
-                    footer.message.is_some(),
-                    footer.message.as_deref().unwrap_or("").to_string(),
-                    footer.copyright.is_some(),
-                    footer.copyright.as_deref().unwrap_or("").to_string(),
-                )
-            }
-            else {
-                (false, false, String::new(), false, String::new())
-            };
 
         let locale_infos: Vec<LocaleInfo> = locales
             .iter()
@@ -387,18 +246,150 @@ impl StaticSiteGenerator {
             content: content.to_string(),
             nav_items: nav_items.to_vec(),
             sidebar_groups: sidebar_groups.to_vec(),
+            social_links: Vec::new(),
             current_path: current_full_path,
-            has_footer,
-            has_footer_message,
-            footer_message,
-            has_footer_copyright,
-            footer_copyright,
+            has_footer: false,
+            has_footer_message: false,
+            footer_message: String::new(),
+            has_footer_copyright: false,
+            footer_copyright: String::new(),
             current_lang: current_lang.to_string(),
             available_locales: locale_infos,
-            root_path: "".to_string(),
+            root_path: String::new(),
         };
 
         self.theme.render_page(&context)
+    }
+
+    /// 生成导航栏项目
+    fn generate_nav_items(&self, _lang: &str) -> Vec<NavItem> {
+        if let Some(ref theme) = self.config.theme {
+            if let Some(ref nav) = theme.nav {
+                nav.iter()
+                    .filter_map(|item| match item {
+                        crate::types::NavItem::WithLink(link) => Some(NavItem {
+                            text: link.text.clone(),
+                            link: link.link.clone(),
+                        }),
+                        crate::types::NavItem::WithChildren(_) => None,
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// 复制资源文件到输出目录
+    ///
+    /// # Arguments
+    ///
+    /// * `source_dir` - 源目录路径
+    /// * `output_dir` - 输出目录路径
+    ///
+    /// # Errors
+    ///
+    /// 返回错误如果文件系统操作失败
+    fn copy_resources(&self, source_dir: &Path, output_dir: &Path) -> Result<()> {
+        let public_dir = if let Some(ref public_path) = self.config.public {
+            source_dir.join(public_path)
+        } else {
+            source_dir.join("public")
+        };
+
+        if public_dir.exists() && public_dir.is_dir() {
+            self.copy_directory(&public_dir, output_dir)?;
+        }
+
+        for entry in WalkDir::new(source_dir) {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() {
+                let rel_path = path.strip_prefix(source_dir).unwrap_or(path);
+                
+                let path_str = rel_path.to_string_lossy();
+                let components: Vec<&str> = path_str.split(std::path::MAIN_SEPARATOR).collect();
+                
+                if components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress" || c == ".vutex") {
+                    continue;
+                }
+                
+                if let Some(ext) = path.extension() {
+                    let ext_str = ext.to_string_lossy().to_lowercase();
+                    
+                    if ext_str == "md" {
+                        continue;
+                    }
+                    
+                    if self.is_resource_file(&ext_str) {
+                        let dest_path = output_dir.join(rel_path);
+                        
+                        if let Some(parent) = dest_path.parent() {
+                            if !parent.exists() {
+                                fs::create_dir_all(parent)?;
+                            }
+                        }
+                        
+                        fs::copy(path, dest_path)?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 检查文件扩展名是否为资源文件
+    ///
+    /// # Arguments
+    ///
+    /// * `ext` - 文件扩展名（小写）
+    ///
+    /// # Returns
+    ///
+    /// 如果是资源文件则返回 true，否则返回 false
+    fn is_resource_file(&self, ext: &str) -> bool {
+        let resource_exts = [
+            "css", "js", "jpg", "jpeg", "png", "gif", "svg", "ico", "webp",
+            "woff", "woff2", "ttf", "eot", "otf",
+            "pdf", "zip", "tar", "gz",
+            "html", "htm",
+        ];
+        
+        resource_exts.contains(&ext)
+    }
+
+    /// 递归复制目录
+    ///
+    /// # Arguments
+    ///
+    /// * `src` - 源目录路径
+    /// * `dest` - 目标目录路径
+    ///
+    /// # Errors
+    ///
+    /// 返回错误如果文件系统操作失败
+    fn copy_directory(&self, src: &Path, dest: &Path) -> Result<()> {
+        if !dest.exists() {
+            fs::create_dir_all(dest)?;
+        }
+
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let file_type = entry.file_type()?;
+            let dest_path = dest.join(entry.file_name());
+
+            if file_type.is_dir() {
+                self.copy_directory(&entry.path(), &dest_path)?;
+            } else {
+                fs::copy(entry.path(), dest_path)?;
+            }
+        }
+
+        Ok(())
     }
 }
 

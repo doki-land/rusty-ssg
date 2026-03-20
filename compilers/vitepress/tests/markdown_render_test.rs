@@ -1,6 +1,6 @@
 //! Markdown 渲染测试
 
-use vutex::compiler::HtmlRenderer;
+use vitepress::compiler::HtmlRenderer;
 
 #[test]
 fn test_markdown_render() {

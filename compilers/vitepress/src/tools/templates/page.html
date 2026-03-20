@@ -110,6 +110,23 @@
             color: #007acc;
         }
         
+        .social-links {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .social-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+        
+        .social-link:hover {
+            color: #007acc;
+        }
+        
         .content-wrapper {
             margin-top: 80px;
             background: #fff;
@@ -231,6 +248,11 @@
                     <li><a href="{{ item.link }}">{{ item.text }}</a></li>
                     {% endfor %}
                 </ul>
+                <div class="social-links">
+                    {% for link in &social_links %}
+                    <a href="{{ link.link }}" class="social-link">{{ link.icon }}</a>
+                    {% endfor %}
+                </div>
             </nav>
             
             <div class="content-wrapper">
