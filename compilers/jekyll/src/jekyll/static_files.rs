@@ -109,7 +109,7 @@ impl StaticFileProcessor {
         let root = self.structure.root();
 
         for entry in WalkDir::new(root) {
-            let entry = entry.map_err(|e| StaticFileError::FileSystemError(e))?;
+            let entry = entry.map_err(|e| StaticFileError::FileSystemError(e.into()))?;
             let path = entry.path();
 
             if path.is_file() {

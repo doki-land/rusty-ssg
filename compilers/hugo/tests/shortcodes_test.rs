@@ -75,4 +75,43 @@ fn test_parser_markdown_shortcode() {
     
     assert_eq!(result.len(), 1);
     if let TextFragment::Shortcode(sc) = &result[0] {
-        assert_eq!(
+        assert_eq!(sc.name, "alert");
+        assert_eq!(sc.shortcode_type, ShortcodeType::Markdown);
+        assert_eq!(sc.inner.as_deref(), Some("Hello"));
+    }
+}
+
+#[test]
+fn test_parser_self_closing() {
+    let parser = ShortcodeParser::new();
+    let result = parser.parse_text("{{< youtube id=\"123\" / >}}").unwrap();
+    
+    assert_eq!(result.len(), 1);
+    if let TextFragment::Shortcode(sc) = &result[0] {
+        assert_eq!(sc.name, "youtube");
+        assert_eq!(sc.params.get_named("id"), Some("123"));
+        assert!(sc.inner.is_none());
+    }
+}
+
+#[test]
+fn test_parser_mixed_text_and_shortcodes() {
+    let parser = ShortcodeParser::new();
+    let result = parser.parse_text("Before {{< tip >}}Inside{{< /tip >}} After").unwrap();
+    
+    assert_eq!(result.len(), 3);
+    if let TextFragment::Text(t) = &result[0] {
+        assert_eq!(t, "Before ");
+    }
+    if let TextFragment::Shortcode(sc) = &result[1] {
+        assert_eq!(sc.name, "tip");
+        assert_eq!(sc.inner.as_deref(), Some("Inside"));
+    }
+    if let TextFragment::Text(t) = &result[2] {
+        assert_eq!(t, " After");
+    }
+}
+
+#[test]
+fn test_execute_highlight() {
+    let registry = ShortcodeRegistry

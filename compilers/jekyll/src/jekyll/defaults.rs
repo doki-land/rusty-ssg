@@ -421,4 +421,6 @@ mod tests {
 
         manager.apply_defaults(Path::new("test.md"), None, &amp;mut front_matter);
 
-        assert_eq!(front_matter.get_str("layout"), Some("
+        assert_eq!(front_matter.get_str("layout"), Some("custom"));
+    }
+}
