@@ -20,7 +20,7 @@ walkdir = { workspace = true }
 nargo-types = { workspace = true }
 nargo-document = { workspace = true }
 nargo-parser = { workspace = true }
-nargo-template = { path = "e:\\灵之镜有限公司\\nargo\\compilers\\nargo-template", version = "0.0.0" }
+nargo-template.workspace = true
 
 
 regex = { workspace = true }

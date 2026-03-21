@@ -38,7 +38,7 @@ wae-https = { workspace = true }
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }
 nargo-document = { workspace = true }
-sha2 = "0.10.8"
+sha2.workspace = true
 
 [dev-dependencies]
 ntest = "0.9.5"

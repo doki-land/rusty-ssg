@@ -1,9 +1,0 @@
-[package]
-name = "test_markdown"
-version = "0.1.0"
-edition = "2024"
-
-[workspace]
-
-[dependencies]
-hexo = { path = "../../compilers/hexo" }
