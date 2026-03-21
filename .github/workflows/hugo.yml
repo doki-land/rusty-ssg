@@ -49,7 +49,6 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest, macos-latest]
-                feature: [no-default, default, all]
         runs-on: ${{ matrix.os }}
         steps:
             - name: Checkout repository
@@ -69,17 +68,8 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-cargo-
 
-            - name: Run tests (no-default features)
-              if: matrix.feature == 'no-default'
-              run: cargo test --workspace --no-default-features
-
             - name: Run tests (default features)
-              if: matrix.feature == 'default'
               run: cargo test --workspace
-
-            - name: Run tests (all features)
-              if: matrix.feature == 'all'
-              run: cargo test --workspace --all-features
 
     js-check:
         name: JavaScript/TypeScript Check

@@ -13,7 +13,7 @@
         "doc": "cargo doc --no-deps --all-features",
         "test": "cargo test --release",
         "bench": "tsx benchmarks/src/benchmark.ts",
-        "fmt": "npx @biomejs/biome format --write . && cargo fmt --all",
+        "fmt": "npx @biomejs/biome format --write . && cargo fmt",
         "lint": "biome lint .",
         "dev": "pnpm -F @vutex/documentation dev",
         "build": "pnpm -F @vutex/documentation build",

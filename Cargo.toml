@@ -73,12 +73,12 @@ oak-json = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", br
 oak-vfs = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
 oak-markdown = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
 # Nargo compilers
-nargo-types = { path = "../nargo/compilers/nargo-types", version = "0.0.0" }
-nargo-parser = { path = "../nargo/compilers/nargo-parser", version = "0.0.0" }
-nargo-template = { path = "../nargo/compilers/nargo-template", version = "0.0.0" }
-nargo-document = { path = "../nargo/compilers/nargo-document", version = "0.0.0" }
+nargo-types = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-parser = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-template = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-document = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
 # Wae server
-wae-https = { path = "../wae/backends/wae-https", version = "0.0.2" }
+wae-https = { git = "https://github.com/oovm/wae.git", branch = "dev", version = "0.0.2" }
 
 [profile.release]
 panic = "abort"

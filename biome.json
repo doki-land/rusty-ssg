@@ -27,6 +27,6 @@
         }
     },
     "files": {
-        "ignore": ["**/node_modules", "**/target", "**/dist", "**/.git"]
+        "ignore": ["**/node_modules", "**/target", "**/dist", "**/.git", "**/public"]
     }
 }

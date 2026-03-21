@@ -7,7 +7,7 @@ license.workspace = true
 repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/vuepress"
 homepage.workspace = true
 description = "Pure Rust implementation of VuePress static site generator compiler"
-keywords = ["vuepress", "cli", "compiler", "markdown", "documentation", "rust"]
+keywords = ["vuepress", "cli", "compiler", "markdown", "documentation"]
 categories = ["command-line-utilities", "compilers"]
 
 [dependencies]
@@ -20,7 +20,7 @@ walkdir = { workspace = true }
 nargo-types = { workspace = true }
 nargo-document = { workspace = true }
 nargo-parser = { workspace = true }
-nargo-template = { workspace = true }
+nargo-template = { path = "e:\\灵之镜有限公司\\nargo\\compilers\\nargo-template", version = "0.0.0" }
 
 
 regex = { workspace = true }
