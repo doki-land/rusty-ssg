@@ -66,7 +66,7 @@ impl LiquidEngine {
     ///
     /// 返回 `LiquidError` 如果解析或渲染失败
     pub fn render_template(&self, template: &str, context: &Object) -> Result<String, LiquidError> {
-        let parser = self.parser.build().map_err(|e| LiquidError::ParseError(format!("Failed to build parser: {}", e)))?;
+        let parser = self.parser.clone().build().map_err(|e| LiquidError::ParseError(format!("Failed to build parser: {}", e)))?;
         let compiled =
             parser.parse(template).map_err(|e| LiquidError::ParseError(format!("Failed to parse template: {}", e)))?;
 
@@ -92,7 +92,7 @@ impl LiquidEngine {
     /// 返回 `LiquidError` 如果文件读取、解析或渲染失败
     pub fn render_template_file(&self, template_path: &Path, context: &Object) -> Result<String, LiquidError> {
         let template_content = fs::read_to_string(template_path)?;
-        let parser = self.parser.build().map_err(|e| LiquidError::ParseError(format!("Failed to build parser: {}", e)))?;
+        let parser = self.parser.clone().build().map_err(|e| LiquidError::ParseError(format!("Failed to build parser: {}", e)))?;
         let compiled = parser.parse(&template_content).map_err(|e| {
             LiquidError::ParseError(format!("Failed to parse template file {}: {}", template_path.display(), e))
         })?;

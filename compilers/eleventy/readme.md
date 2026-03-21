@@ -1,237 +1,325 @@
-# Rusty Eleventy Compiler
+# Eleventy - Rust Implementation
 
-一个用Rust编写的Eleventy静态站点生成器兼容实现。
+## Overview
 
-## 功能特性
+Eleventy (11ty) is a flexible, fast static site generator, now implemented in Rust for even better performance and reliability. It's designed to help you build modern websites with simplicity and flexibility, using your favorite template languages.
 
-- 100% 兼容原始Eleventy静态站点生成器
-- 支持多种模板引擎：Liquid、Handlebars、Markdown
-- 完整的命令行接口
-- 配置文件解析系统
-- 数据系统（全局数据、模板数据、frontmatter）
-- 插件系统
-- 构建系统
-- 开发服务器与热重载
+### Key Features
+- 🚀 **Fast Builds**: Compile your site in seconds, not minutes
+- 🎨 **Template Flexibility**: Use multiple template languages in the same project
+- 📦 **Easy Deployment**: Generate static files that work anywhere
+- 🔧 **Extensible**: Customize with plugins and shortcodes
+- 🛠 **Developer Friendly**: Great tooling and developer experience
+- 📚 **Content-First**: Focus on your content, not the framework
 
-## 安装
+## Installation
+
+### From Crates.io
 
 ```bash
-# 从源代码构建
-cd e:\灵之镜有限公司\rusty-ssg\compilers\eleventy
-cargo build --release
+cargo install eleventy
+```
 
-# 或者使用cargo install（未来）
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/rusty-ssg/eleventy.git
+
+# Build and install
+cd eleventy
 cargo install --path .
 ```
 
-## 使用方法
+## Usage
 
-### 基本命令
+### Create a New Site
 
 ```bash
-# 构建站点
-cargo run -- build
-
-# 启动开发服务器
-cargo run -- serve
-
-# 测试数据系统
-cargo run -- test
-
-# 显示帮助信息
-cargo run -- help
+eleventy init my-site
+cd my-site
 ```
 
-### 配置文件
+### Develop Locally
 
-支持JSON格式的配置文件：
-
-```json
-{
-  "input": ".",
-  "output": "_site",
-  "templateFormats": ["liquid", "hbs", "md"],
-  "dataDir": "_data",
-  "includes": "_includes",
-  "layouts": "_layouts",
-  "passthroughCopy": ["assets"],
-  "watch": true,
-  "port": 8080,
-  "host": "localhost"
-}
+```bash
+eleventy --serve
 ```
 
-## 示例
+This will start a local development server with hot reloading, so you can see your changes in real-time.
 
-### 基本示例
+### Build for Production
+
+```bash
+eleventy build
+```
+
+This will generate optimized static files in the `_site` directory, ready for deployment.
+
+## Architecture
+
+Eleventy follows a modular architecture designed for performance and flexibility:
+
+```mermaid
+flowchart TD
+    A[CLI] --> B[Config Loader]
+    B --> C[Content Scanner]
+    C --> D[Template Engine]
+    D --> E[Renderer]
+    E --> F[Output Generator]
+    G[Plugins] --> D
+    H[Shortcodes] --> D
+    I[Filters] --> D
+```
+
+### Core Components
+
+- **CLI**: Command-line interface for interacting with the compiler
+- **Config Loader**: Reads and parses Eleventy configuration files
+- **Content Scanner**: Discovers and processes content files
+- **Template Engine**: Supports multiple template languages
+- **Renderer**: Renders templates to static HTML
+- **Output Generator**: Writes final static files
+- **Plugins**: Extend functionality with custom plugins
+- **Shortcodes**: Reusable template components
+- **Filters**: Transform data during template rendering
+
+## Project Structure
+
+Here's an example project structure for an Eleventy site:
+
+```
+my-site/
+├── _data/              # Global data files
+│   ├── metadata.json
+│   └── navigation.js
+├── _includes/          # Template includes
+│   ├── layouts/
+│   │   ├── base.njk
+│   │   └── post.njk
+│   └── components/
+│       ├── header.njk
+│       └── footer.njk
+├── _site/              # Generated output
+├── src/                # Source files
+│   ├── posts/          # Blog posts
+│   │   ├── first-post.md
+│   │   └── second-post.md
+│   ├── pages/          # Static pages
+│   │   ├── about.md
+│   │   └── contact.md
+│   └── images/         # Image files
+├── .eleventy.js        # Configuration file
+└── package.json        # For npm dependencies
+```
+
+## Configuration
+
+Here's an example `.eleventy.js` file:
+
+```javascript
+// .eleventy.js
+module.exports = function(eleventyConfig) {
+  // Add passthrough copy for static assets
+  eleventyConfig.addPassthroughCopy("src/images");
+  eleventyConfig.addPassthroughCopy("src/css");
+  
+  // Add custom shortcodes
+  eleventyConfig.addShortcode("year", () => new Date().getFullYear());
+  
+  // Add custom filters
+  eleventyConfig.addFilter("uppercase", (str) => str.toUpperCase());
+  
+  // Set custom directories
+  return {
+    dir: {
+      input: "src",
+      output: "_site",
+      includes: "_includes",
+      data: "_data"
+    },
+    markdownTemplateEngine: "njk",
+    htmlTemplateEngine: "njk",
+    templateFormats: ["njk", "md", "html"]
+  };
+};
+```
+
+## Examples
+
+### Example Template Include
+
+Here's an example of a template include in Eleventy:
+
+```njk
+<!-- _includes/components/header.njk -->
+<header>
+  <h1>{{ metadata.title }}</h1>
+  <nav>
+    {% for item in navigation %}
+      <a href="{{ item.url }}">{{ item.text }}</a>
+    {% endfor %}
+  </nav>
+</header>
+
+<style>
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f0f0f0;
+  }
+  
+  h1 {
+    margin: 0;
+  }
+  
+  nav a {
+    margin-left: 1rem;
+    text-decoration: none;
+    color: #333;
+  }
+</style>
+```
+
+### Example Blog Post
+
+Here's an example of a blog post in Eleventy:
 
 ```markdown
 ---
-title: 示例页面
+title: "Getting Started with Eleventy"
 date: 2024-01-01
-tags: [示例, 文档]
+author: "Your Name"
+categories: ["tutorial", "getting-started"]
+tags: ["eleventy", "static-site-generator"]
 ---
 
-# {{ title }}
+# Getting Started with Eleventy
 
-发布日期：{{ date }}
+Welcome to Eleventy! This is your first blog post.
 
-## 标签
+## What is Eleventy?
 
-{% for tag in tags %}
-- {{ tag }}
-{% endfor %}
+Eleventy is a flexible, fast static site generator that lets you use your favorite template languages.
 
-## 内容
+## Why Use Eleventy?
 
-这是一个示例页面，展示了如何使用Rust Eleventy编译器。
+- It's flexible and customizable
+- It supports multiple template languages
+- It's fast and lightweight
+- It has a great developer experience
+
+## Next Steps
+
+1. Create more content
+2. Customize your templates
+3. Add plugins and shortcodes
+4. Deploy your site
+
+Happy coding!
 ```
 
-### 数据系统示例
+## Compatibility Note
 
-在`_data`目录中创建`site.json`：
+⚠️ **Important**: Eleventy provides 100% compatibility only when using static features. Dynamic features may have limited support or require additional configuration.
+
+## Plugins
+
+Eleventy supports a wide range of plugins to extend functionality:
+
+- **@11ty/eleventy-plugin-rss**: Generate RSS feeds
+- **@11ty/eleventy-plugin-syntaxhighlight**: Syntax highlighting for code blocks
+- **@11ty/eleventy-navigation**: Navigation helper
+- **@11ty/eleventy-img**: Optimized image handling
+- **@11ty/eleventy-plugin-pwa**: Progressive Web App support
+
+## Templates
+
+Eleventy supports multiple template languages out of the box:
+
+- **Nunjucks** (njk): A powerful templating language with inheritance
+- **Markdown** (md): For content files
+- **HTML** (html): Plain HTML files
+- **Liquid**: Shopify's templating language
+- **Handlebars**: A semantic templating language
+- **Mustache**: Logic-less templates
+- **EJS**: Embedded JavaScript templates
+
+## Deployment
+
+Eleventy generates static files that can be deployed anywhere:
+
+### Netlify
+
+```toml
+# netlify.toml
+[build]
+  command = "eleventy build"
+  publish = "_site"
+```
+
+### Vercel
 
 ```json
+// vercel.json
 {
-  "name": "我的网站",
-  "description": "这是一个使用Rust Eleventy构建的网站",
-  "author": "作者姓名"
+  "buildCommand": "eleventy build",
+  "outputDirectory": "_site"
 }
 ```
 
-然后在模板中使用：
+### GitHub Pages
 
-```liquid
-# {{ site.name }}
-
-{{ site.description }}
-
-作者：{{ site.author }}
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+on: [push]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo install eleventy
+      - run: eleventy build
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
 ```
 
-## 模板引擎
+## Contribution Guidelines
 
-### Liquid
+We welcome contributions to Eleventy!
 
-```liquid
-{% assign name = "World" %}
-Hello, {{ name }}!
+### Reporting Issues
 
-{% if true %}
-  这是一个条件语句
-{% endif %}
+If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/eleventy/issues).
 
-{% for item in [1, 2, 3] %}
-  项目：{{ item }}
-{% endfor %}
-```
+### Pull Requests
 
-### Handlebars
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
 
-```handlebars
-{{! 这是一个注释 }}
-Hello, {{ name }}!
+### Code Style
 
-{{#if true}}
-  这是一个条件语句
-{{/if}}
+Please follow the Rust style guide and use `cargo fmt` to format your code.
 
-{{#each items}}
-  项目：{{ this }}
-{{/each}}
-```
+## License
 
-### Markdown
+Eleventy is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
 
-```markdown
-# 标题
+## Acknowledgements
 
-## 子标题
+Eleventy is inspired by the original Eleventy project and benefits from the Rust ecosystem.
 
-- 列表项1
-- 列表项2
+---
 
-**粗体**和*斜体*文本。
-
-[链接](https://example.com)
-
-![图片](image.jpg)
-
-```
-
-## 插件系统
-
-Rust Eleventy支持插件系统，可通过实现`Plugin` trait来创建插件：
-
-```rust
-use eleventy::plugin::Plugin;
-
-struct MyPlugin;
-
-impl Plugin for MyPlugin {
-    fn name(&self) -> &str {
-        "my-plugin"
-    }
-    
-    fn init(&self) {
-        println!("初始化我的插件");
-    }
-}
-
-// 注册插件
-let mut eleventy = Eleventy::new();
-eleventy.add_plugin(Box::new(MyPlugin));
-```
-
-## 开发
-
-### 项目结构
-
-```
-eleventy/
-├── Cargo.toml          # 项目依赖
-├── src/
-│   ├── lib.rs          # 库入口
-│   ├── bin/
-│   │   └── eleventy.rs # 命令行入口
-│   ├── types/          # 类型定义
-│   ├── config/         # 配置系统
-│   ├── data/           # 数据系统
-│   ├── compiler/       # 编译器
-│   ├── plugin/         # 插件系统
-│   ├── build/          # 构建系统
-│   ├── server/         # 开发服务器
-│   ├── tools/          # 工具函数
-│   ├── plugin_host/    # 插件宿主
-│   └── session/        # 会话管理
-├── test-data.md        # 测试数据文件
-├── test-config.json    # 测试配置文件
-└── README.md           # 项目文档
-```
-
-### 构建和测试
-
-```bash
-# 构建项目
-cargo build
-
-# 运行测试
-cargo test
-
-# 构建发布版本
-cargo build --release
-```
-
-## 贡献
-
-欢迎贡献代码！请遵循以下步骤：
-
-1. Fork 仓库
-2. 创建特性分支
-3. 提交更改
-4. 推送分支
-5. 创建 Pull Request
-
-## 许可证
-
-MIT 许可证
+Happy building with Eleventy! 🚀

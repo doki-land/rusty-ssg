@@ -3,9 +3,11 @@
 
 pub mod cmd;
 pub mod site_generator;
+pub mod template;
 pub mod theme;
 
 pub use site_generator::{ConfigLoader, LanguageDocuments, StaticSiteGenerator};
+pub use template::UnifiedTemplateManager;
 pub use theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, SocialLink};
 
 use clap::Parser;

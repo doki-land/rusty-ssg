@@ -1,13 +1,18 @@
 //! Dev 命令实现
 
+#[cfg(feature = "dev")]
 use crate::{
     compiler::{PluginHost, VutexCompiler},
     tools::{ConfigLoader, DevArgs, StaticSiteGenerator},
     types::Result,
 };
+#[cfg(feature = "dev")]
 use console::style;
+#[cfg(feature = "dev")]
 use fs_extra::dir::{CopyOptions, copy};
+#[cfg(feature = "dev")]
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+#[cfg(feature = "dev")]
 use std::{
     collections::HashMap,
     fs,
@@ -15,13 +20,17 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+#[cfg(feature = "dev")]
 use wae_https::{HttpsServerBuilder, static_files_router};
+#[cfg(feature = "dev")]
 use walkdir::WalkDir;
 
 /// Dev 命令
+#[cfg(feature = "dev")]
 pub struct DevCommand;
 
 /// Dev 服务器状态
+#[cfg(feature = "dev")]
 #[derive(Clone)]
 pub struct DevServerState {
     /// 源目录路径
@@ -32,6 +41,7 @@ pub struct DevServerState {
     pub last_build_successful: Arc<Mutex<bool>>,
 }
 
+#[cfg(feature = "dev")]
 impl DevCommand {
     /// 执行 dev 命令
     pub async fn execute(args: DevArgs) -> Result<()> {

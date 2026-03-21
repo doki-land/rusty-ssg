@@ -25,9 +25,12 @@ pub use types::{
 };
 
 pub use tools::{
-    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, DevelopArgs, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem,
+    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem,
     NewArgs, PageContext, SidebarGroup, SidebarLink, StaticSiteGenerator, TemplateEngineType, UnifiedTemplateManager,
 };
+
+#[cfg(feature = "dev")]
+pub use tools::DevelopArgs;
 
 pub use compiler::{GatsbyCompiler, HtmlRenderer, HtmlRendererConfig};
 pub use nargo_parser::{DocumentMeta, FrontMatter, FrontMatterParser, MarkdownParser, parse_document, parse_frontmatter};

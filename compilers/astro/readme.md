@@ -1,165 +1,327 @@
-# Astro Compiler (Rust Implementation)
+# Astro - Rust Implementation
 
-A high-performance, pure Rust implementation of the Astro static site generator compiler, designed for exceptional speed and compatibility without runtime features.
+## Overview
 
-## Features
+Astro is a blazingly fast static site generator, now implemented in Rust for even better performance and reliability. It's designed to help you build beautiful, modern websites with ease, combining the best of static site generation with the power of modern frameworks.
 
-- **Pure Rust Implementation**: Built entirely in Rust for maximum performance and reliability
-- **No Runtime Dependencies**: Compiles to static sites without requiring JavaScript runtime
-- **Exceptional Speed**: Leverages Rust's performance advantages for fast builds
-- **Astro Compatibility**: Supports Astro's component model and syntax
-- **Modern Web Standards**: Generates optimized, standards-compliant HTML
-- **Extensible Plugin System**: Built-in support for custom plugins
+### Key Features
+- 🚀 **Fast Builds**: Compile your site in seconds, not minutes
+- 🎨 **Modern Templates**: Use Astro's unique component-based approach
+- 📦 **Easy Deployment**: Generate static files that work anywhere
+- 🔧 **Extensible**: Customize with plugins and integrations
+- 🛠 **Developer Friendly**: Great tooling and developer experience
+- 🌐 **Framework Agnostic**: Use React, Vue, Svelte, or plain HTML
 
-## Getting Started
+## Installation
 
-### Prerequisites
-
-- Rust 1.60+ (stable)
-- Cargo (Rust's package manager)
-
-### Installation
+### From Crates.io
 
 ```bash
-# From the repository root
-cargo install --path compilers/astro
-
-# Or from crates.io (when published)
-cargo install astro-compiler
+cargo install astro
 ```
 
-### Usage
-
-#### Basic Commands
+### From Source
 
 ```bash
-# Initialize a new Astro project
-astro init
+# Clone the repository
+git clone https://github.com/rusty-ssg/astro.git
 
-# Build the site
-astro build
+# Build and install
+cd astro
+cargo install --path .
+```
 
-# Start development server
+## Usage
+
+### Create a New Site
+
+```bash
+astro init my-site
+cd my-site
+```
+
+### Develop Locally
+
+```bash
 astro dev
-
-# Check project configuration
-astro check
-
-# Create a new content file
-astro new <path>
 ```
 
-#### Example Project Structure
+This will start a local development server with hot reloading, so you can see your changes in real-time.
+
+### Build for Production
+
+```bash
+astro build
+```
+
+This will generate optimized static files in the `dist` directory, ready for deployment.
+
+## Architecture
+
+Astro follows a modular architecture designed for performance and extensibility:
+
+```mermaid
+flowchart TD
+    A[CLI] --> B[Config Loader]
+    B --> C[Content Scanner]
+    C --> D[Parser]
+    D --> E[Component Renderer]
+    E --> F[HTML Generator]
+    G[Plugins] --> E
+    H[Themes] --> E
+    I[Framework Integrations] --> E
+```
+
+### Core Components
+
+- **CLI**: Command-line interface for interacting with the compiler
+- **Config Loader**: Reads and parses Astro configuration files
+- **Content Scanner**: Discovers and processes content files
+- **Parser**: Converts Astro components and Markdown to intermediate representation
+- **Component Renderer**: Renders components to static HTML
+- **HTML Generator**: Writes final static files
+- **Plugins**: Extend functionality with custom plugins
+- **Themes**: Provide reusable templates and styles
+- **Framework Integrations**: Support for React, Vue, Svelte, and more
+
+## Project Structure
+
+Here's an example project structure for an Astro site:
 
 ```
-my-astro-site/
-├── src/
-│   ├── components/
-│   ├── layouts/
-│   ├── pages/
-│   └── styles/
-├── public/
-├── astro.config.toml
-└── package.json
+my-site/
+├── src/                # Source files
+│   ├── components/      # Astro components
+│   │   ├── Header.astro
+│   │   └── Footer.astro
+│   ├── layouts/         # Layout components
+│   │   └── Layout.astro
+│   ├── pages/           # Page files
+│   │   ├── index.astro
+│   │   ├── about.astro
+│   │   └── blog/
+│   │       ├── index.astro
+│   │       └── [slug].astro
+│   └── styles/          # CSS files
+│       └── global.css
+├── public/              # Static assets
+│   ├── images/
+│   └── favicon.ico
+├── astro.config.toml    # Configuration file
+└── package.json         # For npm dependencies
 ```
 
 ## Configuration
 
-The Astro compiler uses a `astro.config.toml` file for configuration:
+Here's an example `astro.config.toml` file:
 
 ```toml
-# astro.config.toml
-[site]
-name = "My Astro Site"
-url = "https://example.com"
+# Site settings
+site = "https://example.com"
+title = "My Awesome Astro Site"
+description = "A description of my awesome Astro site"
 
-[build]
+# Build settings
 outDir = "dist"
+base = "/"
 
-[dev]
-port = 3000
+# Theme settings
+theme = "@astrojs/theme-default"
+
+# Plugin settings
+[plugins]
+enabled = ["@astrojs/mdx", "@astrojs/tailwind"]
+
+# Markdown settings
+[markdown]
+extensions = ["md", "mdx"]
+shikiConfig = {
+  theme = "nord"
+}
 ```
 
-## Performance
+## Examples
 
-The Rust implementation of the Astro compiler offers significant performance improvements over the original JavaScript implementation:
+### Example Astro Component
 
-- **Faster Build Times**: Leverages Rust's parallelism and memory safety
-- **Lower Memory Usage**: Efficient memory management
-- **Smaller Binary Size**: Optimized compilation
-- **Native Execution**: No overhead from JavaScript runtime
+Here's an example of an Astro component:
 
-## Architecture
+```astro
+---
+// src/components/Header.astro
+import { Astro } from 'astro';
 
-The compiler is structured as follows:
+export interface Props {
+  title: string;
+}
 
-- **Core Compiler**: Handles parsing, transforming, and code generation
-- **Plugin System**: Extensible architecture for custom functionality
-- **CLI Tooling**: Command-line interface for common tasks
-- **Session Management**: Tracks build state and dependencies
-- **Type System**: Strongly-typed data structures for reliability
+const { title } = Astro.props;
+---
 
-## Contributing
+<header>
+  <h1>{title}</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/blog">Blog</a>
+  </nav>
+</header>
 
-We welcome contributions to the Astro compiler! Here's how you can help:
-
-1. **Report Bugs**: Open an issue with details about the bug
-2. **Submit Features**: Propose new features or improvements
-3. **Write Tests**: Help ensure the compiler's reliability
-4. **Improve Documentation**: Enhance the project's documentation
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/rusty-ssg/rusty-ssg.git
-cd rusty-ssg
-
-# Build the compiler
-cargo build -p astro-compiler
-
-# Run tests
-cargo test -p astro-compiler
-
-# Run the compiler
-cargo run -p astro-compiler -- <command>
+<style>
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f0f0f0;
+  }
+  
+  h1 {
+    margin: 0;
+  }
+  
+  nav a {
+    margin-left: 1rem;
+    text-decoration: none;
+    color: #333;
+  }
+</style>
 ```
 
-## Roadmap
+### Example Blog Post
 
-- [ ] Complete implementation of Astro component syntax
-- [ ] Support for all Astro directives
-- [ ] Integration with popular UI frameworks (React, Vue, Svelte)
-- [ ] Optimized asset handling
-- [ ] Internationalization support
-- [ ] Advanced caching strategies
+Here's an example of a blog post in Astro:
 
-## Benchmarks
+```markdown
+---
+title: "Getting Started with Astro"
+date: 2024-01-01
+author: "Your Name"
+categories: ["tutorial", "getting-started"]
+tags: ["astro", "static-site-generator"]
+---
 
-### Build Performance Comparison
+# Getting Started with Astro
 
-| Feature | Rust Implementation | JavaScript Implementation | Improvement |
-|---------|---------------------|---------------------------|-------------|
-| Build Time (Medium Site) | ~1.2s | ~4.5s | 73% faster |
-| Memory Usage | ~60MB | ~250MB | 76% less |
-| Binary Size | ~2MB | ~40MB | 95% smaller |
+Welcome to Astro! This is your first blog post.
+
+## What is Astro?
+
+Astro is a fast, modern static site generator that lets you use components from your favorite frameworks like React, Vue, and Svelte.
+
+## Why Use Astro?
+
+- It's blazingly fast
+- It supports multiple frameworks
+- It has a great developer experience
+- It generates fully static sites
+
+## Next Steps
+
+1. Create more content
+2. Add components from your favorite framework
+3. Deploy your site
+
+Happy coding!
+```
+
+## Compatibility Note
+
+⚠️ **Important**: Astro provides 100% compatibility only when using static features. Dynamic features like client-side JavaScript may have limited support or require additional configuration.
+
+## Plugins
+
+Astro supports a wide range of plugins to extend functionality:
+
+- **@astrojs/mdx**: Support for MDX files
+- **@astrojs/tailwind**: Integration with Tailwind CSS
+- **@astrojs/react**: React framework integration
+- **@astrojs/vue**: Vue framework integration
+- **@astrojs/svelte**: Svelte framework integration
+- **@astrojs/image**: Optimized image handling
+
+## Themes
+
+Choose from a variety of built-in themes or create your own:
+
+- **@astrojs/theme-default**: Clean, modern design
+- **@astrojs/theme-blog**: Blog-focused theme
+- **@astrojs/theme-docs**: Documentation-focused theme
+- **@astrojs/theme-minimal**: Minimalist design
+
+## Deployment
+
+Astro generates static files that can be deployed anywhere:
+
+### Netlify
+
+```toml
+# netlify.toml
+[build]
+  command = "astro build"
+  publish = "dist"
+```
+
+### Vercel
+
+```json
+// vercel.json
+{
+  "buildCommand": "astro build",
+  "outputDirectory": "dist"
+}
+```
+
+### GitHub Pages
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+on: [push]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo install astro
+      - run: astro build
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+## Contribution Guidelines
+
+We welcome contributions to Astro!
+
+### Reporting Issues
+
+If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/astro/issues).
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
+
+### Code Style
+
+Please follow the Rust style guide and use `cargo fmt` to format your code.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Astro is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
 
-## Acknowledgments
+## Acknowledgements
 
-- [Astro](https://astro.build/) - The original static site generator
-- [Rust](https://www.rust-lang.org/) - The programming language powering this implementation
-- [Tokio](https://tokio.rs/) - For async runtime support
-- [Serde](https://serde.rs/) - For serialization/deserialization
-
-## Contact
-
-- GitHub: [https://github.com/rusty-ssg/rusty-ssg](https://github.com/rusty-ssg/rusty-ssg)
-- Issues: [https://github.com/rusty-ssg/rusty-ssg/issues](https://github.com/rusty-ssg/rusty-ssg/issues)
+Astro is inspired by the original Astro project and benefits from the Rust ecosystem.
 
 ---
 
-*Built with ❤️ in Rust*
+Happy building with Astro! 🚀

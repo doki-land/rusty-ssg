@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 
 //! Jekyll 博客框架核心编译器
-//!
+//! 
 //! 该库提供完整的 Jekyll 博客框架功能，包括：
 //! - 目录结构识别和处理
 //! - 帖子（Posts）处理
@@ -13,6 +13,7 @@ pub mod compiler;
 pub mod errors;
 pub mod jekyll;
 pub mod plugin_host;
+pub mod session;
 pub mod tools;
 pub mod types;
 
@@ -33,3 +34,6 @@ pub use compiler::*;
 
 /// 导出插件宿主模块
 pub use plugin_host::*;
+
+/// 导出会话模块
+pub use session::*;

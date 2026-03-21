@@ -32,6 +32,7 @@ oak-toml = { workspace = true, features = ["serde"] }
 http = { workspace = true }
 
 nargo-document = { workspace = true }
+nargo-template = { workspace = true }
 
 [dev-dependencies]
 criterion = { version = "0.8.2", features = ["html_reports"] }

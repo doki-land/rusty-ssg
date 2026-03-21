@@ -38,6 +38,7 @@ http = { workspace = true }
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }
 nargo-document = { workspace = true }
+nargo-template = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4.4"

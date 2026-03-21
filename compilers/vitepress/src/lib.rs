@@ -30,9 +30,12 @@ pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 
 pub use tools::{
-    BuildArgs, CheckArgs, Commands, DevArgs, InitArgs, VitePressCli, cmd, site_generator,
+    BuildArgs, CheckArgs, Commands, InitArgs, VitePressCli, cmd, site_generator,
     site_generator::{ConfigLoader, LanguageDocuments, StaticSiteGenerator},
 };
+
+#[cfg(feature = "dev")]
+pub use tools::DevArgs;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

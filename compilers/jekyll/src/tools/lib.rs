@@ -3,6 +3,7 @@
 
 pub use super::{
     site_generator::{ConfigLoader, StaticSiteGenerator},
+    template::UnifiedTemplateManager,
     theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink},
 };
 pub use crate::{

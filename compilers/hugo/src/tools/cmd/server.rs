@@ -18,6 +18,7 @@ pub struct ServerCommand;
 
 impl ServerCommand {
     /// 执行 server 命令
+    #[cfg(feature = "dev")]
     pub async fn execute(args: crate::ServerArgs) -> Result<()> {
         println!("{}", style("Starting Hugo development server...").cyan());
 

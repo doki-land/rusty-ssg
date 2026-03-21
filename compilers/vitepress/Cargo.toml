@@ -18,6 +18,7 @@ toml = { workspace = true }
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }
 nargo-document = { workspace = true }
+nargo-template = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 walkdir = { workspace = true }

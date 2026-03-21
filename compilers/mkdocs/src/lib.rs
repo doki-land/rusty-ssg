@@ -5,7 +5,7 @@ pub mod compiler;
 pub mod plugin;
 pub mod plugin_host;
 pub mod session;
-// pub mod tools;
+pub mod tools;
 pub mod types;
 
 pub use types::{config, errors};
@@ -25,21 +25,21 @@ pub use compiler::{HtmlRenderer, HtmlRendererConfig, MkDocsCompiler};
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 
-// pub use tools::{
-//     MkDocsCli,
-//     MkDocsCommands,
-//     NewArgs,
-//     BuildArgs,
-//     ServeArgs,
-//     InitArgs,
-//     CheckArgs,
-//     BuildCommand,
-//     CheckCommand,
-//     InitCommand,
-//     NewCommand,
-//     ServeCommand,
-//     VersionCommand,
-// };
+pub use tools::{
+    MkDocsCli,
+    MkDocsCommands,
+    NewArgs,
+    BuildArgs,
+    ServeArgs,
+    InitArgs,
+    CheckArgs,
+    BuildCommand,
+    CheckCommand,
+    InitCommand,
+    NewCommand,
+    ServeCommand,
+    VersionCommand,
+};
 
 use nargo_types::Document;
 use serde::{Deserialize, Serialize};
