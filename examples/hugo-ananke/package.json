@@ -1,0 +1,20 @@
+{
+    "name": "hugo-quickstart",
+    "version": "1.0.0",
+    "description": "Hugo quickstart example for rusty-ssg",
+    "scripts": {
+        "check": "node scripts/build-same.mjs",
+        "dev": "node scripts/dev.mjs",
+        "dev:rusty": "node scripts/dev-rusty.mjs",
+        "build": "node scripts/build.mjs",
+        "build:rusty": "node scripts/build-rusty.mjs",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "keywords": ["hugo", "ssg", "rusty-ssg"],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "vitest": "^4.1.0"
+    }
+}
