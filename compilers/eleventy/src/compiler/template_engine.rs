@@ -1,6 +1,8 @@
 //! 模板引擎模块
 
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
 
 /// 模板引擎错误类型
 #[derive(Debug)]
@@ -11,6 +13,22 @@ pub enum TemplateError {
     RenderError(String),
     /// 模板未找到错误
     TemplateNotFoundError(String),
+}
+
+impl fmt::Display for TemplateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TemplateError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            TemplateError::RenderError(msg) => write!(f, "Render error: {}", msg),
+            TemplateError::TemplateNotFoundError(msg) => write!(f, "Template not found: {}", msg),
+        }
+    }
+}
+
+impl Error for TemplateError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
 }
 
 /// 模板引擎 trait

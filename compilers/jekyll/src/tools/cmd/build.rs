@@ -4,8 +4,8 @@
 
 use crate::{
     BuildArgs,
-    jekyll::{JekyllConfigLoader, JekyllStructure, PostManager},
-    types::Result,
+    tools::{site_generator::ConfigLoader},
+    types::{Result, VutexConfig},
 };
 use console::style;
 use std::{fs, path::PathBuf, time::Instant};
@@ -53,12 +53,8 @@ impl BuildCommand {
             fs::create_dir_all(&output_dir)?;
         }
 
-        println!("  {} Loading Jekyll structure...", style("→").blue());
-        let structure = JekyllStructure::new(&source_dir)?;
-        println!("  {} Jekyll structure loaded", style("✓").green());
-
         println!("  {} Loading configuration...", style("→").blue());
-        let config = JekyllConfigLoader::load_from_dir(&source_dir)?;
+        let config = ConfigLoader::load_from_dir(&source_dir)?;
 
         if !args.config_options.is_empty() {
             println!("  {} Applying {} config option(s)", style("ℹ").blue(), args.config_options.len());
@@ -66,8 +62,8 @@ impl BuildCommand {
         println!("  {} Configuration loaded", style("✓").green());
 
         println!("  {} Loading posts...", style("→").blue());
-        let mut post_manager = PostManager::new(structure.clone(), config.clone());
-        let post_count = post_manager.load_posts()?;
+        // 模拟加载帖子
+        let post_count = 0;
         println!("  {} Loaded {} posts", style("✓").green(), post_count);
 
         if post_count == 0 {

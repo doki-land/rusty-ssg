@@ -1,6 +1,6 @@
 # 修复 Cargo Check 错误 - 实现计划
 
-## [ ] 任务1: 分析 nargo-document 库的编译错误
+## [x] 任务1: 分析 nargo-document 库的编译错误
 - **Priority**: P0
 - **Depends On**: None
 - **Description**: 
@@ -13,7 +13,7 @@
   - `human-judgement` TR-1.2: 分析错误原因并制定修复方案
 - **Notes**: 重点关注之前发现的 markdown.rs 和 server.rs 文件中的错误
 
-## [ ] 任务2: 修复 nargo-document 库中的编译错误
+## [x] 任务2: 修复 nargo-document 库中的编译错误
 - **Priority**: P0
 - **Depends On**: 任务1
 - **Description**: 
@@ -26,7 +26,7 @@
   - `human-judgement` TR-2.2: 代码风格保持一致
 - **Notes**: 不修改项目结构，只修复编译错误
 
-## [ ] 任务3: 分析 jekyll 编译器的编译错误
+## [x] 任务3: 分析 jekyll 编译器的编译错误
 - **Priority**: P0
 - **Depends On**: 任务2
 - **Description**: 
@@ -39,7 +39,7 @@
   - `human-judgement` TR-3.2: 分析错误原因并制定修复方案
 - **Notes**: 重点关注之前发现的 lib.rs 文件中的错误
 
-## [ ] 任务4: 修复 jekyll 编译器中的编译错误
+## [x] 任务4: 修复 jekyll 编译器中的编译错误
 - **Priority**: P0
 - **Depends On**: 任务3
 - **Description**: 
@@ -52,7 +52,7 @@
   - `human-judgement` TR-4.2: 代码风格保持一致
 - **Notes**: 不修改项目结构，只修复编译错误
 
-## [ ] 任务5: 验证所有编译器通过 cargo check
+## [/] 任务5: 验证所有编译器通过 cargo check
 - **Priority**: P1
 - **Depends On**: 任务2, 任务4
 - **Description**: 

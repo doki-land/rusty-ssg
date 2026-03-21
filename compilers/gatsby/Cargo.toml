@@ -29,6 +29,10 @@ nargo-parser.workspace = true
 nargo-document.workspace = true
 nargo-template.workspace = true
 indexmap.workspace = true
+async-graphql-value = "7.2.1"
+thiserror = "2.0.18"
+uuid = "1.22.0"
+toml = "1.0.7"
 
 [dev-dependencies]
 tokio-test = "0.4.4"

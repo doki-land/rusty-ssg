@@ -19,9 +19,6 @@ pub mod watcher;
 /// 导出错误类型
 pub use errors::*;
 
-/// 导出工具模块
-pub use tools::*;
-
 /// 导出类型模块
 pub use types::*;
 
@@ -31,5 +28,8 @@ pub use compiler::*;
 /// 导出插件模块
 pub use plugin::*;
 
-/// 导出监听器模块
-pub use watcher::*;
+/// 导出站点生成器相关功能
+pub use tools::site_generator::*;
+
+/// 导出工具模块
+pub use tools::*;

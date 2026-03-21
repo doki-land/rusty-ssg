@@ -297,6 +297,10 @@ impl ComponentRegistry {
         self.components.contains_key(name)
     }
 
+    /// 获取所有组件的迭代器
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Component)> {
+        self.components.iter()
+    }
 
 }
 

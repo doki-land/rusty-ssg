@@ -7,7 +7,7 @@ pub use super::{
     theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink},
 };
 pub use crate::{
-    CompileResult, CompileSession, Document, PluginHost, VutexCompiler,
+    CompileResult, Document, VutexCompiler,
     types::{
         config::VutexConfig,
         errors::{Result, VutexError},

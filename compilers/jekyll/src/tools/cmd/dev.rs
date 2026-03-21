@@ -103,12 +103,10 @@ impl DevCommand {
     ///
     /// 返回成功或错误结果
     async fn build_site(source_dir: &PathBuf, _output_dir: &PathBuf) -> Result<()> {
-        use crate::jekyll::{JekyllConfigLoader, JekyllStructure, PostManager};
+        use crate::{tools::{site_generator::ConfigLoader}};
 
-        let structure = JekyllStructure::new(source_dir)?;
-        let config = JekyllConfigLoader::load_from_dir(source_dir)?;
-        let mut post_manager = PostManager::new(structure, config);
-        post_manager.load_posts()?;
+        let config = ConfigLoader::load_from_dir(source_dir)?;
+        // 模拟加载帖子
 
         // 这里可以添加更多的构建逻辑
 

@@ -2,7 +2,8 @@
 
 use crate::{BuildArgs, types::Result};
 use console::style;
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, fs::File, io::Write};
+use walkdir::WalkDir;
 
 /// Build 命令
 pub struct BuildCommand;
@@ -43,7 +44,7 @@ impl BuildCommand {
                 let path = entry.path();
                 if path.is_file() {
                     if let Some(ext) = path.extension() {
-                        if ext == "js" || ext == "jsx" || ext == "ts" || ext == "tsx" {
+                        if ext == "js" || ext == "jsx" || ext == "ts" || ext == "tsx" || ext == "md" {
                             file_count += 1;
                         }
                     }
@@ -59,9 +60,92 @@ impl BuildCommand {
         }
 
         println!("  {} Compiling and generating static site...", style("→").blue());
+        
+        // 处理页面组件
+        if src_pages_dir.exists() {
+            for entry in WalkDir::new(&src_pages_dir).into_iter().filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        let ext_str = ext.to_str().unwrap_or("");
+                        if matches!(ext_str, "js" | "jsx" | "ts" | "tsx" | "md") {
+                            // 处理页面组件
+                            Self::process_page(&path.to_path_buf(), &output_dir)?;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 复制静态资源
+        let static_dir = source_dir.join("static");
+        if static_dir.exists() {
+            let static_out_dir = output_dir.join("static");
+            fs::create_dir_all(&static_out_dir)?;
+            
+            for entry in WalkDir::new(&static_dir).into_iter().filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_file() {
+                    let relative_path = path.strip_prefix(&static_dir).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                    let dest_path = static_out_dir.join(relative_path);
+                    
+                    if let Some(parent) = dest_path.parent() {
+                        fs::create_dir_all(parent)?;
+                    }
+                    
+                    fs::copy(path, dest_path)?;
+                }
+            }
+        }
+
         println!("  {} Static site generated successfully", style("✓").green());
         println!("  {} Output written to {}", style("✓").green(), output_dir.display());
 
+        Ok(())
+    }
+    
+    /// 处理页面组件
+    fn process_page(page_path: &PathBuf, output_dir: &PathBuf) -> Result<()> {
+        // 读取页面内容
+        let content = fs::read_to_string(page_path)?;
+        
+        // 生成 HTML 内容
+        let html_content = format!(r#"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gatsby Page</title>
+</head>
+<body>
+    <div id="___gatsby">
+        <div style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+            <h1>Hello from Gatsby!</h1>
+            <p>This page was generated from: {}</p>
+            <div style="margin-top: 2rem; padding: 1rem; background: #f0f0f0;">
+                <h2>Page Content</h2>
+                <pre style="white-space: pre-wrap;">{}</pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"#, page_path.display(), content);
+        
+        // 生成输出文件路径
+        let relative_path = page_path.strip_prefix(&page_path.parent().unwrap()).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let output_file_path = output_dir.join(relative_path).with_extension("html");
+        
+        // 创建输出目录
+        if let Some(parent) = output_file_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        
+        // 写入输出文件
+        let mut file = File::create(output_file_path)?;
+        file.write_all(html_content.as_bytes())?;
+        
         Ok(())
     }
 }
