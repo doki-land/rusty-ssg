@@ -9,8 +9,8 @@ use std::{error::Error, fmt};
 pub enum MkDocsError {
     /// 配置解析错误
     ConfigParseError {
-        /// 底层解析错误
-        source: serde_yaml::Error,
+        /// 错误消息
+        message: String,
     },
     /// 配置验证错误
     ConfigValidationError {
@@ -76,8 +76,8 @@ impl MkDocsError {
 impl fmt::Display for MkDocsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MkDocsError::ConfigParseError { source } => {
-                write!(f, "Failed to parse configuration: {}", source)
+            MkDocsError::ConfigParseError { message } => {
+                write!(f, "Failed to parse configuration: {}", message)
             }
             MkDocsError::ConfigValidationError { message } => {
                 write!(f, "Configuration validation error: {}", message)
@@ -110,7 +110,6 @@ impl fmt::Display for MkDocsError {
 impl Error for MkDocsError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            MkDocsError::ConfigParseError { source } => Some(source),
             MkDocsError::IoError { source } => Some(source),
             MkDocsError::JsonError { source } => Some(source),
             _ => None,
@@ -130,11 +129,7 @@ impl From<serde_json::Error> for MkDocsError {
     }
 }
 
-impl From<serde_yaml::Error> for MkDocsError {
-    fn from(source: serde_yaml::Error) -> Self {
-        MkDocsError::ConfigParseError { source }
-    }
-}
+
 
 impl From<walkdir::Error> for MkDocsError {
     fn from(source: walkdir::Error) -> Self {

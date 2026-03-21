@@ -2,7 +2,6 @@
 
 use crate::{
     ConfigLoader, VutexCompiler,
-    plugin_host::PluginHost,
     types::{HugoConfig, Result},
 };
 use console::style;
@@ -99,37 +98,8 @@ impl ServerCommand {
         if file_count > 0 {
             println!("  {} Compiling documents...", style("→").blue());
 
-            let mut plugin_host_option: Option<PluginHost> = None;
-            let project_root = std::env::current_dir()?;
-            let ipc_server_path = project_root.join("runtimes").join("vutex-ipc-server").join("dist").join("index.js");
-
-            match PluginHost::new("node", ipc_server_path.to_str().unwrap()) {
-                Ok(host) => {
-                    println!("  {} Plugin host initialized (Node.js hybrid mode)", style("✓").green());
-                    plugin_host_option = Some(host);
-                }
-                Err(e) => {
-                    println!("  {} Failed to initialize plugin host: {}", style("⚠").yellow(), e);
-                    println!("    {} Please install Node.js to use all features", style("ℹ").blue());
-                    println!("    {} Continuing in Rust-only mode (limited functionality)", style("ℹ").blue());
-                }
-            }
-
-            let result;
-            let mut plugin_host_guard = plugin_host_option;
-
-            if let Some(mut plugin_host) = plugin_host_guard.take() {
-                let mut compiler = VutexCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
-                result = compiler.compile_batch(&content_map);
-
-                if let Some(mut host) = compiler.plugin_host_mut().take() {
-                    let _ = host.shutdown();
-                }
-            }
-            else {
-                let mut compiler = VutexCompiler::with_config(config.clone());
-                result = compiler.compile_batch(&content_map);
-            }
+            let mut compiler = VutexCompiler::with_config(config.clone());
+            let result = compiler.compile_batch(&content_map);
 
             documents = result.documents;
             let success = result.success;

@@ -7,8 +7,8 @@ use nargo_parser::parse_document;
 use nargo_types::Document;
 use std::{collections::HashMap, time::Instant};
 
-mod html_renderer;
-pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
+mod renderer;
+pub use renderer::{HtmlRenderer, HtmlRendererConfig};
 
 /// Gatsby 文档编译器
 ///

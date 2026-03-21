@@ -21,6 +21,7 @@ nargo-template = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 walkdir = { workspace = true }
+thiserror = "1.0.56"
 
 
 regex = { workspace = true }

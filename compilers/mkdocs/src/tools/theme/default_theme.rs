@@ -1,8 +1,7 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::tools::UnifiedTemplateManager;
-use crate::{Result, types::MkDocsConfig};
+use crate::{Result, tools::UnifiedTemplateManager, types::MkDocsConfig};
 use nargo_template::{TemplateEngine, ToJsonValue};
 use serde_json::json;
 use std::collections::HashMap;

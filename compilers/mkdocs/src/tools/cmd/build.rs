@@ -1,7 +1,10 @@
 //! Build 命令实现
 
-use crate::{BuildArgs, MkDocsCompiler, types::Result};
-use crate::tools::{ConfigLoader, StaticSiteGenerator};
+use crate::{
+    BuildArgs, MkDocsCompiler,
+    tools::{ConfigLoader, StaticSiteGenerator},
+    types::Result,
+};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
 use walkdir::WalkDir;
@@ -76,11 +79,12 @@ impl BuildCommand {
 
         println!("  {} Compiling documents...", style("→").blue());
 
-        let mut compiler = MkDocsCompiler::with_config(config.clone());
-        let result = compiler.compile_batch(&documents);
+        let mut compiler = MkDocsCompiler::new(config.clone(), &source_dir, &output_dir);
+        let compile_results = compiler.compile_all()?;
 
-        if result.success {
-            println!("  {} Compiled {} documents in {}ms", style("✓").green(), result.compile_time_ms, result.compile_time_ms);
+        if !compile_results.is_empty() {
+            let total_time = compile_results.iter().sum::<u64>();
+            println!("  {} Compiled {} documents in {}ms", style("✓").green(), compile_results.len(), total_time);
 
             println!("  {} Generating static site...", style("→").blue());
 

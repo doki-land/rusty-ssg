@@ -8,7 +8,7 @@ pub mod template;
 pub mod theme;
 
 pub use crate::{
-    CompileResult, CompileSession, Document, VutexCompiler,
+    CompileResult, Document, VutexCompiler,
     types::{HugoConfig, Result, VutexError},
 };
 pub use site_generator::{ConfigLoader, StaticSiteGenerator};

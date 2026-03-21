@@ -1,4 +1,7 @@
-use crate::jekyll::{JekyllConfig, JekyllStructure, static_files::{StaticFile, StaticFileProcessor}};
+use crate::jekyll::{
+    JekyllConfig, JekyllStructure,
+    static_files::{StaticFile, StaticFileProcessor},
+};
 use std::{fs::File, io::Write, path::Path};
 use tempfile::tempdir;
 

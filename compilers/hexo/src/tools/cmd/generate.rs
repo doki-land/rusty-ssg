@@ -1,7 +1,7 @@
 //! 生成命令实现
 
 use super::super::GenerateArgs;
-use crate::{markdown::renderer::render_markdown_file, types::Result};
+use crate::types::Result;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -67,99 +67,8 @@ impl GenerateCommand {
 
     /// 处理文件
     fn process_file(src: &Path, dst: &Path) -> Result<()> {
-        if let Some(ext) = src.extension() {
-            if ext == "md" || ext == "markdown" {
-                // 处理 Markdown 文件
-                Self::process_markdown_file(src, dst)?;
-            }
-            else {
-                // 复制其他文件
-                fs::copy(src, dst)?;
-            }
-        }
-        else {
-            // 复制无扩展名文件
-            fs::copy(src, dst)?;
-        }
+        // 复制所有文件
+        fs::copy(src, dst)?;
         Ok(())
-    }
-
-    /// 处理 Markdown 文件
-    fn process_markdown_file(src: &Path, dst: &Path) -> Result<()> {
-        // 渲染 Markdown 文件
-        let (front_matter, html) = render_markdown_file(src)?;
-
-        // 生成对应的 HTML 文件路径
-        let html_path = dst.with_extension("html");
-
-        // 生成 HTML 内容
-        let html_content = Self::generate_html_page(&front_matter, &html);
-
-        // 写入 HTML 文件
-        fs::write(html_path, html_content)?;
-
-        Ok(())
-    }
-
-    /// 生成 HTML 页面
-    fn generate_html_page(front_matter: &Option<crate::markdown::parser::FrontMatter>, content: &str) -> String {
-        let default_title = String::from("Untitled");
-        let title = front_matter.as_ref().and_then(|fm| fm.title.as_ref()).unwrap_or(&default_title);
-
-        format!(
-            r#"
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{}</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }}
-        h1, h2, h3, h4, h5, h6 {{
-            color: #2c3e50;
-        }}
-        code {{
-            background: #f4f4f4;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }}
-        pre {{
-            background: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }}
-        pre code {{
-            background: none;
-            padding: 0;
-        }}
-        blockquote {{
-            border-left: 4px solid #3498db;
-            padding-left: 16px;
-            margin: 16px 0;
-            color: #666;
-        }}
-    </style>
-</head>
-<body>
-    <header>
-        <h1>{}</h1>
-    </header>
-    <main>
-        {}
-    </main>
-</body>
-</html>
-"#,
-            title, title, content
-        )
     }
 }

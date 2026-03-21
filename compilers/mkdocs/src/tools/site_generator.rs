@@ -1,13 +1,15 @@
 //! 站点生成模块
 //! 提供静态站点生成的核心功能
 
-use crate::theme::{
-    DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink, ThemeNavItem,
-    ThemeSidebarGroup, ThemeSidebarLink,
+use crate::{
+    Result,
+    tools::theme::{
+        DefaultTheme, PageContext,
+        default_theme::{ThemeNavItem, ThemeSidebarGroup, ThemeSidebarLink},
+    },
+    types::MkDocsConfig,
 };
-use crate::Result;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::types::MkDocsConfig;
 
 /// 静态站点生成器
 pub struct StaticSiteGenerator {
@@ -63,13 +65,7 @@ impl StaticSiteGenerator {
 
             let nav_items = Self::generate_nav_items(&self.config);
 
-            let html_content = self.render_page_for_file(
-                content,
-                path,
-                &nav_items,
-                &sidebar_groups,
-                html_path.clone(),
-            )?;
+            let html_content = self.render_page_for_file(content, path, &nav_items, &sidebar_groups, html_path.clone())?;
 
             fs::write(&output_path, html_content)?;
         }
@@ -83,11 +79,13 @@ impl StaticSiteGenerator {
             let line = line.trim();
             if line.starts_with("# ") {
                 return line[2..].trim().to_string();
-            } else if line.starts_with("title:") {
+            }
+            else if line.starts_with("title:") {
                 let title_part = line[6..].trim();
                 let title = if title_part.starts_with('"') || title_part.starts_with('\'') {
                     &title_part[1..title_part.len() - 1]
-                } else {
+                }
+                else {
                     title_part
                 };
                 return title.to_string();
@@ -102,20 +100,18 @@ impl StaticSiteGenerator {
     fn generate_nav_items(config: &MkDocsConfig) -> Vec<ThemeNavItem> {
         let mut nav_items = Vec::new();
 
-        if let Some(nav) = &config.nav {
-            for item in nav {
-                match item {
-                    crate::types::NavItem::String(text) => {
-                        nav_items.push(ThemeNavItem { text: text.clone(), link: "#".to_string() });
-                    }
-                    crate::types::NavItem::Map(map) => {
-                        for (key, value) in map {
-                            let link = match value {
-                                crate::types::NavValue::String(s) => s.clone(),
-                                crate::types::NavValue::List(_) => "#".to_string(),
-                            };
-                            nav_items.push(ThemeNavItem { text: key.clone(), link: link.replace(".md", ".html") });
-                        }
+        for item in &config.nav {
+            match item {
+                crate::types::NavItem::String(text) => {
+                    nav_items.push(ThemeNavItem { text: text.clone(), link: "#".to_string() });
+                }
+                crate::types::NavItem::Map(map) => {
+                    for (key, value) in map {
+                        let link = match value {
+                            crate::types::NavValue::String(s) => s.clone(),
+                            crate::types::NavValue::List(_) => "#".to_string(),
+                        };
+                        nav_items.push(ThemeNavItem { text: key.clone(), link: link.replace(".md", ".html") });
                     }
                 }
             }
@@ -179,7 +175,8 @@ impl StaticSiteGenerator {
                 in_code_block = !in_code_block;
                 if in_code_block {
                     html.push_str("<pre><code>");
-                } else {
+                }
+                else {
                     html.push_str("</code></pre>\n");
                 }
                 continue;
@@ -198,15 +195,20 @@ impl StaticSiteGenerator {
 
             if line.starts_with("# ") {
                 html.push_str(&format!("<h1>{}</h1>\n", &line[2..]));
-            } else if line.starts_with("## ") {
+            }
+            else if line.starts_with("## ") {
                 html.push_str(&format!("<h2>{}</h2>\n", &line[3..]));
-            } else if line.starts_with("### ") {
+            }
+            else if line.starts_with("### ") {
                 html.push_str(&format!("<h3>{}</h3>\n", &line[4..]));
-            } else if line.starts_with("- ") || line.starts_with("* ") {
+            }
+            else if line.starts_with("- ") || line.starts_with("* ") {
                 html.push_str(&format!("<li>{}</li>\n", &line[2..]));
-            } else if line.starts_with("> ") {
+            }
+            else if line.starts_with("> ") {
                 html.push_str(&format!("<blockquote>{}</blockquote>\n", &line[2..]));
-            } else {
+            }
+            else {
                 html.push_str(&format!("<p>{}</p>\n", line));
             }
         }
@@ -217,11 +219,7 @@ impl StaticSiteGenerator {
 
 /// HTML 转义
 fn html_escape(s: &str) -> String {
-    s.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("'", "&#39;")
+    s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
 }
 
 /// 配置加载器

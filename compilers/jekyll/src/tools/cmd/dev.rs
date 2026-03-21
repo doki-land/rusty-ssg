@@ -103,7 +103,7 @@ impl DevCommand {
     ///
     /// 返回成功或错误结果
     async fn build_site(source_dir: &PathBuf, _output_dir: &PathBuf) -> Result<()> {
-        use crate::{tools::{site_generator::ConfigLoader}};
+        use crate::tools::site_generator::ConfigLoader;
 
         let config = ConfigLoader::load_from_dir(source_dir)?;
         // 模拟加载帖子

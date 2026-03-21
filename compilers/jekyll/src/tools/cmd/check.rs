@@ -4,7 +4,7 @@
 
 use crate::{
     CheckArgs,
-    tools::{site_generator::ConfigLoader},
+    tools::site_generator::ConfigLoader,
     types::{Result, VutexConfig},
 };
 use console::style;
@@ -63,8 +63,7 @@ impl CheckCommand {
             println!("  {} Checked 0 posts", style("✓").green());
 
             println!("  {} Checking content files...", style("→").blue());
-            let (content_errors, content_warnings) =
-                Self::check_content_files(&source_dir, args.drafts, args.detailed);
+            let (content_errors, content_warnings) = Self::check_content_files(&source_dir, args.drafts, args.detailed);
             total_errors += content_errors;
             total_warnings += content_warnings;
         }
@@ -186,11 +185,7 @@ impl CheckCommand {
     /// # Returns
     ///
     /// 返回 (错误数量, 警告数量)
-    fn check_content_files(
-        source_dir: &PathBuf,
-        include_drafts: bool,
-        detailed: bool,
-    ) -> (usize, usize) {
+    fn check_content_files(source_dir: &PathBuf, include_drafts: bool, detailed: bool) -> (usize, usize) {
         let mut errors = 0;
         let mut warnings = 0;
 

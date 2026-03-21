@@ -3,6 +3,8 @@
 //! 包含 MkDocs 配置文件的完整类型定义，用于解析和验证 mkdocs.yml 配置。
 
 use serde::{Deserialize, Serialize};
+use oak_yaml;
+use serde_json;
 use std::collections::HashMap;
 
 /// MkDocs 主配置
@@ -48,7 +50,7 @@ pub struct MkDocsConfig {
     pub plugins: Vec<PluginConfig>,
     /// 额外配置
     #[serde(default)]
-    pub extra: HashMap<String, serde_yaml::Value>,
+    pub extra: HashMap<String, serde_json::Value>,
     /// 额外的 CSS 文件
     #[serde(default)]
     pub extra_css: Vec<String>,
@@ -90,8 +92,8 @@ pub struct ThemeConfig {
     #[serde(default)]
     pub icon: Option<IconConfig>,
     /// 其他主题选项
-    #[serde(flatten)]
-    pub options: HashMap<String, serde_yaml::Value>,
+    #[serde(default)]
+    pub options: HashMap<String, serde_json::Value>,
 }
 
 fn default_theme_name() -> String {
@@ -201,8 +203,8 @@ pub struct PluginOptions {
     #[serde(default = "default_true")]
     pub enabled: bool,
     /// 其他插件选项
-    #[serde(flatten)]
-    pub options: HashMap<String, serde_yaml::Value>,
+    #[serde(default)]
+    pub options: HashMap<String, serde_json::Value>,
 }
 
 fn default_true() -> bool {
@@ -210,9 +212,14 @@ fn default_true() -> bool {
 }
 
 impl MkDocsConfig {
+    /// 创建默认配置
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// 从 YAML 字符串解析配置
     pub fn from_yaml(content: &str) -> Result<Self, crate::types::errors::MkDocsError> {
-        serde_yaml::from_str(content).map_err(|e| crate::types::errors::MkDocsError::ConfigParseError { source: e })
+        oak_yaml::language::from_str(content).map_err(|e| crate::types::errors::MkDocsError::ConfigParseError { message: e.to_string() })
     }
 
     /// 从文件加载配置
@@ -266,5 +273,99 @@ impl MkDocsConfig {
             });
         }
         Ok(())
+    }
+
+    /// 获取站点名称
+    pub fn site_name(&self) -> &str {
+        &self.site_name
+    }
+
+    /// 获取文档目录
+    pub fn docs_dir(&self) -> &str {
+        &self.docs_dir
+    }
+
+    /// 获取站点目录
+    pub fn site_dir(&self) -> &str {
+        &self.site_dir
+    }
+
+    /// 获取主题配置
+    pub fn theme(&self) -> &ThemeConfig {
+        &self.theme
+    }
+
+    /// 获取导航配置
+    pub fn nav(&self) -> &Vec<NavItem> {
+        &self.nav
+    }
+
+    /// 获取 Markdown 扩展配置
+    pub fn markdown_extensions(&self) -> &Vec<String> {
+        &self.markdown_extensions
+    }
+
+    /// 获取插件配置
+    pub fn plugins(&self) -> &Vec<PluginConfig> {
+        &self.plugins
+    }
+
+    /// 获取额外配置
+    pub fn extra(&self) -> &HashMap<String, serde_json::Value> {
+        &self.extra
+    }
+
+    /// 获取额外的 CSS 文件
+    pub fn extra_css(&self) -> &Vec<String> {
+        &self.extra_css
+    }
+
+    /// 获取额外的 JavaScript 文件
+    pub fn extra_javascript(&self) -> &Vec<String> {
+        &self.extra_javascript
+    }
+}
+
+impl ThemeConfig {
+    /// 创建默认主题配置
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// 获取主题名称
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// 获取主题语言
+    pub fn language(&self) -> &str {
+        &self.language
+    }
+
+    /// 获取主题特性
+    pub fn features(&self) -> &Vec<String> {
+        &self.features
+    }
+
+    /// 获取其他主题选项
+    pub fn options(&self) -> &HashMap<String, serde_json::Value> {
+        &self.options
+    }
+}
+
+impl PluginOptions {
+    /// 创建默认插件选项
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// 获取插件是否启用
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// 获取其他插件选项
+    pub fn options(&self) -> &HashMap<String, serde_json::Value> {
+        &self.options
     }
 }

@@ -2,7 +2,7 @@
 
 use crate::{BuildArgs, types::Result};
 use console::style;
-use std::{fs, path::PathBuf, fs::File, io::Write};
+use std::{fs, fs::File, io::Write, path::PathBuf};
 use walkdir::WalkDir;
 
 /// Build 命令
@@ -60,7 +60,7 @@ impl BuildCommand {
         }
 
         println!("  {} Compiling and generating static site...", style("→").blue());
-        
+
         // 处理页面组件
         if src_pages_dir.exists() {
             for entry in WalkDir::new(&src_pages_dir).into_iter().filter_map(|e| e.ok()) {
@@ -76,23 +76,24 @@ impl BuildCommand {
                 }
             }
         }
-        
+
         // 复制静态资源
         let static_dir = source_dir.join("static");
         if static_dir.exists() {
             let static_out_dir = output_dir.join("static");
             fs::create_dir_all(&static_out_dir)?;
-            
+
             for entry in WalkDir::new(&static_dir).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
                 if path.is_file() {
-                    let relative_path = path.strip_prefix(&static_dir).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                    let relative_path =
+                        path.strip_prefix(&static_dir).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
                     let dest_path = static_out_dir.join(relative_path);
-                    
+
                     if let Some(parent) = dest_path.parent() {
                         fs::create_dir_all(parent)?;
                     }
-                    
+
                     fs::copy(path, dest_path)?;
                 }
             }
@@ -103,14 +104,15 @@ impl BuildCommand {
 
         Ok(())
     }
-    
+
     /// 处理页面组件
     fn process_page(page_path: &PathBuf, output_dir: &PathBuf) -> Result<()> {
         // 读取页面内容
         let content = fs::read_to_string(page_path)?;
-        
+
         // 生成 HTML 内容
-        let html_content = format!(r#"
+        let html_content = format!(
+            r#"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,21 +133,26 @@ impl BuildCommand {
     </div>
 </body>
 </html>
-"#, page_path.display(), content);
-        
+"#,
+            page_path.display(),
+            content
+        );
+
         // 生成输出文件路径
-        let relative_path = page_path.strip_prefix(&page_path.parent().unwrap()).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let relative_path = page_path
+            .strip_prefix(&page_path.parent().unwrap())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         let output_file_path = output_dir.join(relative_path).with_extension("html");
-        
+
         // 创建输出目录
         if let Some(parent) = output_file_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        
+
         // 写入输出文件
         let mut file = File::create(output_file_path)?;
         file.write_all(html_content.as_bytes())?;
-        
+
         Ok(())
     }
 }

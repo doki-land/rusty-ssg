@@ -1,19 +1,13 @@
 //! 编译器模块
 //! 提供 VuTeX 文档编译器的核心功能
 
-use crate::types::{
-    HugoConfig, Result,
-    ipc::{InvokePluginRequest, PluginContext},
-};
+use crate::types::{HugoConfig, Result};
 use nargo_document::generator::markdown::MarkdownRenderer;
 use nargo_parser::parse_document;
 use nargo_types::Document;
-use std::{
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use std::{collections::HashMap, time::Instant};
 
-mod html_renderer;
+mod renderer;
 
 /// Hugo 模板引擎模块
 pub mod hugo_template;
@@ -26,14 +20,11 @@ pub use hugo_template::{
 /// 短代码系统模块
 pub mod shortcodes;
 
-use crate::{
-    compiler::shortcodes::{ShortcodeContext, ShortcodeParser, ShortcodeRegistry, parser::TextFragment},
-    plugin_host::PluginHost,
-};
+use crate::compiler::shortcodes::{ShortcodeContext, ShortcodeParser, ShortcodeRegistry, parser::TextFragment};
 
 /// VuTeX 文档编译器
 ///
-/// 负责将 Markdown 文档编译为 VuTeX 文档格式，支持通过 Node.js 混合执行模式调用插件
+/// 负责将 Markdown 文档编译为 VuTeX 文档格式
 pub struct VutexCompiler {
     /// 编译器配置
     config: HugoConfig,
@@ -41,25 +32,22 @@ pub struct VutexCompiler {
     markdown_renderer: MarkdownRenderer,
     /// 编译缓存
     cache: HashMap<String, Document>,
-    /// 插件宿主（可选）
-    plugin_host: Option<PluginHost>,
     /// 短代码注册表
     shortcode_registry: ShortcodeRegistry,
 }
 
 impl VutexCompiler {
-    /// 创建新的编译器（无插件支持，降级模式）
+    /// 创建新的编译器
     pub fn new() -> Self {
         Self {
             config: HugoConfig::new(),
             markdown_renderer: MarkdownRenderer::new(),
             cache: HashMap::new(),
-            plugin_host: None,
             shortcode_registry: ShortcodeRegistry::default(),
         }
     }
 
-    /// 创建带配置的编译器（无插件支持，降级模式）
+    /// 创建带配置的编译器
     ///
     /// # Arguments
     ///
@@ -69,38 +57,6 @@ impl VutexCompiler {
             config,
             markdown_renderer: MarkdownRenderer::new(),
             cache: HashMap::new(),
-            plugin_host: None,
-            shortcode_registry: ShortcodeRegistry::default(),
-        }
-    }
-
-    /// 创建带 PluginHost 的编译器（支持 Node.js 混合执行模式）
-    ///
-    /// # Arguments
-    ///
-    /// * `plugin_host` - 插件宿主实例
-    pub fn with_plugin_host(plugin_host: PluginHost) -> Self {
-        Self {
-            config: HugoConfig::new(),
-            markdown_renderer: MarkdownRenderer::new(),
-            cache: HashMap::new(),
-            plugin_host: Some(plugin_host),
-            shortcode_registry: ShortcodeRegistry::default(),
-        }
-    }
-
-    /// 创建带配置和 PluginHost 的编译器（支持 Node.js 混合执行模式）
-    ///
-    /// # Arguments
-    ///
-    /// * `config` - 编译器配置
-    /// * `plugin_host` - 插件宿主实例
-    pub fn with_config_and_plugin_host(config: HugoConfig, plugin_host: PluginHost) -> Self {
-        Self {
-            config,
-            markdown_renderer: MarkdownRenderer::new(),
-            cache: HashMap::new(),
-            plugin_host: Some(plugin_host),
             shortcode_registry: ShortcodeRegistry::default(),
         }
     }
@@ -125,59 +81,6 @@ impl VutexCompiler {
         &mut self.config
     }
 
-    /// 获取插件宿主的可变引用
-    pub fn plugin_host_mut(&mut self) -> Option<&mut PluginHost> {
-        self.plugin_host.as_mut()
-    }
-
-    /// 获取插件宿主的不可变引用
-    pub fn plugin_host(&self) -> Option<&PluginHost> {
-        self.plugin_host.as_ref()
-    }
-
-    /// 设置插件宿主
-    ///
-    /// # Arguments
-    ///
-    /// * `plugin_host` - 插件宿主实例
-    pub fn set_plugin_host(&mut self, plugin_host: PluginHost) {
-        self.plugin_host = Some(plugin_host);
-    }
-
-    /// 移除插件宿主，进入降级模式
-    pub fn remove_plugin_host(&mut self) {
-        self.plugin_host = None;
-    }
-
-    /// 将 frontmatter 转换为 HashMap<String, String>
-    ///
-    /// # Arguments
-    ///
-    /// * `doc` - 文档对象
-    fn convert_frontmatter_to_map(&self, doc: &Document) -> HashMap<String, String> {
-        let mut map = HashMap::new();
-
-        if let Some(title) = &doc.frontmatter.title {
-            map.insert("title".to_string(), title.clone());
-        }
-
-        if let Some(description) = &doc.frontmatter.description {
-            map.insert("description".to_string(), description.clone());
-        }
-
-        if let Some(layout) = &doc.frontmatter.layout {
-            map.insert("layout".to_string(), layout.clone());
-        }
-
-        for (key, value) in &doc.frontmatter.custom {
-            if let nargo_types::NargoValue::String(s) = value {
-                map.insert(key.clone(), s.clone());
-            }
-        }
-
-        map
-    }
-
     /// 编译单个文档
     ///
     /// # Arguments
@@ -194,15 +97,8 @@ impl VutexCompiler {
         }
 
         let mut doc = parse_document(source, path)?;
-        let frontmatter_map = self.convert_frontmatter_to_map(&doc);
 
         let mut content = doc.content.clone();
-
-        if let Some(ref mut plugin_host) = self.plugin_host {
-            let context = PluginContext::new(content.clone(), frontmatter_map.clone(), path.to_string());
-
-            content = Self::invoke_hook(plugin_host, "before_render", context)?;
-        }
 
         content = self.process_shortcodes(&content, path)?;
 
@@ -211,15 +107,8 @@ impl VutexCompiler {
             .markdown_renderer
             .render(&doc.content)
             .map_err(|e| crate::types::VutexError::ConfigError { message: format!("Markdown render error: {:?}", e) })?;
-        let mut final_html = rendered_html;
 
-        if let Some(ref mut plugin_host) = self.plugin_host {
-            let context = PluginContext::new(final_html.clone(), frontmatter_map, path.to_string());
-
-            final_html = Self::invoke_hook(plugin_host, "after_render", context)?;
-        }
-
-        doc.rendered_content = Some(final_html);
+        doc.rendered_content = Some(rendered_html);
         self.cache.insert(path.to_string(), doc.clone());
 
         Ok(doc)
@@ -261,31 +150,6 @@ impl VutexCompiler {
         }
 
         Ok(result)
-    }
-
-    /// 调用插件钩子
-    ///
-    /// # Arguments
-    ///
-    /// * `plugin_host` - 插件宿主实例
-    /// * `hook_name` - 钩子名称
-    /// * `context` - 插件调用上下文
-    fn invoke_hook(plugin_host: &mut PluginHost, hook_name: &str, context: PluginContext) -> Result<String> {
-        let request = InvokePluginRequest::new(hook_name.to_string(), "*".to_string(), context);
-
-        let timeout = Duration::from_secs(30);
-        let response = plugin_host
-            .invoke_plugin(request, timeout)
-            .map_err(|e| crate::types::VutexError::ConfigError { message: format!("{:?}", e) })?;
-
-        if response.success {
-            Ok(response.content.unwrap_or_default())
-        }
-        else {
-            Err(crate::types::VutexError::ConfigError {
-                message: response.error.unwrap_or_else(|| "Unknown plugin error".to_string()),
-            })
-        }
     }
 
     /// 批量编译文档

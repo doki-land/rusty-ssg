@@ -3,9 +3,10 @@
 use mkdocs::{
     compile_batch, compile_single,
     compiler::HtmlRenderer,
-    types::{CompileResult, MkDocsConfig},
+    CompileResult, types::MkDocsConfig,
 };
 use std::collections::HashMap;
+use oak_yaml;
 
 #[test]
 fn test_full_workflow() {
@@ -15,11 +16,11 @@ site_description: A comprehensive test
 "#;
 
     let config = MkDocsConfig::from_yaml(yaml_config).unwrap();
-    assert_eq!(config.site_name, "Test Workflow Site");
+    assert_eq!(config.site_name(), "Test Workflow Site");
 
     let renderer = HtmlRenderer::new();
 
-    let markdown = "# ".to_string() + &config.site_name + "\n\n" + &config.site_description.clone().unwrap_or_default();
+    let markdown = "# ".to_string() + &config.site_name() + "\n\n" + &config.site_description.clone().unwrap_or_default();
     let html = renderer.render(&markdown);
     assert!(!html.is_empty());
 }
@@ -63,7 +64,7 @@ fn test_batch_with_real_example() {
 
     for (path, doc) in &result.documents {
         assert!(doc.content.len() > 0);
-        assert_eq!(doc.path, *path);
+        assert_eq!(doc.meta.path, *path);
     }
 }
 
@@ -83,7 +84,7 @@ fn test_config_serde_roundtrip() {
         ..Default::default()
     };
 
-    let yaml = serde_yaml::to_string(&original).unwrap();
+    let yaml = oak_yaml::language::to_string(&original).unwrap();
     let parsed = MkDocsConfig::from_yaml(&yaml).unwrap();
 
     assert_eq!(original.site_name, parsed.site_name);

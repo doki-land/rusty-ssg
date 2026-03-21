@@ -55,55 +55,56 @@ extra:
 
     let config = MkDocsConfig::from_yaml(yaml_content).unwrap();
 
-    assert_eq!(config.site_name, "Test Site");
+    assert_eq!(config.site_name(), "Test Site");
     assert_eq!(config.site_description, Some("A test documentation site".to_string()));
     assert_eq!(config.site_author, Some("Test Author".to_string()));
     assert_eq!(config.site_url, Some("https://example.com".to_string()));
     assert_eq!(config.repo_url, Some("https://github.com/example/test".to_string()));
     assert_eq!(config.repo_name, Some("example/test".to_string()));
     assert_eq!(config.copyright, Some("Copyright © 2024 Test".to_string()));
-    assert_eq!(config.docs_dir, "docs");
-    assert_eq!(config.site_dir, "site");
+    assert_eq!(config.docs_dir(), "docs");
+    assert_eq!(config.site_dir(), "site");
 
-    assert_eq!(config.theme.name, "material");
-    assert_eq!(config.theme.language, "zh");
-    assert_eq!(config.theme.features, vec!["navigation.tabs", "navigation.sections"]);
+    assert_eq!(config.theme().name(), "material");
+    assert_eq!(config.theme().language(), "zh");
+    assert_eq!(config.theme().features(), &vec!["navigation.tabs".to_string(), "navigation.sections".to_string()]);
 
-    assert!(config.theme.palette.is_some());
-    let palette = config.theme.palette.as_ref().unwrap();
+    let theme = config.theme();
+    assert!(theme.palette.is_some());
+    let palette = theme.palette.as_ref().unwrap();
     assert_eq!(palette.primary, Some("indigo".to_string()));
     assert_eq!(palette.accent, Some("amber".to_string()));
     assert_eq!(palette.scheme, Some("default".to_string()));
 
-    assert_eq!(config.markdown_extensions.len(), 3);
-    assert_eq!(config.plugins.len(), 2);
+    assert_eq!(config.markdown_extensions().len(), 3);
+    assert_eq!(config.plugins().len(), 2);
 }
 
 #[test]
 fn test_default_config() {
     let config = MkDocsConfig::default();
 
-    assert_eq!(config.site_name, "");
+    assert_eq!(config.site_name(), "");
     assert_eq!(config.site_description, None);
     assert_eq!(config.site_author, None);
     assert_eq!(config.site_url, None);
     assert_eq!(config.repo_url, None);
     assert_eq!(config.repo_name, None);
     assert_eq!(config.copyright, None);
-    assert_eq!(config.docs_dir, "docs");
-    assert_eq!(config.site_dir, "site");
+    assert_eq!(config.docs_dir(), "docs");
+    assert_eq!(config.site_dir(), "site");
 
-    assert_eq!(config.theme.name, "material");
-    assert_eq!(config.theme.language, "en");
-    assert!(config.theme.features.is_empty());
-    assert!(config.theme.palette.is_none());
+    assert_eq!(config.theme().name(), "material");
+    assert_eq!(config.theme().language(), "en");
+    assert!(config.theme().features().is_empty());
+    assert!(config.theme().palette.is_none());
 
-    assert!(config.nav.is_empty());
-    assert!(config.markdown_extensions.is_empty());
-    assert!(config.plugins.is_empty());
-    assert!(config.extra.is_empty());
-    assert!(config.extra_css.is_empty());
-    assert!(config.extra_javascript.is_empty());
+    assert!(config.nav().is_empty());
+    assert!(config.markdown_extensions().is_empty());
+    assert!(config.plugins().is_empty());
+    assert!(config.extra().is_empty());
+    assert!(config.extra_css().is_empty());
+    assert!(config.extra_javascript().is_empty());
 }
 
 #[test]
@@ -122,7 +123,7 @@ site_name: Minimal Site
 "#;
 
     let config = MkDocsConfig::from_yaml(yaml_content).unwrap();
-    assert_eq!(config.site_name, "Minimal Site");
+    assert_eq!(config.site_name(), "Minimal Site");
     assert!(config.validate().is_ok());
 }
 
@@ -138,6 +139,6 @@ site_description: Testing file loading
     let temp_path = temp_file.path().to_path_buf();
 
     let config = MkDocsConfig::load_from_file(&temp_path).unwrap();
-    assert_eq!(config.site_name, "File Test Site");
+    assert_eq!(config.site_name(), "File Test Site");
     assert_eq!(config.site_description, Some("Testing file loading".to_string()));
 }

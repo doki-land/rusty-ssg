@@ -5,10 +5,7 @@
 pub mod compiler;
 /// 插件模块
 pub mod plugin;
-/// 插件主机模块
-pub mod plugin_host;
-/// 编译会话模块
-pub mod session;
+
 /// 工具模块
 pub mod tools;
 /// 类型定义模块
@@ -28,8 +25,6 @@ pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginCon
 pub use compiler::VutexCompiler;
 pub use nargo_parser::{DocumentMeta, FrontMatter, FrontMatterParser, MarkdownParser, parse_document, parse_frontmatter};
 pub use nargo_types::Document;
-pub use plugin_host::{PluginHost, PluginHostError};
-pub use session::CompileSession;
 
 pub use tools::{
     BuildArgs, CheckArgs, Commands, HugoCli, HugoCommands, InitArgs, NewArgs, VutexCli, cmd, site_generator,

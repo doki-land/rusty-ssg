@@ -12,8 +12,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-mod html_renderer;
-pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
+mod renderer;
+pub use renderer::html_renderer::{HtmlRenderer, HtmlRendererConfig};
 
 pub use crate::plugin_host::PluginHost;
 

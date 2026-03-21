@@ -47,6 +47,7 @@ harness = false
 [features]
 default = ["dev"]
 dev = ["notify"]
+serde = []
 
 [[bin]]
 name = "vuepress"

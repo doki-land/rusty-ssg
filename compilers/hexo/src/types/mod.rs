@@ -223,12 +223,6 @@ impl From<serde_json::Error> for HexoError {
     }
 }
 
-impl From<toml::de::Error> for HexoError {
-    fn from(e: toml::de::Error) -> Self {
-        HexoError::toml_error(None, e.to_string())
-    }
-}
-
 impl From<walkdir::Error> for HexoError {
     fn from(e: walkdir::Error) -> Self {
         HexoError::io_error(None, e.to_string())

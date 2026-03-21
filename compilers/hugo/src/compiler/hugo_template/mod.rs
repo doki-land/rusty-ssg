@@ -3,15 +3,13 @@
 
 use std::{collections::HashMap, error::Error, fmt, path::Path};
 
-use handlebars::Handlebars;
+use nargo_template::{TemplateEngine, TemplateManager};
 use serde_json::Value;
 
 pub mod context;
-pub mod functions;
 pub mod resolver;
 
 pub use context::{HugoPage, HugoSite, HugoTemplateContext, LanguageConfig, PageParams, SiteParams};
-pub use functions::register_hugo_functions;
 pub use resolver::{TemplateResolver, TemplateResolverError};
 
 /// Hugo 模板引擎错误类型
@@ -103,8 +101,8 @@ impl From<std::io::Error> for HugoTemplateError {
 pub struct HugoTemplateEngine {
     /// 模板解析器
     resolver: TemplateResolver,
-    /// Handlebars 模板引擎实例
-    handlebars: Handlebars<'static>,
+    /// 模板管理器
+    template_manager: TemplateManager,
     /// 站点配置
     site: HugoSite,
 }
@@ -118,12 +116,9 @@ impl HugoTemplateEngine {
     /// * `site` - 站点配置
     pub fn new(root_dir: impl AsRef<Path>, site: HugoSite) -> Result<Self, HugoTemplateError> {
         let resolver = TemplateResolver::new(root_dir);
-        let mut handlebars = Handlebars::new();
+        let template_manager = TemplateManager::new();
 
-        register_hugo_functions(&mut handlebars);
-        handlebars.set_strict_mode(false);
-
-        Ok(Self { resolver, handlebars, site })
+        Ok(Self { resolver, template_manager, site })
     }
 
     /// 设置主题
@@ -143,8 +138,8 @@ impl HugoTemplateEngine {
     /// * `template_name` - 模板名称（如 "baseof.html" 或 "partials/header.html"）
     pub fn load_template(&mut self, template_name: &str) -> Result<(), HugoTemplateError> {
         let (name, content) = self.resolver.resolve_template(template_name)?;
-        self.handlebars
-            .register_template_string(&name, content)
+        self.template_manager
+            .register_template(TemplateEngine::Liquid, &name, &content)
             .map_err(|e| HugoTemplateError::ParseError { message: e.to_string() })?;
         Ok(())
     }
@@ -168,8 +163,8 @@ impl HugoTemplateEngine {
     /// * `name` - 模板名称
     /// * `content` - 模板内容
     pub fn add_template(&mut self, name: &str, content: &str) -> Result<(), HugoTemplateError> {
-        self.handlebars
-            .register_template_string(name, content)
+        self.template_manager
+            .register_template(TemplateEngine::Liquid, name, content)
             .map_err(|e| HugoTemplateError::ParseError { message: e.to_string() })?;
         Ok(())
     }
@@ -189,8 +184,8 @@ impl HugoTemplateEngine {
         let json_value =
             serde_json::to_value(context).map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })?;
 
-        self.handlebars
-            .render(template_name, &json_value)
+        self.template_manager
+            .render(TemplateEngine::Liquid, template_name, &json_value)
             .map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })
     }
 
@@ -214,13 +209,5 @@ impl HugoTemplateEngine {
         &mut self.resolver
     }
 
-    /// 获取 Handlebars 模板引擎的引用
-    pub fn handlebars(&self) -> &Handlebars<'static> {
-        &self.handlebars
-    }
 
-    /// 获取可变的 Handlebars 模板引擎引用
-    pub fn handlebars_mut(&mut self) -> &mut Handlebars<'static> {
-        &mut self.handlebars
-    }
 }

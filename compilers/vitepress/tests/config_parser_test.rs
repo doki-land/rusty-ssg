@@ -2,7 +2,7 @@
 
 use serde_json;
 use tempfile::NamedTempFile;
-use toml;
+use oak_toml as toml;
 use vutex::config::{ConfigParser, VuePressConfig};
 
 #[test]

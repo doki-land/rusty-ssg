@@ -2,7 +2,6 @@
 //! 提供完整的文档站点主题和样式
 
 use crate::{Result, types::VutexConfig};
-use askama::Template;
 use nargo_template::{TemplateEngine, TemplateManager, ToJsonValue};
 use serde_json::json;
 use std::collections::HashMap;
@@ -93,8 +92,7 @@ impl ToJsonValue for NavItem {
 }
 
 /// 页面模板上下文
-#[derive(Debug, Clone, Template)]
-#[template(path = "page.html")]
+#[derive(Debug, Clone)]
 pub struct PageContext {
     /// 页面标题
     pub page_title: String,
@@ -158,9 +156,9 @@ pub struct DefaultTheme {
 }
 
 impl DefaultTheme {
-    /// 创建新的默认主题实例（使用 Askama 引擎）
+    /// 创建新的默认主题实例（使用 Dejavu 引擎）
     pub fn new(config: VutexConfig) -> Result<Self> {
-        Self::with_engine(config, TemplateEngineType::Askama)
+        Self::with_engine(config, TemplateEngineType::Dejavu)
     }
 
     /// 创建指定模板引擎的默认主题实例
@@ -176,16 +174,9 @@ impl DefaultTheme {
     pub fn with_engine(config: VutexConfig, engine_type: TemplateEngineType) -> Result<Self> {
         let mut template_manager = TemplateManager::new();
 
-        // 注册模板
-        match engine_type {
-            TemplateEngineType::Askama => {
-                // Askama 使用内置模板，不需要注册
-            }
-            TemplateEngineType::Dejavu => {
-                let template_content = include_str!("../templates/page.dejavu");
-                template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
-            }
-        }
+        // 注册 Dejavu 模板
+        let template_content = include_str!("../templates/page.dejavu");
+        template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
 
         Ok(Self { config, engine_type, template_manager })
     }
@@ -200,20 +191,11 @@ impl DefaultTheme {
     ///
     /// 渲染后的 HTML 字符串
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
-        match self.engine_type {
-            TemplateEngineType::Askama => {
-                // 使用 Askama 内置渲染
-                context
-                    .render()
-                    .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
-            }
-            TemplateEngineType::Dejavu => {
-                let json_context = context.to_json_value();
-                self.template_manager
-                    .render(TemplateEngine::DejaVu, "page", &json_context)
-                    .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
-            }
-        }
+        // 使用 Dejavu 渲染
+        let json_context = context.to_json_value();
+        self.template_manager
+            .render(TemplateEngine::DejaVu, "page", &json_context)
+            .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
     }
 
     /// 获取站点标题

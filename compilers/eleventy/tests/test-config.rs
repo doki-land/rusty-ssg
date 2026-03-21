@@ -18,7 +18,7 @@ fn main() {
             println!("Error loading config: {:?}", e);
         }
     }
-    
+
     // 测试默认配置
     let default_config = Config::default();
     println!("\nDefault config:");

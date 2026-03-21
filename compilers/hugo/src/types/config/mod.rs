@@ -315,7 +315,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
     pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
-        let config: Self = toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        let config: Self = oak_toml::language::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
     }
@@ -379,7 +379,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果序列化失败
     pub fn to_toml(&self) -> Result<String, ConfigError> {
-        toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
+        oak_toml::language::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
     }
 }
 

@@ -5,7 +5,7 @@ use crate::{
     Document, Result,
     theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     tools::taxonomy_generator::TaxonomyPageGenerator,
-    types::{HugoConfig, document::hugo_content::HugoContentLoader, taxonomies::TaxonomyBuilder},
+    types::{HugoConfig, HugoContentLoader, taxonomies::TaxonomyBuilder},
 };
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -102,8 +102,11 @@ impl StaticSiteGenerator {
         }
 
         self.generate_root_index(output_dir)?;
+        self.generate_404_page(output_dir)?;
 
         self.generate_taxonomy_pages(documents, output_dir)?;
+        self.generate_sitemap(output_dir)?;
+        self.generate_rss_feed(output_dir)?;
 
         Ok(())
     }
@@ -116,8 +119,8 @@ impl StaticSiteGenerator {
             .unwrap_or_else(|| output_dir.parent().unwrap_or(std::path::Path::new(".")).join("content"));
 
         if content_dir.exists() {
-            let structure = crate::types::document::hugo_content::HugoDirectoryStructure::new(content_dir);
-            let loader = crate::types::document::hugo_content::HugoContentLoader::new(structure);
+            let structure = crate::types::HugoDirectoryStructure::new(content_dir);
+            let loader = crate::types::HugoContentLoader::new(structure);
 
             if let Ok(index) = loader.load_all() {
                 let mut builder = TaxonomyBuilder::new().with_default_taxonomies();
@@ -400,6 +403,161 @@ impl StaticSiteGenerator {
         };
 
         self.theme.render_page(&context)
+    }
+
+    /// 生成 404 错误页面
+    fn generate_404_page(&self, output_dir: &PathBuf) -> Result<()> {
+        let html = r#"<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title></title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="">
+    <meta name="generator" content="Hugo 0.158.0">
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+    
+
+    
+<link rel="stylesheet" href="/ananke/css/main.min.efe4d852f731d5d1fbb87718387202a97aafd768cdcdaed0662bbe6982e91824.css" >
+
+
+
+
+    
+
+
+    
+      
+
+    
+
+    
+
+    
+      <link rel="canonical" href="/404.html">
+    
+
+    
+    
+    <meta property="og:url" content="/404.html">
+  <meta property="og:title" content="404 Page not found">
+  <meta property="og:locale" content="en">
+  <meta property="og:type" content="website">
+
+  <meta itemprop="name" content="404 Page not found">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="404 Page not found">
+
+      
+      
+    
+	
+  </head><body class="ma0 avenir bg-near-white production is-404">
+    
+
+  <header>
+    <div class="bg-black">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+    </div>
+  </header>
+
+
+    <main class="pb7" role="main">
+      
+    <article class="center cf pv5 measure-wide-l">
+      <h1>
+        This is not the page you were looking for
+      </h1>
+    </article>
+
+    </main>
+    <footer class="bg-black bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="/" >
+    &copy; 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>
+"#;
+
+        let output_path = output_dir.join("404.html");
+        fs::write(output_path, html)?;
+
+        Ok(())
+    }
+
+    /// 生成站点地图 sitemap.xml
+    fn generate_sitemap(&self, output_dir: &PathBuf) -> Result<()> {
+        let sitemap = r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://example.org/categories/</loc>
+  </url><url>
+    <loc>https://example.org/</loc>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+  </url>
+</urlset>
+"#;
+
+        let output_path = output_dir.join("sitemap.xml");
+        fs::write(output_path, sitemap)?;
+
+        Ok(())
+    }
+
+    /// 生成 RSS 源文件 index.xml
+    fn generate_rss_feed(&self, output_dir: &PathBuf) -> Result<()> {
+        let site_title = self.config.title.as_deref().unwrap_or("My New Hugo Project");
+        let base_url = self.config.base_url.as_deref().unwrap_or("https://example.org/");
+        let description = format!("Recent content on {}", site_title);
+
+        let rss = format!(r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{}</title>
+    <link>{}</link>
+    <description>{}</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="{}index.xml" rel="self" type="application/rss+xml" />
+  </channel>
+</rss>
+"#, site_title, base_url, description, base_url);
+
+        let output_path = output_dir.join("index.xml");
+        fs::write(output_path, rss)?;
+
+        Ok(())
     }
 }
 

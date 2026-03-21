@@ -525,7 +525,7 @@ impl FrontMatterParser {
         let remaining_content = content[end_marker + 3..].to_string();
 
         let frontmatter: HugoFrontMatter =
-            toml::from_str(toml_content).map_err(|e| HugoContentError::toml_parse_error(e.to_string()))?;
+            oak_toml::language::from_str(toml_content).map_err(|e| HugoContentError::toml_parse_error(e.to_string()))?;
 
         Ok((frontmatter, remaining_content, FrontMatterFormat::Toml))
     }

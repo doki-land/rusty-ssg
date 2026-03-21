@@ -7,8 +7,8 @@ use std::{
 };
 use walkdir::WalkDir;
 
-pub mod html_renderer;
-pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
+pub mod renderer;
+pub use renderer::html_renderer::{HtmlRenderer, HtmlRendererConfig};
 
 /// MkDocs 编译器
 ///

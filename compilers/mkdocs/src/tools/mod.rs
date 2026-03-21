@@ -11,20 +11,13 @@ pub mod theme;
 
 pub use crate::{
     MkDocsCompiler,
-    types::{MkDocsConfig, Result, MkDocsError},
+    types::{MkDocsConfig, MkDocsError, Result},
 };
 pub use site_generator::{ConfigLoader, StaticSiteGenerator};
 pub use template::UnifiedTemplateManager;
 pub use theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink};
 
-pub use cmd::{
-    BuildCommand,
-    CheckCommand,
-    InitCommand,
-    NewCommand,
-    ServeCommand,
-    VersionCommand,
-};
+pub use cmd::{BuildCommand, CheckCommand, InitCommand, NewCommand, ServeCommand, VersionCommand};
 
 /// MkDocs 兼容 CLI 主命令
 #[derive(Parser, Debug)]

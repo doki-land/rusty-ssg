@@ -1,7 +1,6 @@
-use crate::jekyll::defaults::{DefaultsManager, DefaultConfig, FrontMatter, Scope};
-use serde_json::{json, Map};
-use std::collections::HashMap;
-use std::path::Path;
+use crate::jekyll::defaults::{DefaultConfig, DefaultsManager, FrontMatter, Scope};
+use serde_json::{Map, json};
+use std::{collections::HashMap, path::Path};
 
 #[test]
 fn test_scope_from_map() {
@@ -36,7 +35,8 @@ fn test_scope_matches_collection() {
 fn test_apply_defaults() {
     let mut manager = DefaultsManager::new();
 
-    let values = HashMap::from_iter(vec![("layout".to_string(), json!("default")), ("author".to_string(), json!("Test Author"))]);
+    let values =
+        HashMap::from_iter(vec![("layout".to_string(), json!("default")), ("author".to_string(), json!("Test Author"))]);
 
     manager.add_default(DefaultConfig::new(Scope::new(), values));
 
@@ -56,7 +56,8 @@ fn test_apply_defaults_no_override() {
 
     manager.add_default(DefaultConfig::new(Scope::new(), values));
 
-    let mut front_matter = FrontMatter::new(String::new(), HashMap::from_iter(vec![("layout".to_string(), json!("custom"))]), String::new());
+    let mut front_matter =
+        FrontMatter::new(String::new(), HashMap::from_iter(vec![("layout".to_string(), json!("custom"))]), String::new());
 
     manager.apply_defaults(Path::new("test.md"), None, &mut front_matter);
 

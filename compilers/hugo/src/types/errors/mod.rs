@@ -88,12 +88,6 @@ impl From<serde_json::Error> for VutexError {
     }
 }
 
-impl From<toml::de::Error> for VutexError {
-    fn from(e: toml::de::Error) -> Self {
-        VutexError::ConfigError { message: e.to_string() }
-    }
-}
-
 impl From<crate::config::ConfigError> for VutexError {
     fn from(e: crate::config::ConfigError) -> Self {
         VutexError::ConfigError { message: e.to_string() }

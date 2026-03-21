@@ -13,13 +13,9 @@ impl InitCommand {
         println!("{}", style("Initializing MkDocs project...").cyan());
 
         let target_dir = args.directory.unwrap_or_else(|| PathBuf::from("."));
-        let project_name = args.name.unwrap_or_else(|| {
-            target_dir
-                .file_name()
-                .and_then(|s| s.to_str())
-                .unwrap_or("mkdocs-project")
-                .to_string()
-        });
+        let project_name = args
+            .name
+            .unwrap_or_else(|| target_dir.file_name().and_then(|s| s.to_str()).unwrap_or("mkdocs-project").to_string());
 
         println!("  Project name: {}", project_name);
         println!("  Target directory: {}", target_dir.display());
@@ -43,7 +39,8 @@ theme:
             );
             fs::write(&mkdocs_yml_path, mkdocs_yml_content)?;
             println!("  {} Created mkdocs.yml", style("✓").green());
-        } else {
+        }
+        else {
             println!("  {} mkdocs.yml already exists", style("⚠").yellow());
         }
 
@@ -64,7 +61,8 @@ This is your new MkDocs project.
             );
             fs::write(&index_md_path, index_md_content)?;
             println!("  {} Created docs/index.md", style("✓").green());
-        } else {
+        }
+        else {
             println!("  {} docs/index.md already exists", style("⚠").yellow());
         }
 

@@ -1,25 +1,24 @@
 //! 命令行工具模块
 
+use crate::{
+    compiler::template_engine::{SimpleTemplateEngine, TemplateEngineFactory},
+    config::Config,
+    types::Cli,
+};
 use clap::Parser;
-use std::path::Path;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
+use std::{fs, fs::File, io::Write, path::Path};
 use walkdir::WalkDir;
-use crate::config::Config;
-use crate::types::Cli;
-use crate::compiler::template_engine::{TemplateEngineFactory, SimpleTemplateEngine};
 
 /// 运行命令行工具
 pub fn run() {
     let cli = Cli::parse();
-    
+
     // 处理版本信息
     if cli.version {
         println!("Eleventy v0.0.0");
         return;
     }
-    
+
     // 处理帮助信息
     if cli.help {
         println!("Eleventy static site generator");
@@ -47,7 +46,7 @@ pub fn run() {
         println!("  version          Show version information");
         return;
     }
-    
+
     // 加载配置
     let mut config = match Config::from_file(&cli.config) {
         Ok(config) => config,
@@ -57,7 +56,7 @@ pub fn run() {
             Config::default()
         }
     };
-    
+
     // 只有当命令行显式指定了输入或输出目录时，才覆盖配置文件中的值
     if let Some(input) = cli.input {
         config.input_dir = input;
@@ -65,7 +64,7 @@ pub fn run() {
     if let Some(output) = cli.output {
         config.output_dir = output;
     }
-    
+
     // 处理命令
     match cli.command {
         Some(crate::types::Command::Build { input, output, verbose }) => {
@@ -77,7 +76,7 @@ pub fn run() {
             if let Some(output) = output {
                 build_config.output_dir = output;
             }
-            
+
             println!("Building site...");
             println!("Input: {}", build_config.input_dir);
             println!("Output: {}", build_config.output_dir);
@@ -88,7 +87,7 @@ pub fn run() {
             println!("Dryrun: {:?}", cli.dryrun);
             println!("To: {:?}", cli.to);
             println!("Incremental: {:?}", cli.incremental);
-            
+
             // 执行构建
             if let Err(err) = execute_build(&build_config, verbose) {
                 eprintln!("Build failed: {:?}", err);
@@ -103,7 +102,7 @@ pub fn run() {
             if let Some(output) = output {
                 serve_config.output_dir = output;
             }
-            
+
             let server_port = port.unwrap_or(cli.port);
             println!("Starting dev server on port {}", server_port);
             println!("Input: {}", serve_config.input_dir);
@@ -114,7 +113,7 @@ pub fn run() {
             println!("Quiet: {:?}", cli.quiet);
             println!("Incremental: {:?}", cli.incremental);
             println!("Ignore initial: {:?}", cli.ignore_initial);
-            
+
             // 简单的服务器实现
             println!("Server system not implemented yet");
         }
@@ -127,7 +126,7 @@ pub fn run() {
             if let Some(output) = output {
                 watch_config.output_dir = output;
             }
-            
+
             println!("Watching files...");
             println!("Input: {}", watch_config.input_dir);
             println!("Output: {}", watch_config.output_dir);
@@ -178,10 +177,11 @@ pub fn run() {
                 println!("Quiet: {:?}", cli.quiet);
                 println!("Incremental: {:?}", cli.incremental);
                 println!("Ignore initial: {:?}", cli.ignore_initial);
-                
+
                 // 简单的服务器实现
                 println!("Server system not implemented yet");
-            } else if cli.watch {
+            }
+            else if cli.watch {
                 println!("Watching files...");
                 println!("Input: {}", config.input_dir);
                 println!("Output: {}", config.output_dir);
@@ -191,7 +191,8 @@ pub fn run() {
                 println!("Incremental: {:?}", cli.incremental);
                 println!("Ignore initial: {:?}", cli.ignore_initial);
                 // 监视实现
-            } else {
+            }
+            else {
                 // 默认执行构建
                 println!("Building site...");
                 println!("Input: {}", config.input_dir);
@@ -202,7 +203,7 @@ pub fn run() {
                 println!("Dryrun: {:?}", cli.dryrun);
                 println!("To: {:?}", cli.to);
                 println!("Incremental: {:?}", cli.incremental);
-                
+
                 // 执行构建
                 if let Err(err) = execute_build(&config, false) {
                     eprintln!("Build failed: {:?}", err);
@@ -219,20 +220,20 @@ fn execute_build(config: &Config, verbose: bool) -> Result<(), Box<dyn std::erro
     engine_factory.register_engine("liquid", Box::new(SimpleTemplateEngine::new()));
     engine_factory.register_engine("njk", Box::new(SimpleTemplateEngine::new()));
     engine_factory.register_engine("md", Box::new(SimpleTemplateEngine::new()));
-    
+
     // 2. 处理文件
     println!("🔍 Finding and processing files...");
     let input_path = Path::new(&config.input_dir);
     if !input_path.exists() {
         return Err(Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, "Input directory not found")));
     }
-    
+
     // 3. 创建输出目录
     let output_path = Path::new(&config.output_dir);
     if !output_path.exists() {
         fs::create_dir_all(output_path)?;
     }
-    
+
     // 4. 处理所有模板文件
     for entry in WalkDir::new(input_path).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
@@ -242,7 +243,7 @@ fn execute_build(config: &Config, verbose: bool) -> Result<(), Box<dyn std::erro
                 if matches!(ext_str, "liquid" | "njk" | "md" | "html") {
                     // 读取文件内容
                     let content = fs::read_to_string(path)?;
-                    
+
                     // 准备渲染数据
                     let data = serde_json::json!({
                         "site": {
@@ -254,30 +255,30 @@ fn execute_build(config: &Config, verbose: bool) -> Result<(), Box<dyn std::erro
                             "url": "/"
                         }
                     });
-                    
+
                     // 渲染模板
                     let engine_name = match ext_str {
                         "liquid" => "liquid",
                         "njk" => "njk",
                         "md" => "md",
-                        _ => "liquid"
+                        _ => "liquid",
                     };
-                    
+
                     let rendered = engine_factory.render(engine_name, &content, &data)?;
-                    
+
                     // 生成输出文件路径
                     let relative_path = path.strip_prefix(input_path)?;
                     let output_file_path = output_path.join(relative_path).with_extension("html");
-                    
+
                     // 创建输出目录
                     if let Some(parent) = output_file_path.parent() {
                         fs::create_dir_all(parent)?;
                     }
-                    
+
                     // 写入输出文件
                     let mut file = File::create(output_file_path)?;
                     file.write_all(rendered.as_bytes())?;
-                    
+
                     if verbose {
                         println!("Processed: {}", path.display());
                     }
@@ -285,28 +286,28 @@ fn execute_build(config: &Config, verbose: bool) -> Result<(), Box<dyn std::erro
             }
         }
     }
-    
+
     // 5. 复制静态资源
     let static_dir = input_path.join("_static");
     if static_dir.exists() {
         let static_out_dir = output_path.join("static");
         fs::create_dir_all(&static_out_dir)?;
-        
+
         for entry in WalkDir::new(&static_dir).into_iter().filter_map(|e| e.ok()) {
             let path = entry.path();
             if path.is_file() {
                 let relative_path = path.strip_prefix(&static_dir)?;
                 let dest_path = static_out_dir.join(relative_path);
-                
+
                 if let Some(parent) = dest_path.parent() {
                     fs::create_dir_all(parent)?;
                 }
-                
+
                 fs::copy(path, dest_path)?;
             }
         }
     }
-    
+
     println!("✅ Build completed successfully!");
     Ok(())
 }

@@ -4,7 +4,7 @@
 
 use crate::{
     BuildArgs,
-    tools::{site_generator::ConfigLoader},
+    tools::site_generator::ConfigLoader,
     types::{Result, VutexConfig},
 };
 use console::style;

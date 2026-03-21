@@ -13,5 +13,6 @@ pub use nargo_types::{
 };
 
 pub use config::{ConfigError, ConfigValidation, HugoConfig};
+pub use document::*;
 pub use errors::{Result, VutexError};
 pub use ipc::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};

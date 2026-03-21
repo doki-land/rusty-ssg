@@ -1,15 +1,10 @@
 //! 编译器模块
 //! 提供 VuTeX 文档编译器的核心功能
 
-use crate::types::{
-    Result, VutexConfig,
-};
+use crate::types::{Result, VutexConfig};
 use nargo_parser::parse_document;
 use nargo_types::Document;
-use std::{
-    collections::HashMap,
-    time::Instant,
-};
+use std::{collections::HashMap, time::Instant};
 
 mod renderer {
     pub mod html_renderer;

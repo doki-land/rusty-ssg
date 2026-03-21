@@ -327,7 +327,7 @@ impl GatsbyConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果序列化失败
     pub fn to_toml(&self) -> std::result::Result<String, ConfigError> {
-        toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
+        oak_toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
     }
 
     /// 创建新的 Gatsby 配置
