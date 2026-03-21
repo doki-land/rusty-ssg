@@ -301,7 +301,6 @@ impl ComponentRegistry {
     pub fn iter(&self) -> impl Iterator<Item = (&String, &Component)> {
         self.components.iter()
     }
-
 }
 
 impl Default for ComponentRegistry {

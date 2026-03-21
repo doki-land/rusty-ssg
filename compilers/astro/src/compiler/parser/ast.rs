@@ -90,45 +90,31 @@ impl AstNode {
 
     /// 创建变量插值节点
     pub fn interpolation(expression: &str, interpolation_type: InterpolationType) -> Self {
-        AstNode::Interpolation {
-            expression: expression.to_string(),
-            interpolation_type,
-        }
+        AstNode::Interpolation { expression: expression.to_string(), interpolation_type }
     }
 
     /// 创建指令节点
     pub fn directive(directive_type: DirectiveType, arguments: Vec<String>, content: Option<Vec<AstNode>>) -> Self {
-        AstNode::Directive {
-            directive_type,
-            arguments,
-            content,
-        }
+        AstNode::Directive { directive_type, arguments, content }
     }
 
     /// 创建组件标签节点
-    pub fn component(name: &str, attributes: HashMap<String, String>, content: Option<Vec<AstNode>>, self_closing: bool) -> Self {
-        AstNode::Component {
-            name: name.to_string(),
-            attributes,
-            content,
-            self_closing,
-        }
+    pub fn component(
+        name: &str,
+        attributes: HashMap<String, String>,
+        content: Option<Vec<AstNode>>,
+        self_closing: bool,
+    ) -> Self {
+        AstNode::Component { name: name.to_string(), attributes, content, self_closing }
     }
 
     /// 创建布局组件节点
     pub fn layout(name: &str, attributes: HashMap<String, String>, content: Vec<AstNode>) -> Self {
-        AstNode::Layout {
-            name: name.to_string(),
-            attributes,
-            content,
-        }
+        AstNode::Layout { name: name.to_string(), attributes, content }
     }
 
     /// 创建插槽节点
     pub fn slot(name: Option<&str>, content: Vec<AstNode>) -> Self {
-        AstNode::Slot {
-            name: name.map(|s| s.to_string()),
-            content,
-        }
+        AstNode::Slot { name: name.map(|s| s.to_string()), content }
     }
 }

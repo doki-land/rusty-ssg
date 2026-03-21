@@ -101,8 +101,7 @@ impl BuildCommand {
     }
 
     /// 复制静态资源
-    fn copy_static_assets(source_dir: &PathBuf, output_dir: &PathBuf) -> Result<()>
-    {
+    fn copy_static_assets(source_dir: &PathBuf, output_dir: &PathBuf) -> Result<()> {
         // 复制主题静态资源
         let themes_dir = source_dir.join("themes");
         if themes_dir.exists() {
@@ -114,7 +113,7 @@ impl BuildCommand {
                 if ananke_images_dir.exists() {
                     let output_images_dir = output_dir.join("images");
                     fs::create_dir_all(&output_images_dir)?;
-                    
+
                     for entry in WalkDir::new(ananke_images_dir) {
                         let entry = entry?;
                         let path = entry.path();
@@ -133,7 +132,7 @@ impl BuildCommand {
                     let output_css_dir = output_dir.join("ananke").join("css");
                     fs::create_dir_all(&output_css_dir)?;
                     println!("  Created output CSS directory: {}", output_css_dir.display());
-                    
+
                     // 读取所有 CSS 文件内容
                     let mut css_content = String::new();
                     for entry in WalkDir::new(ananke_css_dir) {
@@ -146,33 +145,34 @@ impl BuildCommand {
                             css_content.push_str("\n");
                         }
                     }
-                    
+
                     // 生成简单的 minified CSS（实际项目中应该使用专业的 CSS 压缩库）
-                    let minified_css = css_content
-                        .replace("\n", "")
-                        .replace("\t", "")
-                        .replace("  ", "");
-                    
+                    let minified_css = css_content.replace("\n", "").replace("\t", "").replace("  ", "");
+
                     // 生成哈希值
-                    use sha2::{Sha256, Digest};
+                    use sha2::{Digest, Sha256};
                     let mut hasher = Sha256::new();
                     hasher.update(minified_css.as_bytes());
                     let hash = hasher.finalize();
                     let hash_hex = format!("{:x}", hash);
-                    
+
                     // 写入 CSS 文件
                     let css_file_name = format!("main.min.{}.css", hash_hex);
                     let output_path = output_css_dir.join(css_file_name);
                     println!("  Writing CSS file: {}", output_path.display());
                     fs::write(output_path, minified_css)?;
-                    
+
                     // 写入 map 文件（简化版）
                     let map_file_name = "main.css.map";
-                    let map_content = format!("{{\"version\":3,\"sources\":[],\"names\":[],\"mappings\":\"\",\"file\":\"main.min.{}.css\"}}", hash_hex);
+                    let map_content = format!(
+                        "{{\"version\":3,\"sources\":[],\"names\":[],\"mappings\":\"\",\"file\":\"main.min.{}.css\"}}",
+                        hash_hex
+                    );
                     let map_output_path = output_css_dir.join(map_file_name);
                     println!("  Writing map file: {}", map_output_path.display());
                     fs::write(map_output_path, map_content)?;
-                } else {
+                }
+                else {
                     println!("  CSS source directory does not exist: {}", ananke_css_dir.display());
                     // 检查是否存在官方构建的 CSS 文件，如果存在则复制（作为后备）
                     let official_css_dir = source_dir.join("public-official").join("ananke").join("css");
@@ -181,7 +181,7 @@ impl BuildCommand {
                         println!("  Official CSS directory exists, copying files");
                         let output_css_dir = output_dir.join("ananke").join("css");
                         fs::create_dir_all(&output_css_dir)?;
-                        
+
                         for entry in WalkDir::new(official_css_dir) {
                             let entry = entry?;
                             let path = entry.path();
@@ -192,7 +192,8 @@ impl BuildCommand {
                                 fs::copy(path, output_path)?;
                             }
                         }
-                    } else {
+                    }
+                    else {
                         println!("  Official CSS directory does not exist: {}", official_css_dir.display());
                     }
                 }

@@ -1,13 +1,11 @@
 //! 命令行工具模块
 
-use std::path::Path;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
+use crate::compiler::{
+    component::ComponentParser,
+    renderer::html_renderer::{Context, HtmlRenderer},
+};
+use std::{fs, fs::File, io::Write, path::Path};
 use walkdir::WalkDir;
-use crate::compiler::component::ComponentParser;
-use crate::compiler::renderer::html_renderer::HtmlRenderer;
-use crate::compiler::renderer::html_renderer::Context;
 
 /// 构建命令
 ///
@@ -25,15 +23,15 @@ pub fn build(path: &str, outdir: &str) {
 
     // 1. 读取项目配置
     println!("📦 Loading project configuration...");
-    
+
     // 2. 处理文件
     println!("🔍 Finding and processing files...");
     let component_parser = process_files(project_path);
-    
+
     // 3. 生成静态文件
     println!("✨ Generating static files...");
     generate_static_files(&component_parser, project_path, outdir);
-    
+
     // 4. 输出到指定目录
     println!("✅ Build completed successfully!");
 }
@@ -41,7 +39,7 @@ pub fn build(path: &str, outdir: &str) {
 /// 处理项目文件
 fn process_files(project_path: &Path) -> ComponentParser {
     let mut parser = ComponentParser::new();
-    
+
     // 查找所有组件文件
     let src_dir = project_path.join("src");
     if src_dir.exists() {
@@ -59,7 +57,7 @@ fn process_files(project_path: &Path) -> ComponentParser {
             }
         }
     }
-    
+
     parser
 }
 
@@ -73,45 +71,47 @@ fn generate_static_files(parser: &ComponentParser, project_path: &Path, outdir: 
             return;
         }
     }
-    
+
     // 渲染组件
     let renderer = HtmlRenderer::new();
     let context = Context::new();
-    
+
     // 为每个注册的组件生成静态文件
     let registry = parser.registry();
     for (name, component) in registry.iter() {
         let rendered = component.render(&context);
-        
+
         // 生成 HTML 文件
         let html_path = out_path.join(format!("{}.html", name));
         if let Ok(mut file) = File::create(&html_path) {
             if let Err(err) = file.write_all(rendered.as_bytes()) {
                 eprintln!("Error writing file {}: {}", html_path.display(), err);
-            } else {
+            }
+            else {
                 println!("Generated: {}", html_path.display());
             }
         }
     }
-    
+
     // 复制静态资源
     let public_dir = project_path.join("public");
     if public_dir.exists() {
         let public_out_dir = out_path.join("public");
         if let Err(err) = fs::create_dir_all(&public_out_dir) {
             eprintln!("Error creating public directory: {}", err);
-        } else {
+        }
+        else {
             for entry in WalkDir::new(&public_dir).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
                 if path.is_file() {
                     let relative_path = path.strip_prefix(&public_dir).unwrap();
                     let dest_path = public_out_dir.join(relative_path);
-                    
+
                     if let Err(err) = fs::create_dir_all(dest_path.parent().unwrap()) {
                         eprintln!("Error creating directory: {}", err);
                         continue;
                     }
-                    
+
                     if let Err(err) = fs::copy(path, dest_path) {
                         eprintln!("Error copying file: {}", err);
                     }

@@ -2,8 +2,8 @@
 //!
 //! 包含 MkDocs 配置文件的完整类型定义，用于解析和验证 mkdocs.yml 配置。
 
-use serde::{Deserialize, Serialize};
 use oak_yaml;
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 
@@ -219,7 +219,8 @@ impl MkDocsConfig {
 
     /// 从 YAML 字符串解析配置
     pub fn from_yaml(content: &str) -> Result<Self, crate::types::errors::MkDocsError> {
-        oak_yaml::language::from_str(content).map_err(|e| crate::types::errors::MkDocsError::ConfigParseError { message: e.to_string() })
+        oak_yaml::language::from_str(content)
+            .map_err(|e| crate::types::errors::MkDocsError::ConfigParseError { message: e.to_string() })
     }
 
     /// 从文件加载配置

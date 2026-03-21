@@ -1,12 +1,8 @@
 //! 综合测试
 
-use mkdocs::{
-    compile_batch, compile_single,
-    compiler::HtmlRenderer,
-    CompileResult, types::MkDocsConfig,
-};
-use std::collections::HashMap;
+use mkdocs::{CompileResult, compile_batch, compile_single, compiler::HtmlRenderer, types::MkDocsConfig};
 use oak_yaml;
+use std::collections::HashMap;
 
 #[test]
 fn test_full_workflow() {

@@ -2,9 +2,11 @@
 
 use std::collections::HashMap;
 
-use super::lexer::Lexer;
-use super::tokens::Token;
-use super::ast::{AstNode, DirectiveType};
+use super::{
+    ast::{AstNode, DirectiveType},
+    lexer::Lexer,
+    tokens::Token,
+};
 
 /// 语法分析器
 pub struct Parser {
@@ -19,10 +21,7 @@ impl Parser {
     pub fn new(input: &'static str) -> Self {
         let mut lexer = Lexer::new(input);
         let current_token = lexer.next_token();
-        Self {
-            lexer,
-            current_token,
-        }
+        Self { lexer, current_token }
     }
 
     /// 解析 Astro 模板，返回抽象语法树
@@ -221,7 +220,8 @@ impl Parser {
         let self_closing = if self.current_token == Token::TagClose {
             self.next_token();
             true
-        } else {
+        }
+        else {
             // 跳过 TagEnd
             self.next_token();
             false
@@ -246,7 +246,8 @@ impl Parser {
                 }
             }
             Some(content)
-        } else {
+        }
+        else {
             None
         };
 

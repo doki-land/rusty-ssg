@@ -1,9 +1,8 @@
 //! Astro 语法词法分析器
 
-use std::iter::Peekable;
-use std::str::Chars;
+use std::{iter::Peekable, str::Chars};
 
-use super::tokens::{Token, InterpolationType};
+use super::tokens::{InterpolationType, Token};
 
 /// 词法分析器
 pub struct Lexer {
@@ -18,11 +17,7 @@ pub struct Lexer {
 impl Lexer {
     /// 创建新的词法分析器
     pub fn new(input: &'static str) -> Self {
-        Self {
-            chars: input.chars().peekable(),
-            line: 1,
-            column: 1,
-        }
+        Self { chars: input.chars().peekable(), line: 1, column: 1 }
     }
 
     /// 词法分析，生成下一个 token
@@ -46,7 +41,8 @@ impl Lexer {
                     self.chars.next();
                     self.chars.next();
                     Token::DirectiveStart
-                } else {
+                }
+                else {
                     // 处理插值开始
                     let mut count = 1;
                     self.chars.next();
@@ -96,7 +92,8 @@ impl Lexer {
                     self.chars.next();
                     self.chars.next();
                     Token::DirectiveEnd
-                } else {
+                }
+                else {
                     self.chars.next();
                     Token::Text("%".to_string())
                 }
@@ -108,7 +105,8 @@ impl Lexer {
                     self.chars.next();
                     self.chars.next();
                     Token::TagEndStart
-                } else {
+                }
+                else {
                     self.chars.next();
                     Token::TagStart
                 }
@@ -124,7 +122,8 @@ impl Lexer {
                     self.chars.next();
                     self.chars.next();
                     Token::TagClose
-                } else {
+                }
+                else {
                     self.chars.next();
                     Token::Text("/".to_string())
                 }
@@ -147,7 +146,8 @@ impl Lexer {
                     if c.is_digit(10) || c == '.' {
                         num.push(c);
                         self.chars.next();
-                    } else {
+                    }
+                    else {
                         break;
                     }
                 }
@@ -160,7 +160,8 @@ impl Lexer {
                     if c.is_alphanumeric() || c == '_' || c == '-' {
                         id.push(c);
                         self.chars.next();
-                    } else {
+                    }
+                    else {
                         break;
                     }
                 }
@@ -245,11 +246,13 @@ impl Lexer {
                 if c == '\n' {
                     self.line += 1;
                     self.column = 1;
-                } else {
+                }
+                else {
                     self.column += 1;
                 }
                 self.chars.next();
-            } else {
+            }
+            else {
                 break;
             }
         }

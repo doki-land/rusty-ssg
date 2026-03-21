@@ -1,7 +1,7 @@
 //! 配置解析器测试
 
-use serde_json;
 use oak_toml as toml;
+use serde_json;
 use vutex::types::config::Config;
 
 #[test]

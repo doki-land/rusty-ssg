@@ -1,8 +1,8 @@
 //! 配置解析器测试
 
+use oak_toml as toml;
 use serde_json;
 use tempfile::NamedTempFile;
-use oak_toml as toml;
 use vutex::config::{ConfigParser, VuePressConfig};
 
 #[test]

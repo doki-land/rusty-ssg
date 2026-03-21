@@ -541,7 +541,8 @@ impl StaticSiteGenerator {
         let base_url = self.config.base_url.as_deref().unwrap_or("https://example.org/");
         let description = format!("Recent content on {}", site_title);
 
-        let rss = format!(r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+        let rss = format!(
+            r#"<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>{}</title>
@@ -552,7 +553,9 @@ impl StaticSiteGenerator {
     <atom:link href="{}index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
-"#, site_title, base_url, description, base_url);
+"#,
+            site_title, base_url, description, base_url
+        );
 
         let output_path = output_dir.join("index.xml");
         fs::write(output_path, rss)?;

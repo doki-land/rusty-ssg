@@ -5,3 +5,4 @@ packages:
   - 'themes/*'
   - 'documentation'
   - 'benchmarks'
+  - 'examples/*'

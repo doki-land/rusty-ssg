@@ -147,8 +147,8 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-cargo-
 
-            - name: Build rusty-ssg
-              run: cargo build
+            - name: Build rusty-ssg hugo
+              run: cargo build --package hugo
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -180,17 +180,14 @@ jobs:
             - name: Run Hugo consistency test for hugo-ananke
               run: |
                   cd examples/hugo-ananke
-                  pnpm install
                   pnpm test
 
             - name: Run Hugo consistency test for hugo-blowfish
               run: |
                   cd examples/hugo-blowfish
-                  pnpm install
                   pnpm test
 
             - name: Run Hugo consistency test for hugo-mvp
               run: |
                   cd examples/hugo-mvp
-                  pnpm install
                   pnpm test

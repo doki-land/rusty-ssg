@@ -30,8 +30,6 @@ impl HtmlRenderer {
         &self.component_registry
     }
 
-
-
     /// 渲染 Markdown 内容为 HTML
     pub fn render(&self, content: &str) -> String {
         // 执行插件预处理

@@ -208,6 +208,4 @@ impl HugoTemplateEngine {
     pub fn resolver_mut(&mut self) -> &mut TemplateResolver {
         &mut self.resolver
     }
-
-
 }

@@ -129,8 +129,6 @@ impl From<serde_json::Error> for MkDocsError {
     }
 }
 
-
-
 impl From<walkdir::Error> for MkDocsError {
     fn from(source: walkdir::Error) -> Self {
         use std::io::ErrorKind;
