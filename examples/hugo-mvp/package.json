@@ -1,0 +1,16 @@
+{
+    "name": "hugo-mvp",
+    "version": "1.0.0",
+    "description": "Hugo MVP Template",
+    "main": "index.js",
+    "scripts": {
+        "dev": "hugo server --minify -D -E -F",
+        "test": "vitest run"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "vitest": "^4.1.0"
+    }
+}

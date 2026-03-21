@@ -4,7 +4,8 @@
     "description": "Blowfish Template",
     "main": "index.js",
     "scripts": {
-        "dev": "hugo server --minify -D -E -F"
+        "dev": "hugo server --minify -D -E -F",
+        "test": "vitest run"
     },
     "repository": {
         "type": "git",
@@ -16,5 +17,8 @@
     "bugs": {
         "url": "https://github.com/nunocoracao/blowfish_template/issues"
     },
-    "homepage": "https://github.com/nunocoracao/blowfish_template#readme"
+    "homepage": "https://github.com/nunocoracao/blowfish_template#readme",
+    "devDependencies": {
+        "vitest": "^4.1.0"
+    }
 }
