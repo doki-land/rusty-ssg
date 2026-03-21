@@ -1,26 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "compilers/astro",
-    "compilers/eleventy",
-    "compilers/gatsby",
-    "compilers/hexo",
-    "compilers/hugo",
-    "compilers/jekyll",
-    "compilers/mkdocs",
-    "compilers/vitepress",
-    "compilers/vuepress",
+    "compilers/*",
 ]
 default-members = [
-    "compilers/astro",
-    "compilers/eleventy",
-    "compilers/gatsby",
-    "compilers/hexo",
-    "compilers/hugo",
-    "compilers/jekyll",
-    "compilers/mkdocs",
-    "compilers/vitepress",
-    "compilers/vuepress",
+    "compilers/*",
 ]
 
 [workspace.package]

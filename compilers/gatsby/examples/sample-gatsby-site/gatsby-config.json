@@ -1,11 +1,9 @@
 {
-  "siteMetadata": {
-    "title": "Sample Gatsby Site",
-    "description": "A sample Gatsby site built with Rust",
-    "author": "Your Name",
-    "siteUrl": "https://example.com"
-  },
-  "plugins": [
-    "gatsby-plugin-test"
-  ]
+    "siteMetadata": {
+        "title": "Sample Gatsby Site",
+        "description": "A sample Gatsby site built with Rust",
+        "author": "Your Name",
+        "siteUrl": "https://example.com"
+    },
+    "plugins": ["gatsby-plugin-test"]
 }
