@@ -36,8 +36,7 @@ futures = { version = "0.3.32" }
 dashmap = { version = "6.1.0" }
 lazy_static = "1.5.0"
 itertools = "0.14.0"
-notify = { version = "6.1.1", default-features = false, features = ["crossbeam-channel"] }
-crossterm = "0.29.0"
+
 unicode-width = "0.2.2"
 clap = { version = "4.5.60", features = ["derive"] }
 arcstr = { version = "1.2.0", features = ["serde"] }
@@ -55,8 +54,15 @@ tower-http = { version = "0.6.2", features = ["cors", "trace", "fs"] }
 semantic-id = { version = "0.0.0", features = ["serde"]}
 limbo = { version = "0.0.22", features = ["index_experimental"] }
 chrono = "0.4"
+
+
 console = "0.16.2"
 indicatif = "0.18.4"
+clap = { version = "4.5.60", features = ["derive"] }
+notify = { version = "6.1.1", default-features = false, features = ["crossbeam-channel"] }
+crossterm = "0.29.0"
+
+
 slug = "0.1.5"
 fs_extra = "1.3.0"
 mime_guess = "2.0.4"
@@ -65,20 +71,21 @@ csv = "1.3.10"
 # Hexo internal dependencies
 hexo = { path = "compilers/hexo" }
 
-# Oak parsers
-oak-core = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
-oak-toml = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
-oak-yaml = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
-oak-json = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
-oak-vfs = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
-oak-markdown = { version = "0.0.8", git = "https://github.com/ygg-lang/oaks.git", branch = "dev" }
 # Nargo compilers
-nargo-types = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
-nargo-parser = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
-nargo-template = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
-nargo-document = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-types = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
+nargo-parser = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
+nargo-template = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
+nargo-document = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
 # Wae server
 wae-https = { git = "https://github.com/oovm/wae.git", branch = "dev", version = "0.0.2" }
+
+# Oak parsers
+oak-core = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", version = "0.0.9" }
+oak-toml = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", version = "0.0.9" }
+oak-yaml = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", version = "0.0.9" }
+oak-json = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", version = "0.0.9" }
+oak-vfs = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", version = "0.0.9" }
+oak-markdown = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", version = "0.0.9" }
 
 [profile.release]
 panic = "abort"
