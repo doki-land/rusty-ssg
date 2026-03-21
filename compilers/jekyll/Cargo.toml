@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/jekyll"
 homepage.workspace = true
-description = "Rusty Jekyll 博客框架核心编译器"
+description = "Pure Rust implementation of Jekyll static site generator compiler"
 keywords = ["jekyll", "cli", "compiler", "markdown", "blog"]
 categories = ["command-line-utilities", "compilers"]
 

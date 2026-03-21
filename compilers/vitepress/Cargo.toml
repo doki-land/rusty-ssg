@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/vitepress"
 homepage.workspace = true
-description = "VuTeX 文档系统 - VuePress 兼容版本"
+description = "Pure Rust implementation of VuePress-compatible static site generator"
 keywords = ["vutex", "cli", "compiler", "markdown", "documentation", "vuepress"]
 categories = ["command-line-utilities", "compilers"]
 

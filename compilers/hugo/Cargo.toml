@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/hugo"
 homepage.workspace = true
-description = "Hugo 兼容的文档系统"
+description = "Pure Rust implementation of Hugo-compatible static site generator"
 keywords = ["hugo", "cli", "compiler", "markdown", "documentation"]
 categories = ["command-line-utilities", "compilers"]
 

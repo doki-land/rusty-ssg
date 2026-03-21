@@ -4,10 +4,10 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
-repository.workspace = true
+repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/vuepress"
 homepage.workspace = true
-description = "VuTeX 文档系统 - VuePress 兼容版本"
-keywords = ["vutex", "cli", "compiler", "markdown", "documentation", "vuepress"]
+description = "Pure Rust implementation of VuePress static site generator compiler"
+keywords = ["vuepress", "cli", "compiler", "markdown", "documentation", "rust"]
 categories = ["command-line-utilities", "compilers"]
 
 [dependencies]
