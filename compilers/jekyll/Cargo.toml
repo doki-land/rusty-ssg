@@ -4,7 +4,7 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
-repository.workspace = true
+repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/jekyll"
 homepage.workspace = true
 description = "Rusty Jekyll 博客框架核心编译器"
 keywords = ["jekyll", "cli", "compiler", "markdown", "blog"]
@@ -25,7 +25,6 @@ nargo-parser = { workspace = true }
 nargo-template = { workspace = true }
 nargo-document = { workspace = true }
 csv = { workspace = true }
-liquid = { workspace = true }
 
 
 regex = { workspace = true }

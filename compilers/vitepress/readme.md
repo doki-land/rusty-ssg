@@ -1,42 +1,37 @@
-# VuTeX - VitePress Compatible Static Site Generator
+# VitePress - Rust Reimplementation
 
-[![Crates.io](https://img.shields.io/crates/v/vutex.svg)](https://crates.io/crates/vutex)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/rusty-ssg/rusty-ssg/blob/main/LICENSE)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/rusty-ssg/rusty-ssg/ci.yml?branch=main)](https://github.com/rusty-ssg/rusty-ssg/actions)
+## Overview
 
-A blazingly fast, pure Rust implementation of a VitePress-compatible static site generator.
+VitePress is a fast, modern static site generator for documentation, now reimplemented in Rust for even better performance and reliability. It's designed to help you build beautiful, Vue-powered documentation sites with ease, using Markdown.
 
-## Features
-
-- **Pure Rust Implementation**: Built entirely in Rust for maximum performance and reliability
-- **VitePress Compatibility**: Compatible with VitePress configuration and markdown format
-- **Runtime-Free**: No JavaScript runtime required for compilation
-- **Exceptional Speed**: Leverages Rust's performance advantages for fast builds
-- **Extensible Plugin System**: Support for custom plugins
-- **Static Site Generation**: Generates fully static HTML sites
-- **Markdown Support**: Full support for Markdown with frontmatter
-- **Theme System**: Includes default theme with support for custom themes
+### 🎯 Key Features
+- 🚀 **Fast Builds**: Compile your site in seconds, not minutes
+- 🎨 **Vue-Powered**: Leverage Vue components in your documentation
+- 📦 **Easy Deployment**: Generate static files that work anywhere
+- 🔧 **Extensible**: Customize with plugins and themes
+- 🛠 **Developer Friendly**: Great tooling and developer experience
+- 📝 **Markdown Support**: Write content in Markdown with ease
+- 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
+- 📱 **100% Compatible**: Full compatibility when using static features
 
 ## Installation
+
+### From Crates.io
+
+```bash
+cargo install vitepress
+```
 
 ### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/rusty-ssg/rusty-ssg.git
+git clone https://github.com/doki-land/rusty-ssg.git
+
+# Build and install
 cd rusty-ssg/compilers/vitepress
-
-# Build the project
-cargo build --release
-
-# Run the binary
-./target/release/vitepress
-```
-
-### From Crates.io
-
-```bash
-cargo install vutex
+git checkout dev
+cargo install --path .
 ```
 
 ## Usage
@@ -48,29 +43,60 @@ vitepress init my-docs
 cd my-docs
 ```
 
-### Build the Site
-
-```bash
-vitepress build
-```
-
-### Serve the Site Locally
+### Develop Locally
 
 ```bash
 vitepress dev
 ```
 
-### Check for Errors
+This will start a local development server with hot reloading, so you can see your changes in real-time.
+
+### Build for Production
 
 ```bash
-vitepress check
+vitepress build
 ```
+
+This will generate optimized static files in the `.vitepress/dist` directory, ready for deployment.
+
+## Architecture
+
+VitePress follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:
+
+```mermaid
+flowchart TD
+    A[CLI] --> B[Config Loader]
+    B --> C[Content Scanner]
+    C --> D[Parser]
+    D --> E[Vue Renderer]
+    E --> F[Output Generator]
+    G[Plugins] --> E
+    H[Themes] --> E
+    I[nargo] --> E
+    J[oak] --> D
+    K[IPC] --> G
+```
+
+### Core Components
+
+- **CLI**: Command-line interface for interacting with the compiler
+- **Config Loader**: Reads and parses VitePress configuration files (TypeScript/JavaScript)
+- **Content Scanner**: Discovers and processes content files
+- **Parser**: Converts Markdown to HTML (uses oak)
+- **Vue Renderer**: Renders content using Vue components
+- **Output Generator**: Writes final static files
+- **Plugins**: Extend functionality with custom plugins (uses IPC mode)
+- **Themes**: Provide reusable templates and styles
+- **nargo**: External library with analysis engines and bundlers
+- **oak**: External library for parsing
+- **IPC**: Inter-process communication for plugin system
 
 ## Configuration
 
-VuTeX uses a `vitepress.config.ts` file for configuration, compatible with VitePress:
+Here's an example `vitepress.config.ts` file:
 
 ```typescript
+// vitepress.config.ts
 export default {
   title: 'My Documentation',
   description: 'A comprehensive guide to my project',
@@ -91,12 +117,14 @@ export default {
       ]
     }
   }
-}
+};
 ```
 
-## Markdown Syntax
+## Examples
 
-VuTeX supports standard Markdown syntax with frontmatter:
+### Example Documentation Page
+
+Here's an example of a documentation page in VitePress:
 
 ```markdown
 ---
@@ -124,130 +152,182 @@ Once installed, you can use it as follows:
 const myProject = require('my-project');
 myProject.initialize();
 ```
+
+## Vue Components in Markdown
+
+VitePress allows you to use Vue components directly in your Markdown files:
+
+```vue
+<template>
+  <div class="welcome">
+    <h2>Welcome to VitePress!</h2>
+    <p>This is a Vue component embedded in Markdown.</p>
+  </div>
+</template>
+
+<style scoped>
+.welcome {
+  padding: 2rem;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+}
+</style>
 ```
 
-## Performance
+## Why Use VitePress?
 
-VuTeX is designed for exceptional performance:
+- It's blazingly fast
+- It uses Vue for powerful component-based documentation
+- It has a clean, modern default theme
+- It's 100% compatible with static features
 
-- **Fast Compilation**: Rust's speed优势 enables rapid markdown processing
-- **Parallel Processing**: Leverages multiple cores for faster builds
-- **Efficient Caching**: Minimizes unnecessary re-compilations
-- **Low Memory Usage**: Optimized memory management
+Happy documenting! 🎉
+```
 
-## Plugin System
+### Example Theme Configuration
 
-VuTeX includes a flexible plugin system that allows you to extend functionality:
+Here's an example of a more complex theme configuration:
 
-```rust
-use vutex::plugin::Plugin;
+```typescript
+// vitepress.config.ts
+export default {
+  title: 'My Documentation',
+  description: 'A comprehensive guide to my project',
+  themeConfig: {
+    logo: '/logo.svg',
+    nav: [
+      { text: 'Home', link: '/' },
+      { text: 'Guide', link: '/guide/' },
+      { text: 'API', link: '/api/' },
+      { text: 'GitHub', link: 'https://github.com/rusty-ssg/vitepress' }
+    ],
+    sidebar: {
+      '/guide/': [
+        { 
+          text: 'Getting Started',
+          children: [
+            { text: 'Introduction', link: '/guide/' },
+            { text: 'Installation', link: '/guide/installation/' },
+            { text: 'Basic Usage', link: '/guide/basic-usage/' }
+          ]
+        },
+        { 
+          text: 'Advanced Topics',
+          children: [
+            { text: 'Customization', link: '/guide/customization/' },
+            { text: 'Plugins', link: '/guide/plugins/' }
+          ]
+        }
+      ],
+      '/api/': [
+        { text: 'Overview', link: '/api/' },
+        { text: 'Reference', link: '/api/reference/' }
+      ]
+    },
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/rusty-ssg/vitepress' },
+      { icon: 'twitter', link: 'https://twitter.com/rusty_ssg' }
+    ]
+  }
+};
+```
 
-struct MyPlugin;
+## Compatibility Note
 
-impl Plugin for MyPlugin {
-    fn name(&self) -> &str {
-        "my-plugin"
-    }
-    
-    fn process_markdown(&self, content: &str) -> String {
-        // Custom markdown processing
-        content.to_string()
-    }
+⚠️ **Important**: VitePress provides 100% compatibility only when using static features. Dynamic features may have limited support or require additional configuration.
+
+## Plugins
+
+VitePress supports a wide range of plugins to extend functionality (using IPC mode):
+
+- 🔍 **search**: Built-in search functionality
+- 📊 **katex**: Render mathematical formulas
+- 🎨 **prism**: Syntax highlighting for code blocks
+- 📈 **mermaid**: Render diagrams and flowcharts
+- 🗺️ **sitemap**: Generate sitemap.xml
+
+## Themes
+
+VitePress comes with a beautiful default theme that's highly customizable. You can also create your own themes:
+
+- 🎨 **default**: Modern, responsive theme (default)
+- 🌙 **dark**: Dark mode theme
+- 📦 **minimal**: Minimalist design
+- 📝 **docs**: Documentation-focused theme
+
+## Deployment
+
+VitePress generates static files that can be deployed anywhere:
+
+### Netlify
+
+```toml
+# netlify.toml
+[build]
+  command = "vitepress build"
+  publish = ".vitepress/dist"
+```
+
+### Vercel
+
+```json
+// vercel.json
+{
+  "buildCommand": "vitepress build",
+  "outputDirectory": ".vitepress/dist"
 }
 ```
 
-## Benchmarks
+### GitHub Pages
 
-| Feature | VuTeX (Rust) | VitePress (Node.js) | Improvement |
-|---------|-------------|---------------------|-------------|
-| Build Time (100 pages) | 0.8s | 3.2s | 4x faster |
-| Memory Usage | 45MB | 180MB | 75% less |
-| Startup Time | 0.1s | 0.8s | 8x faster |
-
-## API
-
-### Compile a Single Document
-
-```rust
-use vutex::compile_single;
-
-let source = "# Hello World";
-let path = "index.md";
-let document = compile_single(source, path).unwrap();
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+on: [push]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo install vitepress
+      - run: vitepress build
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./.vitepress/dist
 ```
 
-### Compile Multiple Documents
+## Contribution Guidelines
 
-```rust
-use vutex::compile_batch;
-use std::collections::HashMap;
+We welcome contributions to VitePress! 🤝
 
-let mut documents = HashMap::new();
-documents.insert("index.md".to_string(), "# Home".to_string());
-documents.insert("about.md".to_string(), "# About".to_string());
+### Reporting Issues
 
-let result = compile_batch(&documents);
-```
+If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/vitepress/issues).
 
-## Contributing
+### Pull Requests
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
 
-### Development Setup
+### Code Style
 
-```bash
-# Clone the repository
-git clone https://github.com/rusty-ssg/rusty-ssg.git
-cd rusty-ssg/compilers/vitepress
+Please follow the Rust style guide and use `cargo fmt` to format your code.
 
-# Install dependencies
-cargo build
+## Acknowledgements
 
-# Run tests
-cargo test
-
-# Run benchmarks
-cargo bench
-```
+VitePress is inspired by the original VitePress project and benefits from the Rust ecosystem, including the nargo and oak libraries.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/rusty-ssg/rusty-ssg/blob/main/LICENSE) file for details.
+VitePress is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.
 
-## Acknowledgments
+---
 
-- Inspired by [VitePress](https://vitepress.dev/)
-- Built with [Rust](https://www.rust-lang.org/)
-- Uses oak markdown for Markdown parsing
-- Uses [Askama](https://github.com/djc/askama) for template rendering
-
-## Comparison with VitePress
-
-| Feature | VuTeX | VitePress |
-|---------|-------|-----------|
-| Language | Rust | TypeScript |
-| Runtime | None | Node.js |
-| Build Speed | Very Fast | Fast |
-| Memory Usage | Low | Moderate |
-| Configuration | Compatible | Original |
-| Markdown Support | Full | Full |
-| Plugin System | Rust-based | JavaScript-based |
-| Theme Support | Yes | Yes |
-| Hot Reload | Yes (optional) | Yes |
-
-## Roadmap
-
-- [x] Basic Markdown compilation
-- [x] VitePress configuration compatibility
-- [x] Static site generation
-- [x] Theme support
-- [x] Plugin system
-- [x] Development server
-- [ ] Internationalization support
-- [ ] Advanced Markdown features
-- [ ] More theme options
-- [ ] Improved plugin API
-
-## Support
-
-If you encounter any issues or have questions, please open an issue on the [GitHub repository](https://github.com/rusty-ssg/rusty-ssg/issues).
+Happy documenting with VitePress! 🚀

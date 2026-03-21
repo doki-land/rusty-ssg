@@ -1,16 +1,18 @@
-# Astro - Rust Implementation
+# Astro - Rust Reimplementation
 
 ## Overview
 
-Astro is a blazingly fast static site generator, now implemented in Rust for even better performance and reliability. It's designed to help you build beautiful, modern websites with ease, combining the best of static site generation with the power of modern frameworks.
+Astro is a blazingly fast static site generator, now reimplemented in Rust for even better performance and reliability. It's designed to help you build beautiful, modern websites with ease, combining the best of static site generation with the power of modern frameworks.
 
-### Key Features
+### 🎯 Key Features
 - 🚀 **Fast Builds**: Compile your site in seconds, not minutes
-- 🎨 **Modern Templates**: Use Astro's unique component-based approach
+- 🎨 **Modern Templates**: Use Astro's unique component-based approach with .astro files
 - 📦 **Easy Deployment**: Generate static files that work anywhere
 - 🔧 **Extensible**: Customize with plugins and integrations
 - 🛠 **Developer Friendly**: Great tooling and developer experience
 - 🌐 **Framework Agnostic**: Use React, Vue, Svelte, or plain HTML
+- 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
+- 📱 **100% Compatible**: Full compatibility when using static features
 
 ## Installation
 
@@ -24,10 +26,11 @@ cargo install astro
 
 ```bash
 # Clone the repository
-git clone https://github.com/rusty-ssg/astro.git
+git clone https://github.com/doki-land/rusty-ssg.git
 
 # Build and install
-cd astro
+cd rusty-ssg/compilers/astro
+git checkout dev
 cargo install --path .
 ```
 
@@ -58,18 +61,20 @@ This will generate optimized static files in the `dist` directory, ready for dep
 
 ## Architecture
 
-Astro follows a modular architecture designed for performance and extensibility:
+Astro follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:
 
 ```mermaid
 flowchart TD
     A[CLI] --> B[Config Loader]
     B --> C[Content Scanner]
     C --> D[Parser]
-    D --> E[Component Renderer]
-    E --> F[HTML Generator]
+    D --> E[Renderer]
+    E --> F[Output Generator]
     G[Plugins] --> E
     H[Themes] --> E
-    I[Framework Integrations] --> E
+    I[nargo] --> E
+    J[oak] --> D
+    K[IPC] --> G
 ```
 
 ### Core Components
@@ -77,67 +82,50 @@ flowchart TD
 - **CLI**: Command-line interface for interacting with the compiler
 - **Config Loader**: Reads and parses Astro configuration files
 - **Content Scanner**: Discovers and processes content files
-- **Parser**: Converts Astro components and Markdown to intermediate representation
-- **Component Renderer**: Renders components to static HTML
-- **HTML Generator**: Writes final static files
-- **Plugins**: Extend functionality with custom plugins
+- **Parser**: Converts source files to intermediate representation (uses oak)
+- **Renderer**: Transforms intermediate representation to HTML
+- **Output Generator**: Writes final static files
+- **Plugins**: Extend functionality with custom plugins (uses IPC mode)
 - **Themes**: Provide reusable templates and styles
-- **Framework Integrations**: Support for React, Vue, Svelte, and more
-
-## Project Structure
-
-Here's an example project structure for an Astro site:
-
-```
-my-site/
-├── src/                # Source files
-│   ├── components/      # Astro components
-│   │   ├── Header.astro
-│   │   └── Footer.astro
-│   ├── layouts/         # Layout components
-│   │   └── Layout.astro
-│   ├── pages/           # Page files
-│   │   ├── index.astro
-│   │   ├── about.astro
-│   │   └── blog/
-│   │       ├── index.astro
-│   │       └── [slug].astro
-│   └── styles/          # CSS files
-│       └── global.css
-├── public/              # Static assets
-│   ├── images/
-│   └── favicon.ico
-├── astro.config.toml    # Configuration file
-└── package.json         # For npm dependencies
-```
+- **nargo**: External library with analysis engines and bundlers
+- **oak**: External library for parsing
+- **IPC**: Inter-process communication for plugin system
 
 ## Configuration
 
-Here's an example `astro.config.toml` file:
+Here's an example `astro.config.mjs` file:
 
-```toml
-# Site settings
-site = "https://example.com"
-title = "My Awesome Astro Site"
-description = "A description of my awesome Astro site"
+```javascript
+// astro.config.mjs
+import { defineConfig } from 'astro';
 
-# Build settings
-outDir = "dist"
-base = "/"
-
-# Theme settings
-theme = "@astrojs/theme-default"
-
-# Plugin settings
-[plugins]
-enabled = ["@astrojs/mdx", "@astrojs/tailwind"]
-
-# Markdown settings
-[markdown]
-extensions = ["md", "mdx"]
-shikiConfig = {
-  theme = "nord"
-}
+export default defineConfig({
+  // Site settings
+  site: 'https://example.com',
+  base: '/',
+  
+  // Build settings
+  output: 'static',
+  outDir: './dist',
+  
+  // Integrations
+  integrations: [
+    // Add integrations here
+  ],
+  
+  // Markdown settings
+  markdown: {
+    shikiConfig: {
+      theme: 'github-dark',
+    },
+  },
+  
+  // Server settings
+  server: {
+    port: 3000,
+    host: true,
+  },
+});
 ```
 
 ## Examples
@@ -149,12 +137,6 @@ Here's an example of an Astro component:
 ```astro
 ---
 // src/components/Header.astro
-import { Astro } from 'astro';
-
-export interface Props {
-  title: string;
-}
-
 const { title } = Astro.props;
 ---
 
@@ -207,47 +189,48 @@ Welcome to Astro! This is your first blog post.
 
 ## What is Astro?
 
-Astro is a fast, modern static site generator that lets you use components from your favorite frameworks like React, Vue, and Svelte.
+Astro is a fast, modern static site generator that lets you use your favorite JavaScript frameworks while generating fully static HTML.
 
 ## Why Use Astro?
 
 - It's blazingly fast
-- It supports multiple frameworks
-- It has a great developer experience
-- It generates fully static sites
+- It supports multiple frameworks (React, Vue, Svelte)
+- It has a unique component-based approach
+- It's 100% compatible with static features
 
 ## Next Steps
 
 1. Create more content
-2. Add components from your favorite framework
-3. Deploy your site
+2. Customize your components
+3. Add integrations
+4. Deploy your site
 
-Happy coding!
+Happy coding! 🎉
 ```
 
 ## Compatibility Note
 
-⚠️ **Important**: Astro provides 100% compatibility only when using static features. Dynamic features like client-side JavaScript may have limited support or require additional configuration.
+⚠️ **Important**: Astro provides 100% compatibility only when using static features. Dynamic features may have limited support or require additional configuration.
 
 ## Plugins
 
-Astro supports a wide range of plugins to extend functionality:
+Astro supports a wide range of plugins to extend functionality (using IPC mode):
 
-- **@astrojs/mdx**: Support for MDX files
-- **@astrojs/tailwind**: Integration with Tailwind CSS
-- **@astrojs/react**: React framework integration
-- **@astrojs/vue**: Vue framework integration
-- **@astrojs/svelte**: Svelte framework integration
-- **@astrojs/image**: Optimized image handling
+- 📊 **@astrojs/katex**: Render mathematical formulas
+- 🎨 **@astrojs/prism**: Syntax highlighting for code blocks
+- 📈 **@astrojs/mermaid**: Render diagrams and flowcharts
+- 🔍 **@astrojs/google-analytics**: Add Google Analytics tracking
+- 🗺️ **@astrojs/sitemap**: Generate sitemap.xml
+- 📱 **@astrojs/pwa**: Add PWA support
 
 ## Themes
 
 Choose from a variety of built-in themes or create your own:
 
-- **@astrojs/theme-default**: Clean, modern design
-- **@astrojs/theme-blog**: Blog-focused theme
-- **@astrojs/theme-docs**: Documentation-focused theme
-- **@astrojs/theme-minimal**: Minimalist design
+- 🎨 **default**: Clean, modern design
+- 🌙 **dark**: Dark mode theme
+- 📦 **minimal**: Minimalist design
+- 📝 **blog**: Blog-focused theme
 
 ## Deployment
 
@@ -296,11 +279,11 @@ jobs:
 
 ## Contribution Guidelines
 
-We welcome contributions to Astro!
+We welcome contributions to Astro! 🤝
 
 ### Reporting Issues
 
-If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/astro/issues).
+If you find a bug or have a feature request, please [open an issue](https://github.com/doki-land/rusty-ssg/issues).
 
 ### Pull Requests
 
@@ -314,13 +297,13 @@ If you find a bug or have a feature request, please [open an issue](https://gith
 
 Please follow the Rust style guide and use `cargo fmt` to format your code.
 
-## License
-
-Astro is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
-
 ## Acknowledgements
 
-Astro is inspired by the original Astro project and benefits from the Rust ecosystem.
+Astro is inspired by the original Astro project and benefits from the Rust ecosystem, including the nargo and oak libraries.
+
+## License
+
+Astro is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.
 
 ---
 

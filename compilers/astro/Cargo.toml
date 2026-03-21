@@ -3,23 +3,28 @@ name = "astro"
 version.workspace = true
 description = "Astro static site generator compiler in Rust"
 homepage.workspace = true
-repository.workspace = true
+repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/astro"
 license.workspace = true
 authors.workspace = true
 edition.workspace = true
+keywords = ["static-site-generator", "astro", "rust", "compiler"]
+categories = ["web-programming", "command-line-utilities"]
 
 [dependencies]
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-pulldown-cmark.workspace = true
-pulldown-cmark-to-cmark.workspace = true
 clap.workspace = true
 nargo-template.workspace = true
+oak-core.workspace = true
+oak-markdown.workspace = true
 
 [dev-dependencies]
 tokio-test = "0.4.4"
 tempfile = "3.10.0"
+
+[features]
+default = []
 
 [[bin]]
 name = "astro"

@@ -1,6 +1,6 @@
 //! 组件系统模块
 
-use crate::compiler::{framework_parser::FrameworkParserManager, html_renderer::Context};
+use crate::compiler::renderer::html_renderer::Context;
 use std::{collections::HashMap, fs::File, io::Read, path::Path};
 
 /// 前端框架类型
@@ -232,14 +232,12 @@ impl Component {
 pub struct ComponentRegistry {
     /// 组件映射
     components: HashMap<String, Component>,
-    /// 框架解析器管理器
-    framework_parser_manager: FrameworkParserManager,
 }
 
 impl ComponentRegistry {
     /// 创建新的组件注册表
     pub fn new() -> Self {
-        Self { components: HashMap::new(), framework_parser_manager: FrameworkParserManager::new() }
+        Self { components: HashMap::new() }
     }
 
     /// 注册组件
@@ -260,14 +258,12 @@ impl ComponentRegistry {
         let mut content = String::new();
         file.read_to_string(&mut content).map_err(|e| format!("Failed to read file: {}", e))?;
 
-        // 解析组件
-        let component = self
-            .framework_parser_manager
-            .parse_component(file_path, &content)
-            .map_err(|e| format!("Failed to parse component: {}", e))?;
+        // 简单实现：创建一个 Astro 组件
+        let file_name = file_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let component_name = file_name.split('.').next().unwrap_or(&file_name).to_string();
+        let component = Component::new_astro(&component_name, &content);
 
         // 注册组件
-        let component_name = component.name().to_string();
         self.register(component);
 
         Ok(component_name)
@@ -301,10 +297,7 @@ impl ComponentRegistry {
         self.components.contains_key(name)
     }
 
-    /// 获取框架解析器管理器
-    pub fn framework_parser_manager(&self) -> &FrameworkParserManager {
-        &self.framework_parser_manager
-    }
+
 }
 
 impl Default for ComponentRegistry {
@@ -327,8 +320,7 @@ impl ComponentParser {
 
     /// 解析组件文件
     pub fn parse_component(&mut self, content: &str) -> Result<Component, String> {
-        // 这里将实现组件文件解析逻辑
-        // 暂时返回一个简单的组件
+        // 暂时返回一个简单的组件，不使用 oaks 库的解析功能
         Ok(Component::new_astro("TestComponent", content))
     }
 

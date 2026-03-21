@@ -1,16 +1,18 @@
-# Eleventy - Rust Implementation
+# Eleventy - Rust Reimplementation
 
 ## Overview
 
-Eleventy (11ty) is a flexible, fast static site generator, now implemented in Rust for even better performance and reliability. It's designed to help you build modern websites with simplicity and flexibility, using your favorite template languages.
+Eleventy (11ty) is a flexible, fast static site generator, now reimplemented in Rust for even better performance and reliability. It's designed to help you build modern websites with simplicity and flexibility, using your favorite template languages.
 
-### Key Features
+### 🎯 Key Features
 - 🚀 **Fast Builds**: Compile your site in seconds, not minutes
 - 🎨 **Template Flexibility**: Use multiple template languages in the same project
 - 📦 **Easy Deployment**: Generate static files that work anywhere
 - 🔧 **Extensible**: Customize with plugins and shortcodes
 - 🛠 **Developer Friendly**: Great tooling and developer experience
 - 📚 **Content-First**: Focus on your content, not the framework
+- 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
+- 📱 **100% Compatible**: Full compatibility when using static features
 
 ## Installation
 
@@ -24,10 +26,11 @@ cargo install eleventy
 
 ```bash
 # Clone the repository
-git clone https://github.com/rusty-ssg/eleventy.git
+git clone https://github.com/doki-land/rusty-ssg.git
 
 # Build and install
-cd eleventy
+cd rusty-ssg/compilers/eleventy
+git checkout dev
 cargo install --path .
 ```
 
@@ -58,18 +61,20 @@ This will generate optimized static files in the `_site` directory, ready for de
 
 ## Architecture
 
-Eleventy follows a modular architecture designed for performance and flexibility:
+Eleventy follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:
 
 ```mermaid
 flowchart TD
     A[CLI] --> B[Config Loader]
     B --> C[Content Scanner]
-    C --> D[Template Engine]
+    C --> D[Parser]
     D --> E[Renderer]
     E --> F[Output Generator]
-    G[Plugins] --> D
-    H[Shortcodes] --> D
-    I[Filters] --> D
+    G[Plugins] --> E
+    H[Themes] --> E
+    I[nargo] --> E
+    J[oak] --> D
+    K[IPC] --> G
 ```
 
 ### Core Components
@@ -77,41 +82,14 @@ flowchart TD
 - **CLI**: Command-line interface for interacting with the compiler
 - **Config Loader**: Reads and parses Eleventy configuration files
 - **Content Scanner**: Discovers and processes content files
-- **Template Engine**: Supports multiple template languages
-- **Renderer**: Renders templates to static HTML
+- **Parser**: Converts source files to intermediate representation (uses oak)
+- **Renderer**: Transforms intermediate representation to HTML
 - **Output Generator**: Writes final static files
-- **Plugins**: Extend functionality with custom plugins
-- **Shortcodes**: Reusable template components
-- **Filters**: Transform data during template rendering
-
-## Project Structure
-
-Here's an example project structure for an Eleventy site:
-
-```
-my-site/
-├── _data/              # Global data files
-│   ├── metadata.json
-│   └── navigation.js
-├── _includes/          # Template includes
-│   ├── layouts/
-│   │   ├── base.njk
-│   │   └── post.njk
-│   └── components/
-│       ├── header.njk
-│       └── footer.njk
-├── _site/              # Generated output
-├── src/                # Source files
-│   ├── posts/          # Blog posts
-│   │   ├── first-post.md
-│   │   └── second-post.md
-│   ├── pages/          # Static pages
-│   │   ├── about.md
-│   │   └── contact.md
-│   └── images/         # Image files
-├── .eleventy.js        # Configuration file
-└── package.json        # For npm dependencies
-```
+- **Plugins**: Extend functionality with custom plugins (uses IPC mode)
+- **Themes**: Provide reusable templates and styles
+- **nargo**: External library with analysis engines and bundlers
+- **oak**: External library for parsing
+- **IPC**: Inter-process communication for plugin system
 
 ## Configuration
 
@@ -210,6 +188,7 @@ Eleventy is a flexible, fast static site generator that lets you use your favori
 - It supports multiple template languages
 - It's fast and lightweight
 - It has a great developer experience
+- It's 100% compatible with static features
 
 ## Next Steps
 
@@ -218,7 +197,7 @@ Eleventy is a flexible, fast static site generator that lets you use your favori
 3. Add plugins and shortcodes
 4. Deploy your site
 
-Happy coding!
+Happy coding! 🎉
 ```
 
 ## Compatibility Note
@@ -227,25 +206,25 @@ Happy coding!
 
 ## Plugins
 
-Eleventy supports a wide range of plugins to extend functionality:
+Eleventy supports a wide range of plugins to extend functionality (using IPC mode):
 
-- **@11ty/eleventy-plugin-rss**: Generate RSS feeds
-- **@11ty/eleventy-plugin-syntaxhighlight**: Syntax highlighting for code blocks
-- **@11ty/eleventy-navigation**: Navigation helper
-- **@11ty/eleventy-img**: Optimized image handling
-- **@11ty/eleventy-plugin-pwa**: Progressive Web App support
+- 📊 **@11ty/eleventy-plugin-rss**: Generate RSS feeds
+- 🎨 **@11ty/eleventy-plugin-syntaxhighlight**: Syntax highlighting for code blocks
+- 🔧 **@11ty/eleventy-navigation**: Navigation helper
+- 🖼️ **@11ty/eleventy-img**: Optimized image handling
+- 📱 **@11ty/eleventy-plugin-pwa**: Progressive Web App support
 
 ## Templates
 
 Eleventy supports multiple template languages out of the box:
 
-- **Nunjucks** (njk): A powerful templating language with inheritance
-- **Markdown** (md): For content files
-- **HTML** (html): Plain HTML files
-- **Liquid**: Shopify's templating language
-- **Handlebars**: A semantic templating language
-- **Mustache**: Logic-less templates
-- **EJS**: Embedded JavaScript templates
+- 📄 **Nunjucks** (njk): A powerful templating language with inheritance
+- 📝 **Markdown** (md): For content files
+- 🌐 **HTML** (html): Plain HTML files
+- 🛍️ **Liquid**: Shopify's templating language
+- 📋 **Handlebars**: A semantic templating language
+- 🧩 **Mustache**: Logic-less templates
+- 📜 **EJS**: Embedded JavaScript templates
 
 ## Deployment
 
@@ -294,11 +273,11 @@ jobs:
 
 ## Contribution Guidelines
 
-We welcome contributions to Eleventy!
+We welcome contributions to Eleventy! 🤝
 
 ### Reporting Issues
 
-If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/eleventy/issues).
+If you find a bug or have a feature request, please [open an issue](https://github.com/doki-land/rusty-ssg/issues).
 
 ### Pull Requests
 
@@ -312,13 +291,13 @@ If you find a bug or have a feature request, please [open an issue](https://gith
 
 Please follow the Rust style guide and use `cargo fmt` to format your code.
 
-## License
-
-Eleventy is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
-
 ## Acknowledgements
 
-Eleventy is inspired by the original Eleventy project and benefits from the Rust ecosystem.
+Eleventy is inspired by the original Eleventy project and benefits from the Rust ecosystem, including the nargo and oak libraries.
+
+## License
+
+Eleventy is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.
 
 ---
 

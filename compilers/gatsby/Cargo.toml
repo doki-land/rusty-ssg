@@ -3,16 +3,17 @@ name = "gatsby"
 version.workspace = true
 description = "Gatsby static site generator compiler in Rust"
 homepage.workspace = true
-repository.workspace = true
+repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/gatsby"
 license.workspace = true
 authors.workspace = true
 edition.workspace = true
+keywords = ["static-site-generator", "gatsby", "rust", "compiler"]
+categories = ["web-programming", "command-line-utilities"]
 
 [dependencies]
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-toml.workspace = true
 oak-core.workspace = true
 oak-json.workspace = true
 oak-yaml.workspace = true
@@ -27,9 +28,6 @@ nargo-types.workspace = true
 nargo-parser.workspace = true
 nargo-document.workspace = true
 nargo-template.workspace = true
-async-graphql.workspace = true
-async-graphql-value.workspace = true
-uuid.workspace = true
 indexmap.workspace = true
 
 [dev-dependencies]

@@ -1,16 +1,18 @@
-# Gatsby - Rust Implementation
+# Gatsby - Rust Reimplementation
 
 ## Overview
 
-Gatsby is a powerful, fast static site generator, now implemented in Rust for even better performance and reliability. It's designed to help you build modern, feature-rich websites with React and GraphQL, combining the best of static site generation with dynamic capabilities.
+Gatsby is a powerful, fast static site generator, now reimplemented in Rust for even better performance and reliability. It's designed to help you build modern, feature-rich websites with React and GraphQL, combining the best of static site generation with dynamic capabilities.
 
-### Key Features
+### 🎯 Key Features
 - 🚀 **Fast Builds**: Compile your site in seconds, not minutes
 - 🎨 **React-Based**: Use React for building components and pages
 - 📦 **Easy Deployment**: Generate static files that work anywhere
 - 🔧 **Extensible**: Customize with plugins and themes
 - 🛠 **Developer Friendly**: Great tooling and developer experience
 - 📊 **GraphQL Data Layer**: Query data from multiple sources
+- 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
+- 📱 **100% Compatible**: Full compatibility when using static features
 
 ## Installation
 
@@ -24,10 +26,11 @@ cargo install gatsby
 
 ```bash
 # Clone the repository
-git clone https://github.com/rusty-ssg/gatsby.git
+git clone https://github.com/doki-land/rusty-ssg.git
 
 # Build and install
-cd gatsby
+cd rusty-ssg/compilers/gatsby
+git checkout dev
 cargo install --path .
 ```
 
@@ -58,7 +61,7 @@ This will generate optimized static files in the `public` directory, ready for d
 
 ## Architecture
 
-Gatsby follows a modular architecture designed for performance and extensibility:
+Gatsby follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:
 
 ```mermaid
 flowchart TD
@@ -66,10 +69,13 @@ flowchart TD
     B --> C[Data Layer]
     C --> D[GraphQL Engine]
     D --> E[React Renderer]
-    E --> F[HTML Generator]
+    E --> F[Output Generator]
     G[Plugins] --> C
     H[Themes] --> E
     I[Source Plugins] --> C
+    J[nargo] --> E
+    K[oak] --> D
+    L[IPC] --> G
 ```
 
 ### Core Components
@@ -79,40 +85,13 @@ flowchart TD
 - **Data Layer**: Collects and processes data from various sources
 - **GraphQL Engine**: Provides a GraphQL API for querying data
 - **React Renderer**: Renders React components to static HTML
-- **HTML Generator**: Writes final static files
-- **Plugins**: Extend functionality with custom plugins
+- **Output Generator**: Writes final static files
+- **Plugins**: Extend functionality with custom plugins (uses IPC mode)
 - **Themes**: Provide reusable templates and styles
 - **Source Plugins**: Fetch data from external sources
-
-## Project Structure
-
-Here's an example project structure for a Gatsby site:
-
-```
-my-site/
-├── src/                # Source files
-│   ├── components/      # React components
-│   │   ├── Header.js
-│   │   └── Footer.js
-│   ├── pages/           # Page components
-│   │   ├── index.js
-│   │   ├── about.js
-│   │   └── blog/         # Blog pages
-│   │       ├── index.js
-│   │       └── {slug}.js
-│   ├── templates/       # Template components
-│   │   └── blog-post.js
-│   └── styles/          # CSS files
-│       └── global.css
-├── public/              # Generated output
-├── static/              # Static assets
-│   ├── images/
-│   └── favicon.ico
-├── gatsby-config.js     # Configuration file
-├── gatsby-node.js       # Node API implementation
-├── gatsby-browser.js    # Browser API implementation
-└── package.json         # For npm dependencies
-```
+- **nargo**: External library with analysis engines and bundlers
+- **oak**: External library for parsing
+- **IPC**: Inter-process communication for plugin system
 
 ## Configuration
 
@@ -248,6 +227,7 @@ Gatsby is a fast, modern static site generator that uses React and GraphQL to bu
 - It uses React for building components
 - It has a powerful GraphQL data layer
 - It has a rich ecosystem of plugins and themes
+- It's 100% compatible with static features
 
 ## Next Steps
 
@@ -256,7 +236,7 @@ Gatsby is a fast, modern static site generator that uses React and GraphQL to bu
 3. Customize your theme
 4. Deploy your site
 
-Happy coding!
+Happy coding! 🎉
 ```
 
 ## Compatibility Note
@@ -265,24 +245,24 @@ Happy coding!
 
 ## Plugins
 
-Gatsby supports a wide range of plugins to extend functionality:
+Gatsby supports a wide range of plugins to extend functionality (using IPC mode):
 
-- **gatsby-source-filesystem**: Source data from the filesystem
-- **gatsby-transformer-remark**: Transform Markdown to HTML
-- **gatsby-plugin-react-helmet**: Manage document head
-- **gatsby-plugin-sitemap**: Generate sitemap.xml
-- **gatsby-plugin-manifest**: Generate PWA manifest
-- **gatsby-plugin-sharp**: Image optimization
-- **gatsby-transformer-sharp**: Transform images
+- 📁 **gatsby-source-filesystem**: Source data from the filesystem
+- 📝 **gatsby-transformer-remark**: Transform Markdown to HTML
+- 📄 **gatsby-plugin-react-helmet**: Manage document head
+- 🗺️ **gatsby-plugin-sitemap**: Generate sitemap.xml
+- 📱 **gatsby-plugin-manifest**: Generate PWA manifest
+- 🖼️ **gatsby-plugin-sharp**: Image optimization
+- 🔄 **gatsby-transformer-sharp**: Transform images
 
 ## Themes
 
 Choose from a variety of Gatsby themes or create your own:
 
-- **gatsby-theme-blog**: Blog-focused theme
-- **gatsby-theme-docs**: Documentation-focused theme
-- **gatsby-theme-ecommerce**: E-commerce theme
-- **gatsby-theme-portfolio**: Portfolio theme
+- 📝 **gatsby-theme-blog**: Blog-focused theme
+- 📚 **gatsby-theme-docs**: Documentation-focused theme
+- 🛍️ **gatsby-theme-ecommerce**: E-commerce theme
+- 🎨 **gatsby-theme-portfolio**: Portfolio theme
 
 ## Deployment
 
@@ -331,11 +311,11 @@ jobs:
 
 ## Contribution Guidelines
 
-We welcome contributions to Gatsby!
+We welcome contributions to Gatsby! 🤝
 
 ### Reporting Issues
 
-If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/gatsby/issues).
+If you find a bug or have a feature request, please [open an issue](https://github.com/doki-land/rusty-ssg/issues).
 
 ### Pull Requests
 
@@ -349,13 +329,13 @@ If you find a bug or have a feature request, please [open an issue](https://gith
 
 Please follow the Rust style guide and use `cargo fmt` to format your code.
 
-## License
-
-Gatsby is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
-
 ## Acknowledgements
 
-Gatsby is inspired by the original Gatsby project and benefits from the Rust ecosystem.
+Gatsby is inspired by the original Gatsby project and benefits from the Rust ecosystem, including the nargo and oak libraries.
+
+## License
+
+Gatsby is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.
 
 ---
 

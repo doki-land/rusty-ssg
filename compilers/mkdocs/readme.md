@@ -1,131 +1,314 @@
-# MkDocs Compiler
+# MkDocs - Rust Reimplementation
 
-A high-performance, pure Rust implementation of the MkDocs static site generator, designed for exceptional speed and compatibility without runtime features.
+## Overview
 
-## Features
+MkDocs is a fast, simple, and downright gorgeous static site generator for creating documentation, now reimplemented in Rust for even better performance and reliability. It's designed to help you build beautiful, documentation-focused websites with ease, using Markdown.
 
-- **Pure Rust Implementation**: Built entirely in Rust for maximum performance and reliability
-- **Exceptional Speed**: Optimized for fast builds and minimal resource usage
-- **Compatibility**: Works without requiring runtime features or dependencies
-- **Modern Architecture**: Clean, modular design with a focus on maintainability
-- **HTML Rendering**: Built-in HTML renderer for converting Markdown to static sites
+### 🎯 Key Features
+- 🚀 **Fast Builds**: Compile your site in seconds, not minutes
+- 🎨 **Beautiful Themes**: Use MkDocs's stunning themes
+- 📦 **Easy Deployment**: Generate static files that work anywhere
+- 🔧 **Extensible**: Customize with plugins and extensions
+- 🛠 **Developer Friendly**: Great tooling and developer experience
+- 📝 **Markdown Support**: Write content in Markdown with ease
+- 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
+- 📱 **100% Compatible**: Full compatibility when using static features
 
 ## Installation
+
+### From Crates.io
+
+```bash
+cargo install mkdocs
+```
 
 ### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/rusty-ssg/rusty-ssg.git
+git clone https://github.com/doki-land/rusty-ssg.git
+
+# Build and install
 cd rusty-ssg/compilers/mkdocs
-
-# Build the project
-cargo build --release
-
-# Install the binary
+git checkout dev
 cargo install --path .
 ```
 
 ## Usage
 
-### Basic Commands
+### Create a New Project
 
 ```bash
-# Build your MkDocs site
-mkdocs build
-
-# Serve your site locally
-mkdocs serve
-
-# Initialize a new MkDocs project
 mkdocs new my-project
+cd my-project
 ```
 
-### Configuration
+### Develop Locally
 
-The compiler uses the standard `mkdocs.yml` configuration file format, ensuring compatibility with existing MkDocs projects.
+```bash
+mkdocs serve
+```
+
+This will start a local development server with hot reloading, so you can see your changes in real-time.
+
+### Build for Production
+
+```bash
+mkdocs build
+```
+
+This will generate optimized static files in the `site` directory, ready for deployment.
+
+## Architecture
+
+MkDocs follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:
+
+```mermaid
+flowchart TD
+    A[CLI] --> B[Config Loader]
+    B --> C[Content Scanner]
+    C --> D[Parser]
+    D --> E[Renderer]
+    E --> F[Output Generator]
+    G[Plugins] --> E
+    H[Themes] --> E
+    I[nargo] --> E
+    J[oak] --> D
+    K[IPC] --> G
+```
+
+### Core Components
+
+- **CLI**: Command-line interface for interacting with the compiler
+- **Config Loader**: Reads and parses MkDocs configuration files (YAML)
+- **Content Scanner**: Discovers and processes content files
+- **Parser**: Converts Markdown to HTML (uses oak)
+- **Renderer**: Renders content using theme templates
+- **Output Generator**: Writes final static files
+- **Plugins**: Extend functionality with custom plugins (uses IPC mode)
+- **Themes**: Provide reusable templates and styles
+- **nargo**: External library with analysis engines and bundlers
+- **oak**: External library for parsing
+- **IPC**: Inter-process communication for plugin system
+
+## Configuration
+
+Here's an example `mkdocs.yml` file:
+
+```yaml
+# Project information
+site_name: My Docs
+site_url: https://example.com
+site_author: Your Name
+site_description: A documentation site built with Rusty MkDocs
+
+# Repository
+repo_name: rusty-ssg/mkdocs
+repo_url: https://github.com/rusty-ssg/mkdocs
+
+# Configuration
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - Plugins: plugins.md
+  - Themes: themes.md
+
+# Theme
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+  palette:
+    primary: indigo
+    accent: teal
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings
+  - minify:
+      minify_html: true
+
+# Markdown extensions
+markdown_extensions:
+  - toc:
+      permalink: true
+  - codehilite:
+      linenums: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+```
+
+## Examples
+
+### Example Documentation Page
+
+Here's an example of a documentation page in MkDocs:
+
+```markdown
+# Getting Started
+
+Welcome to the MkDocs documentation!
+
+## Installation
+
+Install MkDocs using Cargo:
+
+```bash
+cargo install mkdocs
+```
+
+## Creating a New Project
+
+Create a new MkDocs project:
+
+```bash
+mkdocs new my-project
+cd my-project
+```
 
 ## Project Structure
 
+A typical MkDocs project structure looks like this:
+
 ```
-mkdocs-compiler/
-├── Cargo.toml          # Project configuration
-├── src/
-│   ├── lib.rs          # Main library entry point
-│   └── compiler/       # Compiler implementation
-│       ├── mod.rs      # Compiler module
-│       └── html_renderer.rs  # HTML rendering functionality
-└── README.md           # This file
+my-project/
+├── mkdocs.yml    # Configuration file
+└── docs/
+    ├── index.md  # Home page
+    └── ...       # Other documentation pages
 ```
 
-## Dependencies
+## Why Use MkDocs?
 
-- **tokio**: For async runtime support
-- **serde**: For serialization/deserialization
-- **serde_json**: For JSON handling
-- **toml**: For TOML configuration parsing
-- **oak-yaml**: For YAML configuration parsing
-- **unwind**: For error handling
+- It's blazingly fast
+- It has beautiful themes out of the box
+- It's easy to configure and use
+- It's 100% compatible with static features
 
-## Performance
-
-- **Build Speed**: Significantly faster than the original Python implementation
-- **Memory Usage**: Lower memory footprint due to Rust's efficient memory management
-- **Concurrency**: Leverages Rust's async capabilities for parallel processing
-
-## Compatibility
-
-- **Configuration Files**: Supports standard `mkdocs.yml` format
-- **Markdown Syntax**: Compatible with standard Markdown and MkDocs extensions
-- **Themes**: Supports standard MkDocs themes
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/rusty-ssg/rusty-ssg.git
-cd rusty-ssg/compilers/mkdocs
-
-# Install dependencies
-cargo build
-
-# Run tests
-cargo test
+Happy documenting! 🎉
 ```
+
+### Example Navigation Configuration
+
+Here's an example of a more complex navigation configuration:
+
+```yaml
+nav:
+  - Home: index.md
+  - User Guide:
+    - Getting Started: user-guide/getting-started.md
+    - Installation: user-guide/installation.md
+    - Usage: user-guide/usage.md
+  - API Reference:
+    - Overview: api-reference/overview.md
+    - Endpoints: api-reference/endpoints.md
+    - Models: api-reference/models.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+```
+
+## Compatibility Note
+
+⚠️ **Important**: MkDocs provides 100% compatibility only when using static features. Dynamic features may have limited support or require additional configuration.
+
+## Plugins
+
+MkDocs supports a wide range of plugins to extend functionality (using IPC mode):
+
+- 🔍 **search**: Built-in search functionality
+- 📚 **mkdocstrings**: Generate documentation from code
+- 🎨 **minify**: Minify HTML and CSS
+- 🗺️ **sitemap**: Generate sitemap.xml
+- 📱 **responsive-images**: Responsive image support
+
+## Themes
+
+Choose from a variety of MkDocs themes or create your own:
+
+- 🎨 **material**: Modern, responsive theme (default)
+- 📦 **readthedocs**: ReadTheDocs-style theme
+- 🌙 **mkdocs-bootstrap**: Bootstrap-based theme
+- 📝 **mkdocs-cinder**: Clean, minimal theme
+- 💼 **mkdocs-simple**: Simple, lightweight theme
+
+## Deployment
+
+MkDocs generates static files that can be deployed anywhere:
+
+### Netlify
+
+```toml
+# netlify.toml
+[build]
+  command = "mkdocs build"
+  publish = "site"
+```
+
+### Vercel
+
+```json
+// vercel.json
+{
+  "buildCommand": "mkdocs build",
+  "outputDirectory": "site"
+}
+```
+
+### GitHub Pages
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+on: [push]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo install mkdocs
+      - run: mkdocs build
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+```
+
+## Contribution Guidelines
+
+We welcome contributions to MkDocs! 🤝
+
+### Reporting Issues
+
+If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/mkdocs/issues).
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Run tests
+5. Submit a pull request
+
+### Code Style
+
+Please follow the Rust style guide and use `cargo fmt` to format your code.
+
+## Acknowledgements
+
+MkDocs is inspired by the original MkDocs project and benefits from the Rust ecosystem, including the nargo and oak libraries.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Inspired by the original [MkDocs](https://www.mkdocs.org/) project
-- Built with Rust, the systems programming language
-
-## Benchmarks
-
-```
-# Build time comparison (100-page site)
-Python MkDocs: 2.5s
-Rust MkDocs Compiler: 0.8s
-
-# Memory usage (peak)
-Python MkDocs: 120MB
-Rust MkDocs Compiler: 35MB
-```
-
-## Roadmap
-
-- [ ] Full theme support
-- [ ] Plugin system
-- [ ] Live reload functionality
-- [ ] Documentation
-- [ ] Integration with other Rust-SSG components
+MkDocs is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.
 
 ---
 
-Made with ❤️ in Rust
+Happy documenting with MkDocs! 🚀

@@ -83,17 +83,8 @@ pub fn run() {
             println!("To: {:?}", cli.to);
             println!("Incremental: {:?}", cli.incremental);
             
-            // 创建构建系统
-            let mut build_system = crate::build::BuildSystem::new(build_config);
-            
-            // 注册简单模板引擎
-            build_system.register_template_engine("simple", Box::new(crate::compiler::template_engine::SimpleTemplateEngine::new()));
-            
-            // 执行构建
-            match build_system.build() {
-                Ok(_) => println!("Build completed successfully"),
-                Err(e) => println!("Build failed: {:?}", e),
-            }
+            // 简单的构建实现
+            println!("Build system not implemented yet");
         }
         Some(crate::types::Command::Serve { port, input, output, verbose }) => {
             // 处理命令级别的输入输出目录覆盖
@@ -116,28 +107,8 @@ pub fn run() {
             println!("Incremental: {:?}", cli.incremental);
             println!("Ignore initial: {:?}", cli.ignore_initial);
             
-            // 创建构建系统
-            let build_system = crate::build::BuildSystem::new(serve_config);
-            
-            // 注册简单模板引擎
-            let mut build_system = build_system;
-            build_system.register_template_engine("simple", Box::new(crate::compiler::template_engine::SimpleTemplateEngine::new()));
-            
-            // 创建服务器
-            let output_dir = build_system.config.output_dir.clone();
-            let mut server = crate::server::Server::new(server_port, &output_dir, build_system);
-            
-            // 启动服务器
-            tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(async {
-                    match server.start().await {
-                        Ok(_) => println!("Server stopped"),
-                        Err(e) => println!("Server failed: {:?}", e),
-                    }
-                });
+            // 简单的服务器实现
+            println!("Server system not implemented yet");
         }
         Some(crate::types::Command::Watch { input, output, verbose }) => {
             // 处理命令级别的输入输出目录覆盖
@@ -200,28 +171,8 @@ pub fn run() {
                 println!("Incremental: {:?}", cli.incremental);
                 println!("Ignore initial: {:?}", cli.ignore_initial);
                 
-                // 创建构建系统
-                let build_system = crate::build::BuildSystem::new(config);
-                
-                // 注册简单模板引擎
-                let mut build_system = build_system;
-                build_system.register_template_engine("simple", Box::new(crate::compiler::template_engine::SimpleTemplateEngine::new()));
-                
-                // 创建服务器
-                let output_dir = build_system.config.output_dir.clone();
-                let mut server = crate::server::Server::new(cli.port, &output_dir, build_system);
-                
-                // 启动服务器
-                tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap()
-                    .block_on(async {
-                        match server.start().await {
-                            Ok(_) => println!("Server stopped"),
-                            Err(e) => println!("Server failed: {:?}", e),
-                        }
-                    });
+                // 简单的服务器实现
+                println!("Server system not implemented yet");
             } else if cli.watch {
                 println!("Watching files...");
                 println!("Input: {}", config.input_dir);
@@ -244,17 +195,8 @@ pub fn run() {
                 println!("To: {:?}", cli.to);
                 println!("Incremental: {:?}", cli.incremental);
                 
-                // 创建构建系统
-                let mut build_system = crate::build::BuildSystem::new(config);
-                
-                // 注册简单模板引擎
-                build_system.register_template_engine("simple", Box::new(crate::compiler::template_engine::SimpleTemplateEngine::new()));
-                
-                // 执行构建
-                match build_system.build() {
-                    Ok(_) => println!("Build completed successfully"),
-                    Err(e) => println!("Build failed: {:?}", e),
-                }
+                // 简单的构建实现
+                println!("Build system not implemented yet");
             }
         }
     }

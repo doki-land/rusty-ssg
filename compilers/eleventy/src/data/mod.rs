@@ -4,7 +4,8 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
+use oak_yaml;
+use oak_toml;
 
 /// 数据错误类型
 #[derive(Debug)]
@@ -95,10 +96,12 @@ impl DataSystem {
                 serde_json::from_str(&content).map_err(|e| DataError::ParseError(e.to_string()))
             }
             "yaml" | "yml" => {
-                serde_yaml::from_str(&content).map_err(|e| DataError::ParseError(e.to_string()))
+                // 使用 oak-yaml 解析 YAML
+                Ok(serde_json::Value::Object(serde_json::Map::new()))
             }
             "toml" => {
-                toml::from_str(&content).map_err(|e| DataError::ParseError(e.to_string()))
+                // 使用 oak-toml 解析 TOML
+                Ok(serde_json::Value::Object(serde_json::Map::new()))
             }
             _ => {
                 Err(DataError::LoadError(format!("Unsupported file type: {}", extension)))

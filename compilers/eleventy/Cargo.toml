@@ -4,27 +4,26 @@ name = "eleventy"
 version.workspace = true
 description = "Eleventy static site generator compiler in Rust"
 homepage.workspace = true
-repository.workspace = true
+repository = "https://github.com/doki-land/rusty-ssg/tree/dev/compilers/eleventy"
 license.workspace = true
 authors.workspace = true
 edition.workspace = true
+keywords = ["static-site-generator", "eleventy", "rust", "compiler"]
+categories = ["web-programming", "command-line-utilities"]
 
 [dependencies]
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_yaml.workspace = true
 clap.workspace = true
-toml.workspace = true
-yaml-rust.workspace = true
 notify.workspace = true
-axum.workspace = true
 tower-http.workspace = true
-websocket.workspace = true
-liquid.workspace = true
-handlebars.workspace = true
-pulldown-cmark.workspace = true
+
 nargo-template.workspace = true
+oak-core.workspace = true
+oak-yaml.workspace = true
+oak-toml.workspace = true
+oak-markdown.workspace = true
 
 [dev-dependencies]
 tokio-test = "0.4.4"

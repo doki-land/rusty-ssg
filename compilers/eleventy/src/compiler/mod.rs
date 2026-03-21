@@ -1,4 +1,5 @@
 //! Eleventy compiler module
 
-pub mod html_renderer;
+pub mod parser;
+pub mod renderer;
 pub mod template_engine;
