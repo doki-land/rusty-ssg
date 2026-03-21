@@ -1,10 +1,8 @@
 //! Build 命令实现
 
-use crate::{BuildArgs, ConfigLoader, StaticSiteGenerator, VutexCompiler};
+use crate::{BuildArgs, ConfigLoader, StaticSiteGenerator, VutexCompiler, plugin_host::PluginHost, types::Result};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::plugin_host::PluginHost;
-use crate::types::Result;
 use walkdir::WalkDir;
 
 /// Build 命令

@@ -14,9 +14,7 @@ pub struct HtmlRendererConfig {
 
 impl Default for HtmlRendererConfig {
     fn default() -> Self {
-        Self {
-            options: HashMap::new(),
-        }
+        Self { options: HashMap::new() }
     }
 }
 
@@ -39,10 +37,7 @@ impl HtmlRenderer {
     /// # 参数
     /// * `config` - 渲染器配置
     pub fn with_config(config: HtmlRendererConfig) -> Self {
-        Self {
-            config,
-            markdown_renderer: NargoMarkdownRenderer::new(),
-        }
+        Self { config, markdown_renderer: NargoMarkdownRenderer::new() }
     }
 
     /// 获取渲染器配置

@@ -1,16 +1,11 @@
 //! 编译器模块
 //! 提供 Gatsby 文档编译器的核心功能
 
-use crate::types::{
-    GatsbyConfig, Result,
-};
+use crate::types::{GatsbyConfig, Result};
 use nargo_document::generator::markdown::MarkdownRenderer;
 use nargo_parser::parse_document;
 use nargo_types::Document;
-use std::{
-    collections::HashMap,
-    time::Instant,
-};
+use std::{collections::HashMap, time::Instant};
 
 mod html_renderer;
 pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
@@ -30,11 +25,7 @@ pub struct GatsbyCompiler {
 impl GatsbyCompiler {
     /// 创建新的编译器
     pub fn new() -> Self {
-        Self {
-            config: GatsbyConfig::new(),
-            markdown_renderer: MarkdownRenderer::new(),
-            cache: HashMap::new(),
-        }
+        Self { config: GatsbyConfig::new(), markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new() }
     }
 
     /// 创建带配置的编译器
@@ -43,11 +34,7 @@ impl GatsbyCompiler {
     ///
     /// * `config` - 编译器配置
     pub fn with_config(config: GatsbyConfig) -> Self {
-        Self {
-            config,
-            markdown_renderer: MarkdownRenderer::new(),
-            cache: HashMap::new(),
-        }
+        Self { config, markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new() }
     }
 
     /// 获取编译器配置

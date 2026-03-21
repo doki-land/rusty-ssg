@@ -156,21 +156,21 @@ pub struct UnifiedTemplateManager {
 impl UnifiedTemplateManager {
     /// 创建新的统一模板管理器
     pub fn new() -> Self {
-        Self {
-            manager: nargo_template::TemplateManager::new(),
-        }
+        Self { manager: nargo_template::TemplateManager::new() }
     }
 
     /// 注册模板
     pub fn register_template(&mut self, engine: TemplateEngine, name: &str, content: &str) -> Result<()> {
-        self.manager.register_template(engine, name, content)
+        self.manager
+            .register_template(engine, name, content)
             .map_err(|e| crate::types::errors::VutexError::ConfigError { message: e.to_string() })
     }
 
     /// 渲染模板
     pub fn render<T: ToJsonValue>(&self, engine: TemplateEngine, template_name: &str, context: &T) -> Result<String> {
         let json_context = context.to_json_value();
-        self.manager.render(engine, template_name, &json_context)
+        self.manager
+            .render(engine, template_name, &json_context)
             .map_err(|e| crate::types::errors::VutexError::ConfigError { message: e.to_string() })
     }
 }
@@ -209,7 +209,7 @@ impl DefaultTheme {
     /// 新的默认主题实例
     pub fn with_engine(config: VutexConfig, engine_type: TemplateEngineType) -> Result<Self> {
         let mut template_manager = UnifiedTemplateManager::new();
-        
+
         // 注册模板
         match engine_type {
             TemplateEngineType::DejaVu => {
@@ -228,7 +228,7 @@ impl DefaultTheme {
                 // 保持 Askama 模板的兼容性
             }
         }
-        
+
         Ok(Self { config, engine_type, template_manager })
     }
 
@@ -243,26 +243,20 @@ impl DefaultTheme {
     /// 渲染后的 HTML 字符串
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
         match self.engine_type {
-            TemplateEngineType::DejaVu => {
-                self.template_manager.render(TemplateEngine::DejaVu, "page", context)
-            }
-            TemplateEngineType::Handlebars => {
-                self.template_manager.render(TemplateEngine::Handlebars, "page", context)
-            }
-            TemplateEngineType::Jinja2 => {
-                self.template_manager.render(TemplateEngine::Jinja2, "page", context)
-            }
+            TemplateEngineType::DejaVu => self.template_manager.render(TemplateEngine::DejaVu, "page", context),
+            TemplateEngineType::Handlebars => self.template_manager.render(TemplateEngine::Handlebars, "page", context),
+            TemplateEngineType::Jinja2 => self.template_manager.render(TemplateEngine::Jinja2, "page", context),
             TemplateEngineType::Askama => {
                 // 保持 Askama 模板的兼容性
                 // 这里可以使用临时的字符串替换实现
                 let template_content = include_str!("../templates/page.html");
                 let mut result = template_content.to_string();
-                
+
                 // 简单的变量替换
                 result = result.replace("{{ page_title }}", &context.page_title);
                 result = result.replace("{{ site_title }}", &context.site_title);
                 result = result.replace("{{ content }}", &context.content);
-                
+
                 Ok(result)
             }
         }
@@ -276,7 +270,7 @@ impl DefaultTheme {
     pub fn site_title(&self) -> &str {
         self.config.title.as_deref().unwrap_or("VuTeX Documentation")
     }
-    
+
     /// 获取当前使用的模板引擎类型
     ///
     /// # Returns

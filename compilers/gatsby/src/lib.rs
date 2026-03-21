@@ -4,6 +4,10 @@
 
 /// 编译器模块
 pub mod compiler;
+/// 数据源模块
+pub mod data_source;
+/// GraphQL 执行引擎模块
+pub mod graphql;
 /// 插件模块
 pub mod plugin;
 /// 插件主机模块
@@ -14,51 +18,35 @@ pub mod session;
 pub mod tools;
 /// 类型定义模块
 pub mod types;
-/// GraphQL 执行引擎模块
-pub mod graphql;
-/// 数据源模块
-pub mod data_source;
 
 pub use types::{
-    ConfigError, ConfigValidation, GatsbyConfig, SiteMetadata, SocialLink, PluginConfig,
-    ProxyConfig, DevelopConfig, FlagsConfig, GraphQLTypegenConfig, AdapterConfig,
-    TrailingSlash, CompileResult, GatsbyError, Result,
+    AdapterConfig, CompileResult, ConfigError, ConfigValidation, DevelopConfig, FlagsConfig, GatsbyConfig, GatsbyError,
+    GraphQLTypegenConfig, PluginConfig, ProxyConfig, Result, SiteMetadata, SocialLink, TrailingSlash,
 };
 
 pub use tools::{
-    GatsbyCli, GatsbyCommands, NewArgs, BuildArgs, DevelopArgs, InitArgs, CheckArgs,
-    ConfigLoader, StaticSiteGenerator, UnifiedTemplateManager,
-    DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink,
-    TemplateEngineType,
+    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, DevelopArgs, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem,
+    NewArgs, PageContext, SidebarGroup, SidebarLink, StaticSiteGenerator, TemplateEngineType, UnifiedTemplateManager,
 };
 
-pub use compiler::GatsbyCompiler;
-pub use compiler::{HtmlRenderer, HtmlRendererConfig};
+pub use compiler::{GatsbyCompiler, HtmlRenderer, HtmlRendererConfig};
 pub use nargo_parser::{DocumentMeta, FrontMatter, FrontMatterParser, MarkdownParser, parse_document, parse_frontmatter};
 pub use nargo_types::Document;
 pub use session::CompileSession;
 
-pub use plugin::{
-    Plugin, PluginError, PluginMeta, PluginRegistry, PluginContext,
-    Page,
-};
+pub use plugin::{Page, Plugin, PluginContext, PluginError, PluginMeta, PluginRegistry};
 
 pub use plugin_host::{PluginHost, PluginHostError};
 
-pub use graphql::{
-    GraphQLExecutor, SchemaBuilder, NodeBuilder, ContentDigest,
-};
+pub use graphql::{ContentDigest, GraphQLExecutor, NodeBuilder, SchemaBuilder};
 
 pub use types::graphql::{
-    GraphQLError, GraphQLResult, NodeId, NodeType, Node, Internal, NodeActions,
-    GraphQLFieldType, GraphQLField, GraphQLArgument, GraphQLObjectType, GraphQLSchema,
-    SelectionSet, Selection, FieldSelection, Directive, GraphQLRequest, GraphQLResponse,
-    NodeStore,
+    Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType,
+    GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType,
+    Selection, SelectionSet,
 };
 
-pub use data_source::{
-    MarkdownDataSource, SiteMetadataDataSource, FileDataSource, DataLayerManager,
-};
+pub use data_source::{DataLayerManager, FileDataSource, MarkdownDataSource, SiteMetadataDataSource};
 
 use std::collections::HashMap;
 

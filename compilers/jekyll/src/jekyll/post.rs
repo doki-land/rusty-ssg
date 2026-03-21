@@ -76,36 +76,23 @@ impl Post {
         let front_matter = crate::jekyll::FrontMatterParser::parse(&content)?;
 
         // 提取标题（优先使用 Front Matter 中的 title）
-        let title = front_matter.get_str("title")
-            .map(|s| s.to_string())
-            .unwrap_or(title_from_filename);
+        let title = front_matter.get_str("title").map(|s| s.to_string()).unwrap_or(title_from_filename);
 
         // 提取日期（优先使用 Front Matter 中的 date）
-        let date = Self::parse_date_from_front_matter(&front_matter)?
-            .unwrap_or(date_from_filename);
+        let date = Self::parse_date_from_front_matter(&front_matter)?.unwrap_or(date_from_filename);
 
         // 生成 Slug
-        let slug = front_matter.get_str("slug")
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| Self::slugify(&title));
+        let slug = front_matter.get_str("slug").map(|s| s.to_string()).unwrap_or_else(|| Self::slugify(&title));
 
         // 提取分类和标签
         let categories = Self::extract_categories(&front_matter, post_path);
         let tags = Self::extract_tags(&front_matter);
 
         // 提取布局
-        let layout = front_matter.get_str("layout")
-            .map(|s| s.to_string());
+        let layout = front_matter.get_str("layout").map(|s| s.to_string());
 
         // 生成永久链接
-        let permalink = Self::generate_permalink(
-            &title,
-            &slug,
-            &date,
-            &categories,
-            &front_matter,
-            config,
-        )?;
+        let permalink = Self::generate_permalink(&title, &slug, &date, &categories, &front_matter, config)?;
 
         Ok(Self {
             path: post_path.to_path_buf(),
@@ -155,7 +142,8 @@ impl Post {
                 .ok_or_else(|| PostError::DateParseError("Invalid date".to_string()))?;
 
             Ok((title, date))
-        } else {
+        }
+        else {
             Err(PostError::InvalidFilename(filename.to_string()))
         }
     }
@@ -183,27 +171,30 @@ impl Post {
         match front_matter.get_str("date") {
             Some(date_str) => {
                 let date_str = date_str.trim();
-                
+
                 // 尝试多种日期格式
                 let date = if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%d %H:%M:%S") {
                     Ok(dt.date())
-                } else if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y/%m/%d %H:%M:%S") {
+                }
+                else if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y/%m/%d %H:%M:%S") {
                     Ok(dt.date())
-                } else if let Ok(dt) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+                }
+                else if let Ok(dt) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
                     Ok(dt)
-                } else if let Ok(dt) = NaiveDate::parse_from_str(date_str, "%Y/%m/%d") {
+                }
+                else if let Ok(dt) = NaiveDate::parse_from_str(date_str, "%Y/%m/%d") {
                     Ok(dt)
-                } else if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S") {
+                }
+                else if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S") {
                     Ok(dt.date())
-                } else if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.f") {
+                }
+                else if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.f") {
                     Ok(dt.date())
-                } else {
-                    Err(PostError::DateParseError(format!(
-                        "Could not parse date: {}",
-                        date_str
-                    )))
+                }
+                else {
+                    Err(PostError::DateParseError(format!("Could not parse date: {}", date_str)))
                 };
-                
+
                 date.map(Some)
             }
             None => Ok(None),
@@ -228,7 +219,8 @@ impl Post {
         if let Some(categories) = front_matter.get("categories") {
             if let Some(cat_array) = categories.as_array() {
                 return cat_array.iter().filter_map(|v| v.as_str()).map(|s| s.to_string()).collect();
-            } else if let Some(cat_str) = categories.as_str() {
+            }
+            else if let Some(cat_str) = categories.as_str() {
                 return cat_str.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
             }
         }
@@ -237,7 +229,8 @@ impl Post {
         if let Some(category) = front_matter.get("category") {
             if let Some(cat_str) = category.as_str() {
                 return vec![cat_str.to_string()];
-            } else if let Some(cat_array) = category.as_array() {
+            }
+            else if let Some(cat_array) = category.as_array() {
                 return cat_array.iter().filter_map(|v| v.as_str()).map(|s| s.to_string()).collect();
             }
         }
@@ -275,7 +268,8 @@ impl Post {
         if let Some(tags) = front_matter.get("tags") {
             if let Some(tag_array) = tags.as_array() {
                 return tag_array.iter().filter_map(|v| v.as_str()).map(|s| s.to_string()).collect();
-            } else if let Some(tag_str) = tags.as_str() {
+            }
+            else if let Some(tag_str) = tags.as_str() {
                 return tag_str.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
             }
         }
@@ -284,7 +278,8 @@ impl Post {
         if let Some(tag) = front_matter.get("tag") {
             if let Some(tag_str) = tag.as_str() {
                 return vec![tag_str.to_string()];
-            } else if let Some(tag_array) = tag.as_array() {
+            }
+            else if let Some(tag_array) = tag.as_array() {
                 return tag_array.iter().filter_map(|v| v.as_str()).map(|s| s.to_string()).collect();
             }
         }
@@ -330,7 +325,8 @@ impl Post {
         config: &JekyllConfig,
     ) -> Result<String, PostError> {
         // 优先使用 Front Matter 中的 permalink
-        let permalink_format = front_matter.get_str("permalink")
+        let permalink_format = front_matter
+            .get_str("permalink")
             .or(config.permalink.as_deref())
             .unwrap_or("/:categories/:year/:month/:day/:title/");
 
@@ -491,15 +487,11 @@ impl Post {
         if let Some(description) = self.front_matter.get_str("description") {
             return description.to_string();
         }
-        
+
         let content = self.front_matter.content();
         let mut chars = content.chars();
         let excerpt: String = chars.by_ref().take(200).collect();
-        if chars.next().is_some() {
-            format!("{}...", excerpt)
-        } else {
-            excerpt
-        }
+        if chars.next().is_some() { format!("{}...", excerpt) } else { excerpt }
     }
 }
 
@@ -620,29 +612,20 @@ impl PostManager {
             self.posts_by_year.entry(post.year()).or_default().push(post.clone());
 
             // 按年月分组
-            self.posts_by_year_month
-                .entry((post.year(), post.month()))
-                .or_default()
-                .push(post.clone());
+            self.posts_by_year_month.entry((post.year(), post.month())).or_default().push(post.clone());
         }
 
         // 按分类分组
         for post in &self.posts {
             for category in &post.categories {
-                self.posts_by_category
-                    .entry(category.clone())
-                    .or_default()
-                    .push(post.clone());
+                self.posts_by_category.entry(category.clone()).or_default().push(post.clone());
             }
         }
 
         // 按标签分组
         for post in &self.posts {
             for tag in &post.tags {
-                self.posts_by_tag
-                    .entry(tag.clone())
-                    .or_default()
-                    .push(post.clone());
+                self.posts_by_tag.entry(tag.clone()).or_default().push(post.clone());
             }
         }
     }
@@ -764,11 +747,7 @@ impl PostManager {
     ///
     /// 返回最新的帖子列表
     pub fn get_latest_posts(&self, limit: usize) -> &[Post] {
-        if limit >= self.posts.len() {
-            &self.posts
-        } else {
-            &self.posts[..limit]
-        }
+        if limit >= self.posts.len() { &self.posts } else { &self.posts[..limit] }
     }
 
     /// 搜索帖子

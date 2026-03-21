@@ -1,10 +1,12 @@
 //! Gatsby 插件宿主模块
 //! 提供插件的加载、管理和执行环境
 
-use crate::plugin::{Plugin, PluginRegistry, PluginContext, Node, Page};
-use crate::types::Result;
-use std::collections::HashMap;
+use crate::{
+    plugin::{Node, Page, Plugin, PluginContext, PluginRegistry},
+    types::Result,
+};
 use nargo_types::NargoValue;
+use std::collections::HashMap;
 
 /// 插件宿主错误类型
 #[derive(Debug)]
@@ -43,11 +45,7 @@ pub struct PluginHost {
 impl PluginHost {
     /// 创建新的插件宿主
     pub fn new() -> Self {
-        Self {
-            registry: PluginRegistry::new(),
-            context: PluginContext::new(),
-            config: HashMap::new(),
-        }
+        Self { registry: PluginRegistry::new(), context: PluginContext::new(), config: HashMap::new() }
     }
 
     /// 从配置创建新的插件宿主

@@ -1,12 +1,12 @@
 //! 编译器模块
 //! 提供 VuTeX 文档编译器的核心功能
 
-use nargo_parser::parse_document;
 use crate::types::{
     Result, VutexConfig,
     ipc::{InvokePluginRequest, PluginContext},
 };
 use nargo_document::generator::markdown::MarkdownRenderer;
+use nargo_parser::parse_document;
 use nargo_types::Document;
 use std::{
     collections::HashMap,

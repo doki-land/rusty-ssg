@@ -121,7 +121,7 @@ impl VutexCompiler {
     /// * `doc` - 文档对象
     fn convert_frontmatter_to_map(&self, doc: &nargo_types::Document) -> HashMap<String, String> {
         let mut map = HashMap::new();
-        
+
         if let Some(title) = &doc.frontmatter.title {
             map.insert("title".to_string(), title.clone());
         }
@@ -134,11 +134,11 @@ impl VutexCompiler {
         if !doc.frontmatter.tags.is_empty() {
             map.insert("tags".to_string(), doc.frontmatter.tags.join(","));
         }
-        
+
         for (key, value) in &doc.frontmatter.custom {
             map.insert(key.clone(), format!("{:?}", value));
         }
-        
+
         map
     }
 

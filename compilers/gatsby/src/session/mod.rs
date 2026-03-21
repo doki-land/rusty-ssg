@@ -22,12 +22,7 @@ pub struct CompileSession {
 impl CompileSession {
     /// 创建新的编译会话
     pub fn new() -> Self {
-        Self {
-            config: GatsbyConfig::new(),
-            documents: HashMap::new(),
-            source_dir: None,
-            output_dir: None,
-        }
+        Self { config: GatsbyConfig::new(), documents: HashMap::new(), source_dir: None, output_dir: None }
     }
 
     /// 创建带配置的编译会话
@@ -36,12 +31,7 @@ impl CompileSession {
     ///
     /// * `config` - Gatsby 配置
     pub fn with_config(config: GatsbyConfig) -> Self {
-        Self {
-            config,
-            documents: HashMap::new(),
-            source_dir: None,
-            output_dir: None,
-        }
+        Self { config, documents: HashMap::new(), source_dir: None, output_dir: None }
     }
 
     /// 设置源目录

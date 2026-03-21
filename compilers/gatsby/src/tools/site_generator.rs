@@ -28,11 +28,7 @@ impl StaticSiteGenerator {
     }
 
     /// 生成静态站点
-    pub fn generate(
-        &mut self,
-        documents: &HashMap<String, Document>,
-        output_dir: &PathBuf,
-    ) -> Result<()> {
+    pub fn generate(&mut self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
         }
@@ -43,10 +39,7 @@ impl StaticSiteGenerator {
 
         for (path, doc) in documents {
             let (lang, _) = self.extract_language_from_path(path, &default_lang);
-            all_docs_by_lang
-                .entry(lang)
-                .or_default()
-                .push((path.clone(), doc.clone()));
+            all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
         }
 
         for (lang, docs) in all_docs_by_lang {
@@ -81,25 +74,15 @@ impl StaticSiteGenerator {
                 }
 
                 let depth = normalized_path.matches('/').count();
-                let root_path = if depth == 0 {
-                    "./".to_string()
-                } else {
-                    "../".repeat(depth)
-                };
+                let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
 
                 let mut sidebar_links = Vec::new();
                 for (title, link) in &all_sidebar_links {
                     let relative_link = format!("{}{}", root_path, link);
-                    sidebar_links.push(SidebarLink {
-                        text: title.clone(),
-                        link: relative_link,
-                    });
+                    sidebar_links.push(SidebarLink { text: title.clone(), link: relative_link });
                 }
 
-                let sidebar_group = SidebarGroup {
-                    text: "文档".to_string(),
-                    items: sidebar_links,
-                };
+                let sidebar_group = SidebarGroup { text: "文档".to_string(), items: sidebar_links };
                 let sidebar_groups = vec![sidebar_group];
 
                 let html_content = self.render_page_for_file(
@@ -148,20 +131,14 @@ impl StaticSiteGenerator {
     }
 
     /// 按语言分组文档
-    fn group_documents_by_language(
-        &self,
-        documents: &HashMap<String, Document>,
-    ) -> LanguageDocuments {
+    fn group_documents_by_language(&self, documents: &HashMap<String, Document>) -> LanguageDocuments {
         let mut result = LanguageDocuments::new();
         let default_lang = self.get_default_language();
 
         for (path, document) in documents {
             let (lang, normalized_path) = self.extract_language_from_path(path, &default_lang);
 
-            result
-                .entry(lang)
-                .or_insert_with(HashMap::new)
-                .insert(normalized_path, document.clone());
+            result.entry(lang).or_insert_with(HashMap::new).insert(normalized_path, document.clone());
         }
 
         result
@@ -179,15 +156,9 @@ impl StaticSiteGenerator {
 
         if first_part.contains('-') || first_part.len() == 2 {
             let normalized_path = parts[1..].join("/");
-            (
-                first_part.to_string(),
-                if normalized_path.is_empty() {
-                    "index.md".to_string()
-                } else {
-                    normalized_path
-                },
-            )
-        } else {
+            (first_part.to_string(), if normalized_path.is_empty() { "index.md".to_string() } else { normalized_path })
+        }
+        else {
             (default_lang.to_string(), path.to_string())
         }
     }
@@ -214,11 +185,7 @@ impl StaticSiteGenerator {
         let doc_title = document.title().unwrap_or("");
         let site_title = self.theme.site_title();
 
-        let page_title = if !doc_title.is_empty() {
-            format!("{} | {}", doc_title, site_title)
-        } else {
-            site_title.to_string()
-        };
+        let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
         let content = document.rendered_content.as_deref().unwrap_or("");
 
@@ -228,11 +195,7 @@ impl StaticSiteGenerator {
         let locale_infos: Vec<LocaleInfo> = vec![];
 
         let depth = current_path.matches('/').count();
-        let root_path = if depth == 0 {
-            "./".to_string()
-        } else {
-            "../".repeat(depth)
-        };
+        let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
 
         let context = PageContext {
             page_title,
@@ -271,16 +234,9 @@ impl StaticSiteGenerator {
     }
 
     /// 简单版本的侧边栏生成
-    fn generate_sidebar_groups_simple(
-        &self,
-        documents: &HashMap<String, Document>,
-        lang: &str,
-    ) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
-        let mut default_group = SidebarGroup {
-            text: "文档".to_string(),
-            items: Vec::new(),
-        };
+        let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
         for (path, doc) in documents {
             let title = doc.title().unwrap_or(path).to_string();
@@ -305,11 +261,7 @@ impl StaticSiteGenerator {
         let doc_title = document.title().unwrap_or("");
         let site_title = self.theme.site_title();
 
-        let page_title = if !doc_title.is_empty() {
-            format!("{} | {}", doc_title, site_title)
-        } else {
-            site_title.to_string()
-        };
+        let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
         let content = document.rendered_content.as_deref().unwrap_or("");
 

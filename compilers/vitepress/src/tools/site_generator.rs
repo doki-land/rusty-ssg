@@ -1,12 +1,17 @@
 //! 站点生成模块
 //! 提供静态站点生成的核心功能，支持多语言文档
 
-use crate::Result;
-use std::{collections::HashMap, fs, path::PathBuf, path::Path};
-use crate::types::{LocaleConfig, VutexConfig, Sidebar, SidebarItem};
-use crate::tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink};
+use crate::{
+    Document, Result,
+    tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
+    types::{LocaleConfig, Sidebar, SidebarItem, VutexConfig},
+};
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
 use walkdir::WalkDir;
-use crate::Document;
 
 /// 语言分组的文档映射
 /// 键为语言代码，值为该语言下的文档映射（路径 -> 文档）
@@ -124,7 +129,8 @@ impl StaticSiteGenerator {
 
                 let sidebar_groups = if !sidebar_items.is_empty() {
                     sidebar_items.clone()
-                } else {
+                }
+                else {
                     let mut sidebar_links = Vec::new();
                     for (title, link) in &all_sidebar_links {
                         let relative_link = format!("{}{}", root_path, link);
@@ -214,7 +220,7 @@ impl StaticSiteGenerator {
 
         let first_part = parts[0];
         let locales = self.config.locales.as_ref().map(|l| l.keys().collect::<Vec<_>>()).unwrap_or_default();
-        
+
         if locales.contains(&&first_part.to_string()) || first_part.contains('-') || first_part.len() == 2 {
             let normalized_path = parts[1..].join("/");
             (first_part.to_string(), if normalized_path.is_empty() { "index.md".to_string() } else { normalized_path })
@@ -238,7 +244,8 @@ impl StaticSiteGenerator {
                 return lang.to_string();
             }
             locales.keys().next().cloned().unwrap_or_else(|| "zh-hans".to_string())
-        } else {
+        }
+        else {
             "zh-hans".to_string()
         }
     }
@@ -251,7 +258,8 @@ impl StaticSiteGenerator {
     fn get_available_locales(&self) -> Vec<(String, LocaleConfig)> {
         if let Some(locales) = &self.config.locales {
             locales.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
-        } else {
+        }
+        else {
             Vec::new()
         }
     }
@@ -355,30 +363,23 @@ impl StaticSiteGenerator {
     /// 导航栏项目向量
     fn generate_nav_items(&self, lang: &str) -> Vec<NavItem> {
         let nav_config = if let Some(locales) = &self.config.locales {
-            if let Some(locale_config) = locales.get(lang) {
-                locale_config.nav.as_ref()
-            } else {
-                None
-            }
-        } else {
+            if let Some(locale_config) = locales.get(lang) { locale_config.nav.as_ref() } else { None }
+        }
+        else {
             None
         };
 
-        let nav_config = nav_config.or_else(|| {
-            self.config.theme.as_ref().and_then(|theme| theme.nav.as_ref())
-        });
+        let nav_config = nav_config.or_else(|| self.config.theme.as_ref().and_then(|theme| theme.nav.as_ref()));
 
         if let Some(nav) = nav_config {
             nav.iter()
                 .filter_map(|item| match item {
-                    crate::types::NavItem::WithLink(link) => Some(NavItem {
-                        text: link.text.clone(),
-                        link: link.link.clone(),
-                    }),
+                    crate::types::NavItem::WithLink(link) => Some(NavItem { text: link.text.clone(), link: link.link.clone() }),
                     crate::types::NavItem::WithChildren(_) => None,
                 })
                 .collect()
-        } else {
+        }
+        else {
             Vec::new()
         }
     }
@@ -396,29 +397,21 @@ impl StaticSiteGenerator {
     /// 侧边栏组向量
     fn generate_sidebar_items(&self, lang: &str) -> Vec<SidebarGroup> {
         let sidebar_config = if let Some(locales) = &self.config.locales {
-            if let Some(locale_config) = locales.get(lang) {
-                locale_config.sidebar.as_ref()
-            } else {
-                None
-            }
-        } else {
+            if let Some(locale_config) = locales.get(lang) { locale_config.sidebar.as_ref() } else { None }
+        }
+        else {
             None
         };
 
-        let sidebar_config = sidebar_config.or_else(|| {
-            self.config.theme.as_ref().and_then(|theme| theme.sidebar.as_ref())
-        });
+        let sidebar_config = sidebar_config.or_else(|| self.config.theme.as_ref().and_then(|theme| theme.sidebar.as_ref()));
 
         if let Some(sidebar) = sidebar_config {
             match sidebar {
-                crate::types::Sidebar::List(items) => {
-                    self.convert_sidebar_items(items)
-                }
-                crate::types::Sidebar::Multi(_) => {
-                    Vec::new()
-                }
+                crate::types::Sidebar::List(items) => self.convert_sidebar_items(items),
+                crate::types::Sidebar::Multi(_) => Vec::new(),
             }
-        } else {
+        }
+        else {
             Vec::new()
         }
     }
@@ -434,21 +427,16 @@ impl StaticSiteGenerator {
     /// 转换后的侧边栏组向量
     fn convert_sidebar_items(&self, items: &[crate::types::SidebarItem]) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
-        let mut current_group = SidebarGroup {
-            text: String::new(),
-            items: Vec::new(),
-        };
+        let mut current_group = SidebarGroup { text: String::new(), items: Vec::new() };
         let mut has_items = false;
 
         for item in items {
             if let Some(text) = &item.text {
                 if has_items {
                     groups.push(current_group);
-                    current_group = SidebarGroup {
-                        text: text.clone(),
-                        items: Vec::new(),
-                    };
-                } else {
+                    current_group = SidebarGroup { text: text.clone(), items: Vec::new() };
+                }
+                else {
                     current_group.text = text.clone();
                 }
                 has_items = true;
@@ -456,10 +444,7 @@ impl StaticSiteGenerator {
 
             if let Some(link) = &item.link {
                 if let Some(text) = &item.text {
-                    current_group.items.push(SidebarLink {
-                        text: text.clone(),
-                        link: link.clone(),
-                    });
+                    current_group.items.push(SidebarLink { text: text.clone(), link: link.clone() });
                 }
             }
 
@@ -467,25 +452,16 @@ impl StaticSiteGenerator {
                 if !sub_items.is_empty() {
                     if has_items && !current_group.items.is_empty() {
                         groups.push(current_group);
-                        current_group = SidebarGroup {
-                            text: item.text.clone().unwrap_or_default(),
-                            items: Vec::new(),
-                        };
+                        current_group = SidebarGroup { text: item.text.clone().unwrap_or_default(), items: Vec::new() };
                     }
                     for sub_item in sub_items {
                         if let (Some(text), Some(link)) = (&sub_item.text, &sub_item.link) {
-                            current_group.items.push(SidebarLink {
-                                text: text.clone(),
-                                link: link.clone(),
-                            });
+                            current_group.items.push(SidebarLink { text: text.clone(), link: link.clone() });
                         }
                     }
                     if !current_group.items.is_empty() {
                         groups.push(current_group);
-                        current_group = SidebarGroup {
-                            text: String::new(),
-                            items: Vec::new(),
-                        };
+                        current_group = SidebarGroup { text: String::new(), items: Vec::new() };
                         has_items = false;
                     }
                 }
@@ -512,7 +488,8 @@ impl StaticSiteGenerator {
     fn copy_resources(&self, source_dir: &Path, output_dir: &Path) -> Result<()> {
         let public_dir = if let Some(ref public_path) = self.config.public {
             source_dir.join(public_path)
-        } else {
+        }
+        else {
             source_dir.join("public")
         };
 
@@ -526,30 +503,33 @@ impl StaticSiteGenerator {
 
             if path.is_file() {
                 let rel_path = path.strip_prefix(source_dir).unwrap_or(path);
-                
+
                 let path_str = rel_path.to_string_lossy();
                 let components: Vec<&str> = path_str.split(std::path::MAIN_SEPARATOR).collect();
-                
-                if components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress" || c == ".vutex") {
+
+                if components
+                    .iter()
+                    .any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress" || c == ".vutex")
+                {
                     continue;
                 }
-                
+
                 if let Some(ext) = path.extension() {
                     let ext_str = ext.to_string_lossy().to_lowercase();
-                    
+
                     if ext_str == "md" {
                         continue;
                     }
-                    
+
                     if self.is_resource_file(&ext_str) {
                         let dest_path = output_dir.join(rel_path);
-                        
+
                         if let Some(parent) = dest_path.parent() {
                             if !parent.exists() {
                                 fs::create_dir_all(parent)?;
                             }
                         }
-                        
+
                         fs::copy(path, dest_path)?;
                     }
                 }
@@ -570,12 +550,10 @@ impl StaticSiteGenerator {
     /// 如果是资源文件则返回 true，否则返回 false
     fn is_resource_file(&self, ext: &str) -> bool {
         let resource_exts = [
-            "css", "js", "jpg", "jpeg", "png", "gif", "svg", "ico", "webp",
-            "woff", "woff2", "ttf", "eot", "otf",
-            "pdf", "zip", "tar", "gz",
-            "html", "htm",
+            "css", "js", "jpg", "jpeg", "png", "gif", "svg", "ico", "webp", "woff", "woff2", "ttf", "eot", "otf", "pdf", "zip",
+            "tar", "gz", "html", "htm",
         ];
-        
+
         resource_exts.contains(&ext)
     }
 
@@ -601,7 +579,8 @@ impl StaticSiteGenerator {
 
             if file_type.is_dir() {
                 self.copy_directory(&entry.path(), &dest_path)?;
-            } else {
+            }
+            else {
                 fs::copy(entry.path(), dest_path)?;
             }
         }

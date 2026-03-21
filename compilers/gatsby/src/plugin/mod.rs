@@ -1,9 +1,9 @@
 //! Gatsby 插件模块
 //! 提供 Gatsby 静态站点生成器的插件系统
 
-use std::collections::HashMap;
-use nargo_types::NargoValue;
 use crate::types::Result;
+use nargo_types::NargoValue;
+use std::collections::HashMap;
 
 /// 插件错误类型
 #[derive(Debug)]
@@ -62,12 +62,7 @@ pub struct Node {
 impl Node {
     /// 创建新的节点
     pub fn new(id: String, node_type: String) -> Self {
-        Self {
-            id,
-            node_type,
-            data: HashMap::new(),
-            internal: NodeInternal::default(),
-        }
+        Self { id, node_type, data: HashMap::new(), internal: NodeInternal::default() }
     }
 
     /// 设置节点数据
@@ -109,11 +104,7 @@ pub struct Page {
 impl Page {
     /// 创建新的页面
     pub fn new(path: String, component: String) -> Self {
-        Self {
-            path,
-            component,
-            context: HashMap::new(),
-        }
+        Self { path, component, context: HashMap::new() }
     }
 
     /// 设置页面上下文
@@ -137,11 +128,7 @@ pub struct PluginContext {
 impl PluginContext {
     /// 创建新的插件上下文
     pub fn new() -> Self {
-        Self {
-            site_config: HashMap::new(),
-            nodes: HashMap::new(),
-            pages: Vec::new(),
-        }
+        Self { site_config: HashMap::new(), nodes: HashMap::new(), pages: Vec::new() }
     }
 
     /// 添加节点

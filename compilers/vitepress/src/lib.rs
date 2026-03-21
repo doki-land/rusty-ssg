@@ -10,7 +10,9 @@ pub mod types;
 
 pub use types::{ast, config, document, errors, ipc, language};
 
-pub use nargo_types::{CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span};
+pub use nargo_types::{
+    CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span,
+};
 
 pub use types::{
     BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
@@ -27,9 +29,10 @@ pub use nargo_types::Document;
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 
-pub use tools::{cmd, site_generator};
-pub use tools::site_generator::{ConfigLoader, StaticSiteGenerator, LanguageDocuments};
-pub use tools::{BuildArgs, CheckArgs, Commands, DevArgs, InitArgs, VitePressCli};
+pub use tools::{
+    BuildArgs, CheckArgs, Commands, DevArgs, InitArgs, VitePressCli, cmd, site_generator,
+    site_generator::{ConfigLoader, LanguageDocuments, StaticSiteGenerator},
+};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

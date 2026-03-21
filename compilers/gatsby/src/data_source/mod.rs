@@ -1,16 +1,17 @@
 //! 数据源模块
 //! 提供从各种数据源创建 GraphQL 节点的功能
 
-use std::collections::HashMap;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use async_graphql_value::{ConstValue, Name};
 use indexmap::IndexMap;
 use nargo_parser::parse_document;
 use nargo_types::Document;
 
-use crate::graphql::{NodeBuilder, ContentDigest};
-use crate::types::graphql::{Node, NodeId, NodeType, GraphQLResult};
+use crate::{
+    graphql::{ContentDigest, NodeBuilder},
+    types::graphql::{GraphQLResult, Node, NodeId, NodeType},
+};
 
 /// Markdown 数据源
 pub struct MarkdownDataSource;
@@ -32,8 +33,8 @@ impl MarkdownDataSource {
     ///
     /// 如果解析失败，返回 `GraphQLError`
     pub fn create_node_from_markdown(&self, content: &str, path: &str) -> GraphQLResult<Node> {
-        let doc = parse_document(content, path)
-            .map_err(|e| crate::types::graphql::GraphQLError::ExecutionError(e.to_string()))?;
+        let doc =
+            parse_document(content, path).map_err(|e| crate::types::graphql::GraphQLError::ExecutionError(e.to_string()))?;
 
         self.create_node_from_document(doc, content)
     }
@@ -49,11 +50,8 @@ impl MarkdownDataSource {
         let type_name = NodeType::new("MarkdownRemark".to_string());
         let content_digest = ContentDigest::generate(raw_content);
 
-        let mut builder = NodeBuilder::new()
-            .id(node_id)
-            .type_name(type_name)
-            .content_digest(content_digest)
-            .content(raw_content.to_string());
+        let mut builder =
+            NodeBuilder::new().id(node_id).type_name(type_name).content_digest(content_digest).content(raw_content.to_string());
 
         if let Some(title) = &doc.frontmatter.title {
             builder = builder.field("title".to_string(), ConstValue::String(title.clone()));
@@ -88,7 +86,7 @@ impl MarkdownDataSource {
         match value {
             nargo_types::NargoValue::String(s) => ConstValue::String(s.clone()),
             nargo_types::NargoValue::Number(n) => ConstValue::Number(
-                async_graphql_value::Number::from_f64(*n).unwrap_or_else(|| async_graphql_value::Number::from(0))
+                async_graphql_value::Number::from_f64(*n).unwrap_or_else(|| async_graphql_value::Number::from(0)),
             ),
             nargo_types::NargoValue::Bool(b) => ConstValue::Boolean(*b),
             nargo_types::NargoValue::Array(arr) => {
@@ -140,10 +138,7 @@ impl SiteMetadataDataSource {
         let content = format!("{:?}{:?}{:?}", title, description, site_url);
         let content_digest = ContentDigest::generate(&content);
 
-        let mut builder = NodeBuilder::new()
-            .id(node_id)
-            .type_name(type_name)
-            .content_digest(content_digest);
+        let mut builder = NodeBuilder::new().id(node_id).type_name(type_name).content_digest(content_digest);
 
         let mut site_metadata = IndexMap::new();
 
@@ -188,13 +183,7 @@ impl FileDataSource {
     /// * `name` - 文件名
     /// * `extension` - 文件扩展名
     /// * `size` - 文件大小
-    pub fn create_file_node(
-        &self,
-        path: &str,
-        name: &str,
-        extension: &str,
-        size: u64,
-    ) -> GraphQLResult<Node> {
+    pub fn create_file_node(&self, path: &str, name: &str, extension: &str, size: u64) -> GraphQLResult<Node> {
         let node_id = NodeId::new(path.to_string());
         let type_name = NodeType::new("File".to_string());
         let content_digest = ContentDigest::generate(path);

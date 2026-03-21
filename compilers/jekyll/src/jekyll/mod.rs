@@ -550,17 +550,9 @@ impl FrontMatterParser {
         }
 
         let raw_yaml: String = yaml_lines.join("\n");
-        let content = if content_start < lines.len() { 
-            lines[content_start..].join("\n") 
-        } else { 
-            String::new() 
-        };
+        let content = if content_start < lines.len() { lines[content_start..].join("\n") } else { String::new() };
 
-        let variables = if raw_yaml.trim().is_empty() { 
-            HashMap::new() 
-        } else { 
-            Self::parse_yaml(&raw_yaml)? 
-        };
+        let variables = if raw_yaml.trim().is_empty() { HashMap::new() } else { Self::parse_yaml(&raw_yaml)? };
 
         Ok(FrontMatter::new(raw_yaml, variables, content))
     }
@@ -578,16 +570,12 @@ impl FrontMatterParser {
     ///
     /// 返回 `JekyllError::YamlParseError` 如果 YAML 解析失败或根元素不是对象
     fn parse_yaml(yaml_content: &str) -> Result<HashMap<String, Value>, JekyllError> {
-        let value: serde_json::Value =
-            oak_yaml::from_str(yaml_content).map_err(|e| {
-                JekyllError::YamlParseError(format!("Failed to parse YAML: {}", e))
-            })?;
+        let value: serde_json::Value = oak_yaml::from_str(yaml_content)
+            .map_err(|e| JekyllError::YamlParseError(format!("Failed to parse YAML: {}", e)))?;
 
         match value {
             Value::Object(map) => Ok(map.into_iter().collect()),
-            _ => Err(JekyllError::YamlParseError(
-                "YAML root must be an object (key-value pairs)".to_string()
-            )),
+            _ => Err(JekyllError::YamlParseError("YAML root must be an object (key-value pairs)".to_string())),
         }
     }
 
@@ -603,9 +591,7 @@ impl FrontMatterParser {
     /// 返回 `JekyllError::InvalidFrontMatterFormat` 如果 Front Matter 格式无效
     /// 返回 `JekyllError::YamlParseError` 如果 YAML 解析失败
     pub fn parse_file<P: AsRef<Path>>(path: P) -> Result<FrontMatter, JekyllError> {
-        let content = std::fs::read_to_string(path.as_ref()).map_err(|e| {
-            JekyllError::FileSystemError(e)
-        })?;
+        let content = std::fs::read_to_string(path.as_ref()).map_err(|e| JekyllError::FileSystemError(e))?;
         Self::parse(&content)
     }
 
@@ -633,7 +619,8 @@ impl FrontMatterParser {
             if trimmed_line == "---" {
                 if !found_start {
                     found_start = true;
-                } else if found_start {
+                }
+                else if found_start {
                     found_end = true;
                     break;
                 }

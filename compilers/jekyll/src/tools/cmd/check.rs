@@ -1,29 +1,31 @@
 //! Check 命令实现
-//! 
+//!
 //! 提供 Jekyll 站点检查功能，验证配置文件、内容文件和目录结构的有效性。
 
-use crate::CheckArgs;
+use crate::{
+    CheckArgs,
+    jekyll::{JekyllConfigLoader, JekyllStructure, PostManager},
+    types::Result,
+};
 use console::style;
 use std::{fs, path::PathBuf};
-use crate::types::Result;
-use crate::jekyll::{JekyllStructure, JekyllConfigLoader, PostManager};
 
 /// Check 命令执行器
-/// 
+///
 /// 负责检查 Jekyll 站点的配置、内容和目录结构的有效性。
 pub struct CheckCommand;
 
 impl CheckCommand {
     /// 执行 check 命令
-    /// 
+    ///
     /// 根据提供的参数检查 Jekyll 站点的有效性。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `args` - 检查命令参数，包含检查范围、详细程度等配置
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     pub async fn execute(args: CheckArgs) -> Result<()> {
         println!("{}", style("Checking Jekyll site...").cyan());
@@ -31,7 +33,7 @@ impl CheckCommand {
         let source_dir = args.source.unwrap_or_else(|| PathBuf::from("."));
 
         println!("  Source directory: {}", source_dir.display());
-        
+
         let mut total_errors = 0;
         let mut total_warnings = 0;
 
@@ -75,7 +77,8 @@ impl CheckCommand {
             }
 
             println!("  {} Checking content files...", style("→").blue());
-            let (content_errors, content_warnings) = Self::check_content_files(&source_dir, &structure, args.drafts, args.detailed);
+            let (content_errors, content_warnings) =
+                Self::check_content_files(&source_dir, &structure, args.drafts, args.detailed);
             total_errors += content_errors;
             total_warnings += content_warnings;
         }
@@ -96,29 +99,29 @@ impl CheckCommand {
     }
 
     /// 检查配置文件
-    /// 
+    ///
     /// 验证 _config.yml 文件的存在性和有效性。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `source_dir` - 源目录路径
     /// * `detailed` - 是否显示详细信息
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回警告数量或错误结果
     fn check_configuration(source_dir: &PathBuf, detailed: bool) -> Result<usize> {
         let config_path = source_dir.join("_config.yml");
-        
+
         if !config_path.exists() {
             println!("    {} Configuration file _config.yml not found", style("✗").red());
             return Ok(1);
         }
 
         let mut warnings = 0;
-        
+
         let content = fs::read_to_string(&config_path)?;
-        
+
         if detailed {
             println!("    {} Configuration file exists", style("✓").green());
         }
@@ -134,16 +137,16 @@ impl CheckCommand {
     }
 
     /// 检查目录结构
-    /// 
+    ///
     /// 验证 Jekyll 标准目录是否存在。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `source_dir` - 源目录路径
     /// * `detailed` - 是否显示详细信息
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回缺失的目录列表
     fn check_directory_structure(source_dir: &PathBuf, detailed: bool) -> Vec<&'static str> {
         let required_dirs = ["_posts", "_layouts"];
@@ -157,7 +160,8 @@ impl CheckCommand {
                 if detailed {
                     println!("    {} Missing required directory: {}", style("✗").red(), dir);
                 }
-            } else if detailed {
+            }
+            else if detailed {
                 println!("    {} Required directory exists: {}", style("✓").green(), dir);
             }
         }
@@ -166,14 +170,16 @@ impl CheckCommand {
             let dir_path = source_dir.join(dir);
             if !dir_path.exists() && detailed {
                 println!("    {} Optional directory missing: {}", style("⚠").yellow(), dir);
-            } else if detailed {
+            }
+            else if detailed {
                 println!("    {} Optional directory exists: {}", style("✓").green(), dir);
             }
         }
 
         if missing_dirs.is_empty() {
             println!("  {} All required directories exist", style("✓").green());
-        } else {
+        }
+        else {
             println!("  {} Missing directories: {:?}", style("⚠").yellow(), missing_dirs);
         }
 
@@ -181,24 +187,24 @@ impl CheckCommand {
     }
 
     /// 检查内容文件
-    /// 
+    ///
     /// 验证 Markdown 和 HTML 文件的有效性。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `source_dir` - 源目录路径
     /// * `structure` - Jekyll 结构对象
     /// * `include_drafts` - 是否包含草稿文件
     /// * `detailed` - 是否显示详细信息
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回 (错误数量, 警告数量)
     fn check_content_files(
-        source_dir: &PathBuf, 
-        structure: &JekyllStructure, 
+        source_dir: &PathBuf,
+        structure: &JekyllStructure,
         include_drafts: bool,
-        detailed: bool
+        detailed: bool,
     ) -> (usize, usize) {
         let mut errors = 0;
         let mut warnings = 0;
@@ -218,7 +224,7 @@ impl CheckCommand {
 
         for file in &markdown_files {
             let _file_name = file.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            
+
             if !include_drafts {
                 let drafts_dir = source_dir.join("_drafts");
                 if file.starts_with(&drafts_dir) {
@@ -235,7 +241,8 @@ impl CheckCommand {
                         if detailed {
                             println!("    {} Empty file: {}", style("⚠").yellow(), file.display());
                         }
-                    } else if detailed {
+                    }
+                    else if detailed {
                         println!("    {} Valid file: {}", style("✓").green(), file.display());
                     }
                 }
@@ -250,7 +257,8 @@ impl CheckCommand {
 
         if errors == 0 && warnings == 0 {
             println!("  {} Checked {} content files, all valid", style("✓").green(), checked_count);
-        } else {
+        }
+        else {
             println!("  {} Checked {} content files", style("ℹ").blue(), checked_count);
         }
 
@@ -259,13 +267,13 @@ impl CheckCommand {
 }
 
 /// 执行 check 命令的公开入口点
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `args` - 检查命令参数
-/// 
+///
 /// # Returns
-/// 
+///
 /// 返回成功或错误结果
 pub async fn execute(args: crate::CheckArgs) -> crate::types::Result<()> {
     CheckCommand::execute(args).await

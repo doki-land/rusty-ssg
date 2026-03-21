@@ -7,12 +7,12 @@ use handlebars::Handlebars;
 use serde_json::Value;
 
 pub mod context;
-pub mod resolver;
 pub mod functions;
+pub mod resolver;
 
 pub use context::{HugoPage, HugoSite, HugoTemplateContext, LanguageConfig, PageParams, SiteParams};
-pub use resolver::{TemplateResolver, TemplateResolverError};
 pub use functions::register_hugo_functions;
+pub use resolver::{TemplateResolver, TemplateResolverError};
 
 /// Hugo 模板引擎错误类型
 #[derive(Debug)]
@@ -119,7 +119,7 @@ impl HugoTemplateEngine {
     pub fn new(root_dir: impl AsRef<Path>, site: HugoSite) -> Result<Self, HugoTemplateError> {
         let resolver = TemplateResolver::new(root_dir);
         let mut handlebars = Handlebars::new();
-        
+
         register_hugo_functions(&mut handlebars);
         handlebars.set_strict_mode(false);
 
@@ -143,7 +143,8 @@ impl HugoTemplateEngine {
     /// * `template_name` - 模板名称（如 "baseof.html" 或 "partials/header.html"）
     pub fn load_template(&mut self, template_name: &str) -> Result<(), HugoTemplateError> {
         let (name, content) = self.resolver.resolve_template(template_name)?;
-        self.handlebars.register_template_string(&name, content)
+        self.handlebars
+            .register_template_string(&name, content)
             .map_err(|e| HugoTemplateError::ParseError { message: e.to_string() })?;
         Ok(())
     }
@@ -167,7 +168,8 @@ impl HugoTemplateEngine {
     /// * `name` - 模板名称
     /// * `content` - 模板内容
     pub fn add_template(&mut self, name: &str, content: &str) -> Result<(), HugoTemplateError> {
-        self.handlebars.register_template_string(name, content)
+        self.handlebars
+            .register_template_string(name, content)
             .map_err(|e| HugoTemplateError::ParseError { message: e.to_string() })?;
         Ok(())
     }
@@ -184,10 +186,11 @@ impl HugoTemplateEngine {
     /// 渲染后的 HTML 字符串
     pub fn render(&self, template_name: &str, page: HugoPage) -> Result<String, HugoTemplateError> {
         let context = HugoTemplateContext { site: self.site.clone(), page };
-        let json_value = serde_json::to_value(context)
-            .map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })?;
-        
-        self.handlebars.render(template_name, &json_value)
+        let json_value =
+            serde_json::to_value(context).map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })?;
+
+        self.handlebars
+            .render(template_name, &json_value)
             .map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })
     }
 

@@ -1,9 +1,8 @@
 //! Check 命令实现
 
-use crate::{CheckArgs, ConfigLoader, VutexCompiler};
+use crate::{CheckArgs, ConfigLoader, VutexCompiler, types::Result};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::types::Result;
 use walkdir::WalkDir;
 
 /// Check 命令

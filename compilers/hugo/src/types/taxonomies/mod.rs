@@ -1,10 +1,10 @@
 //! 分类法（Taxonomies）模块
-//! 
+//!
 //! 提供 Hugo 兼容的分类法系统，包括标签、分类和自定义分类法，
 //! 支持分类页面和术语页面的生成。
 
-use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
 use crate::types::document::hugo_content::HugoPage;
 
@@ -24,12 +24,7 @@ pub struct TaxonomyTerm {
 impl TaxonomyTerm {
     /// 创建新的分类法术语
     pub fn new(name: String, slug: String) -> Self {
-        Self {
-            name,
-            slug,
-            weight: None,
-            pages: Vec::new(),
-        }
+        Self { name, slug, weight: None, pages: Vec::new() }
     }
 
     /// 添加关联页面
@@ -60,12 +55,7 @@ pub struct Taxonomy {
 impl Taxonomy {
     /// 创建新的分类法
     pub fn new(name: String, singular: String) -> Self {
-        Self {
-            name,
-            singular,
-            terms: HashMap::new(),
-            disabled: false,
-        }
+        Self { name, singular, terms: HashMap::new(), disabled: false }
     }
 
     /// 添加术语
@@ -138,7 +128,7 @@ impl TaxonomyIndex {
     /// 为页面收集所有分类法
     pub fn get_page_taxonomies(&self, page: &HugoPage) -> HashMap<String, Vec<String>> {
         let mut result = HashMap::new();
-        
+
         for (taxonomy_name, taxonomy) in &self.taxonomies {
             let mut terms = Vec::new();
             for term in taxonomy.terms.values() {
@@ -150,7 +140,7 @@ impl TaxonomyIndex {
                 result.insert(taxonomy_name.clone(), terms);
             }
         }
-        
+
         result
     }
 }
@@ -167,10 +157,7 @@ pub struct TaxonomyBuilder {
 impl TaxonomyBuilder {
     /// 创建新的分类法构建器
     pub fn new() -> Self {
-        Self {
-            index: TaxonomyIndex::new(),
-            used_slugs: HashSet::new(),
-        }
+        Self { index: TaxonomyIndex::new(), used_slugs: HashSet::new() }
     }
 
     /// 注册默认分类法（tags 和 categories）
@@ -197,29 +184,29 @@ impl TaxonomyBuilder {
     /// 索引单个页面
     fn index_page(&mut self, page: &HugoPage) {
         let fm = &page.frontmatter;
-        
+
         if let Some(tags) = &fm.tags {
             self.add_page_to_taxonomy("tags", tags, page.clone());
         }
-        
+
         if let Some(categories) = &fm.categories {
             self.add_page_to_taxonomy("categories", categories, page.clone());
         }
-        
+
         if let Some(series) = &fm.series {
             if !self.index.taxonomies.contains_key("series") {
                 self.register_taxonomy("series".to_string(), "series".to_string());
             }
             self.add_page_to_taxonomy("series", series, page.clone());
         }
-        
+
         if let Some(authors) = &fm.authors {
             if !self.index.taxonomies.contains_key("authors") {
                 self.register_taxonomy("authors".to_string(), "author".to_string());
             }
             self.add_page_to_taxonomy("authors", authors, page.clone());
         }
-        
+
         for (taxonomy_name, value) in &fm.custom_taxonomies {
             if let Ok(terms) = serde_json::from_value::<Vec<String>>(value.clone()) {
                 if !self.index.taxonomies.contains_key(taxonomy_name) {
@@ -238,7 +225,8 @@ impl TaxonomyBuilder {
                 let slug = Self::slugify(term_name);
                 if let Some(term) = taxonomy.get_term_mut(&slug) {
                     term.add_page(page.clone());
-                } else {
+                }
+                else {
                     let mut term = TaxonomyTerm::new(term_name.clone(), slug);
                     term.add_page(page.clone());
                     taxonomy.add_term(term);
@@ -249,11 +237,7 @@ impl TaxonomyBuilder {
 
     /// 将字符串转换为 slug（URL 友好格式）
     fn slugify(s: &str) -> String {
-        s.to_lowercase()
-            .replace(|c: char| !c.is_alphanumeric(), "-")
-            .replace("--", "-")
-            .trim_matches('-')
-            .to_string()
+        s.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "-").replace("--", "-").trim_matches('-').to_string()
     }
 
     /// 获取构建完成的索引

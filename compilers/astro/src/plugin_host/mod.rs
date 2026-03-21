@@ -1,10 +1,8 @@
 //! 插件宿主模块
 
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
+use crate::plugin::{Plugin, PluginConfig, PluginError, PluginManager};
 use serde_json::Value;
-use crate::plugin::{Plugin, PluginError, PluginConfig, PluginManager};
+use std::{collections::HashMap, fs, path::Path};
 
 /// 插件宿主错误类型
 #[derive(Debug)]
@@ -30,48 +28,41 @@ pub struct PluginHost {
 impl PluginHost {
     /// 创建新的插件宿主
     pub fn new(config: &str) -> Self {
-        Self {
-            config: config.to_string(),
-            plugin_manager: PluginManager::new(),
-            plugin_configs: HashMap::new(),
-        }
+        Self { config: config.to_string(), plugin_manager: PluginManager::new(), plugin_configs: HashMap::new() }
     }
 
     /// 加载插件配置
-    /// 
+    ///
     /// # 参数
     /// - `config_path`: 插件配置文件路径
-    /// 
+    ///
     /// # 返回值
     /// - `Result<(), PluginHostError>`: 加载结果
     pub fn load_config(&mut self, config_path: &Path) -> Result<(), PluginHostError> {
         let config_content = fs::read_to_string(config_path)
             .map_err(|e| PluginHostError::StartError(format!("Failed to read config file: {}", e)))?;
-        
+
         let config: Value = serde_json::from_str(&config_content)
             .map_err(|e| PluginHostError::StartError(format!("Failed to parse config file: {}", e)))?;
-        
+
         if let Some(plugins) = config.get("plugins").and_then(|v| v.as_array()) {
             for plugin_config in plugins {
                 if let Some(name) = plugin_config.get("name").and_then(|v| v.as_str()) {
                     let options = plugin_config.get("options").unwrap_or(&Value::Object(Default::default())).clone();
-                    let config = PluginConfig {
-                        name: name.to_string(),
-                        options,
-                    };
+                    let config = PluginConfig { name: name.to_string(), options };
                     self.plugin_configs.insert(name.to_string(), config);
                 }
             }
         }
-        
+
         Ok(())
     }
 
     /// 注册插件
-    /// 
+    ///
     /// # 参数
     /// - `plugin`: 插件实例
-    /// 
+    ///
     /// # 返回值
     /// - `Result<(), PluginError>`: 注册结果
     pub fn register_plugin(&mut self, plugin: impl Plugin + Send + Sync + 'static) -> Result<(), PluginError> {
@@ -81,7 +72,7 @@ impl PluginHost {
     }
 
     /// 初始化所有插件
-    /// 
+    ///
     /// # 返回值
     /// - `Result<(), PluginError>`: 初始化结果
     pub fn init_plugins(&self) -> Result<(), PluginError> {
@@ -89,10 +80,10 @@ impl PluginHost {
     }
 
     /// 执行所有插件
-    /// 
+    ///
     /// # 参数
     /// - `content`: 要处理的内容
-    /// 
+    ///
     /// # 返回值
     /// - `Result<String, PluginError>`: 处理后的内容
     pub fn execute_plugins(&self, content: &str) -> Result<String, PluginError> {
@@ -100,7 +91,7 @@ impl PluginHost {
     }
 
     /// 获取插件管理器
-    /// 
+    ///
     /// # 返回值
     /// - `&PluginManager`: 插件管理器
     pub fn plugin_manager(&self) -> &PluginManager {
@@ -108,14 +99,13 @@ impl PluginHost {
     }
 
     /// 获取插件配置
-    /// 
+    ///
     /// # 参数
     /// - `plugin_name`: 插件名称
-    /// 
+    ///
     /// # 返回值
     /// - `Option<&PluginConfig>`: 插件配置
     pub fn plugin_config(&self, plugin_name: &str) -> Option<&PluginConfig> {
         self.plugin_configs.get(plugin_name)
     }
 }
-

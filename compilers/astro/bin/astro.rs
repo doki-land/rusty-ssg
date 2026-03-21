@@ -1,7 +1,7 @@
 //! Astro command-line interface
 
-use clap::{Parser, Subcommand};
 use astro::tools::cmd;
+use clap::{Parser, Subcommand};
 
 /// Astro static site generator
 #[derive(Parser)]
@@ -18,29 +18,29 @@ enum Commands {
         /// Path to the project directory
         #[arg(default_value = ".")]
         path: String,
-        
+
         /// Output directory
         #[arg(short, long, default_value = "dist")]
         outdir: String,
     },
-    
+
     /// Start development server
     Dev {
         /// Path to the project directory
         #[arg(default_value = ".")]
         path: String,
-        
+
         /// Port to run the dev server on
         #[arg(short, long, default_value = "3000")]
         port: u16,
     },
-    
+
     /// Preview the built site
     Preview {
         /// Path to the build output directory
         #[arg(default_value = "dist")]
         path: String,
-        
+
         /// Port to run the preview server on
         #[arg(short, long, default_value = "3000")]
         port: u16,
@@ -50,7 +50,7 @@ enum Commands {
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
-    
+
     match cli.command {
         Commands::Build { path, outdir } => {
             cmd::build(&path, &outdir);

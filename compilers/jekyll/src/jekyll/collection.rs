@@ -332,15 +332,7 @@ impl CollectionItem {
 
         let slug = Self::generate_slug(&name, &front_matter);
 
-        let permalink = Self::generate_permalink(
-            &name,
-            collection_name,
-            &front_matter,
-            date,
-            &slug,
-            config,
-            site_config,
-        )?;
+        let permalink = Self::generate_permalink(&name, collection_name, &front_matter, date, &slug, config, site_config)?;
 
         Ok(Self {
             path: item_path.to_path_buf(),
@@ -386,10 +378,7 @@ impl CollectionItem {
     ///
     /// 返回生成的 slug
     fn generate_slug(name: &str, front_matter: &FrontMatter) -> String {
-        let title = front_matter
-            .get_str("title")
-            .or_else(|| front_matter.get_str("slug"))
-            .unwrap_or(name);
+        let title = front_matter.get_str("title").or_else(|| front_matter.get_str("slug")).unwrap_or(name);
 
         title
             .to_lowercase()
@@ -429,11 +418,8 @@ impl CollectionItem {
         config: &CollectionConfig,
         site_config: &JekyllConfig,
     ) -> Result<String, CollectionError> {
-        let permalink_format = config
-            .permalink
-            .as_deref()
-            .or_else(|| site_config.permalink.as_deref())
-            .unwrap_or("/:collection/:name/");
+        let permalink_format =
+            config.permalink.as_deref().or_else(|| site_config.permalink.as_deref()).unwrap_or("/:collection/:name/");
 
         let mut permalink = permalink_format.to_string();
 
@@ -477,13 +463,8 @@ impl CollectionItem {
     /// # Errors
     ///
     /// 返回 `CollectionError` 如果渲染失败
-    pub fn render_content(
-        &self,
-        converter: &crate::jekyll::MarkdownConverter,
-    ) -> Result<String, CollectionError> {
-        converter
-            .convert(&self.front_matter.content())
-            .map_err(|e| CollectionError::FileParseError(format!("{:?}", e)))
+    pub fn render_content(&self, converter: &crate::jekyll::MarkdownConverter) -> Result<String, CollectionError> {
+        converter.convert(&self.front_matter.content()).map_err(|e| CollectionError::FileParseError(format!("{:?}", e)))
     }
 
     /// 获取集合项的标题
@@ -520,10 +501,7 @@ impl CollectionItem {
     ///
     /// 返回布局名称（如果有）
     pub fn layout(&self, config: &CollectionConfig) -> Option<String> {
-        self.front_matter
-            .get_str("layout")
-            .map(|s| s.to_string())
-            .or_else(|| config.layout.clone())
+        self.front_matter.get_str("layout").map(|s| s.to_string()).or_else(|| config.layout.clone())
     }
 
     /// 将集合项转换为 JSON 值
@@ -539,25 +517,13 @@ impl CollectionItem {
         map.insert("name".to_string(), Value::String(self.name.clone()));
         map.insert("title".to_string(), Value::String(self.title().to_string()));
         map.insert("slug".to_string(), Value::String(self.slug.clone()));
-        map.insert(
-            "permalink".to_string(),
-            Value::String(self.permalink.clone()),
-        );
-        map.insert(
-            "relative_path".to_string(),
-            Value::String(self.relative_path.clone()),
-        );
-        map.insert(
-            "collection".to_string(),
-            Value::String(self.collection.clone()),
-        );
+        map.insert("permalink".to_string(), Value::String(self.permalink.clone()));
+        map.insert("relative_path".to_string(), Value::String(self.relative_path.clone()));
+        map.insert("collection".to_string(), Value::String(self.collection.clone()));
         map.insert("url".to_string(), Value::String(self.permalink.clone()));
 
         if let Some(date) = self.date {
-            map.insert(
-                "date".to_string(),
-                Value::String(date.to_string()),
-            );
+            map.insert("date".to_string(), Value::String(date.to_string()));
         }
 
         for (k, v) in &self.front_matter.variables {
@@ -597,12 +563,7 @@ impl Collection {
     ///
     /// 返回新的集合实例
     pub fn new(name: String, config: CollectionConfig, directory: PathBuf) -> Self {
-        Self {
-            name,
-            config,
-            items: Vec::new(),
-            directory,
-        }
+        Self { name, config, items: Vec::new(), directory }
     }
 
     /// 加载集合中的所有项
@@ -637,16 +598,13 @@ impl Collection {
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!(
-                                        "Error loading collection item {}: {:?}",
-                                        path.to_string_lossy(),
-                                        e
-                                    );
+                                    eprintln!("Error loading collection item {}: {:?}", path.to_string_lossy(), e);
                                 }
                             }
                         }
                     }
-                } else if path.is_dir() {
+                }
+                else if path.is_dir() {
                     let sub_dir_name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
                     let sub_collection_name = format!("{}/{}", self.name, sub_dir_name);
                     let mut sub_config = self.config.clone();
@@ -674,23 +632,17 @@ impl Collection {
 
         self.items.sort_by(|a, b| {
             let ordering = match sort_by {
-                "date" => {
-                    match (a.date, b.date) {
-                        (Some(d1), Some(d2)) => d1.cmp(&d2),
-                        (Some(_), None) => std::cmp::Ordering::Less,
-                        (None, Some(_)) => std::cmp::Ordering::Greater,
-                        (None, None) => a.name.cmp(&b.name),
-                    }
-                }
+                "date" => match (a.date, b.date) {
+                    (Some(d1), Some(d2)) => d1.cmp(&d2),
+                    (Some(_), None) => std::cmp::Ordering::Less,
+                    (None, Some(_)) => std::cmp::Ordering::Greater,
+                    (None, None) => a.name.cmp(&b.name),
+                },
                 "title" => a.title().cmp(b.title()),
                 _ => a.name.cmp(&b.name),
             };
 
-            if reverse {
-                ordering.reverse()
-            } else {
-                ordering
-            }
+            if reverse { ordering.reverse() } else { ordering }
         });
     }
 
@@ -805,11 +757,7 @@ impl CollectionManager {
     ///
     /// 返回新的集合管理器实例
     pub fn new(structure: JekyllStructure, config: JekyllConfig) -> Self {
-        Self {
-            collections: HashMap::new(),
-            structure,
-            config,
-        }
+        Self { collections: HashMap::new(), structure, config }
     }
 
     /// 加载所有集合
@@ -843,19 +791,14 @@ impl CollectionManager {
 
                 let collection_dir = if let Some(path) = &config.path {
                     self.structure.root().join(path)
-                } else {
-                    let collections_dir = self
-                        .config
-                        .collections_dir
-                        .as_deref()
-                        .unwrap_or("");
+                }
+                else {
+                    let collections_dir = self.config.collections_dir.as_deref().unwrap_or("");
                     if collections_dir.is_empty() {
                         self.structure.root().join(format!("_{}", name))
-                    } else {
-                        self.structure
-                            .root()
-                            .join(collections_dir)
-                            .join(name)
+                    }
+                    else {
+                        self.structure.root().join(collections_dir).join(name)
                     }
                 };
 
@@ -942,10 +885,6 @@ impl CollectionManager {
 
 impl Clone for CollectionManager {
     fn clone(&self) -> Self {
-        Self {
-            collections: self.collections.clone(),
-            structure: self.structure.clone(),
-            config: self.config.clone(),
-        }
+        Self { collections: self.collections.clone(), structure: self.structure.clone(), config: self.config.clone() }
     }
 }

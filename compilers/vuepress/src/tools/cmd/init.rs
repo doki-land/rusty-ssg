@@ -1,9 +1,8 @@
 //! Init 命令实现
 
-use crate::InitArgs;
+use crate::{InitArgs, types::Result};
 use console::style;
 use std::{fs, path::PathBuf};
-use crate::types::Result;
 
 /// Init 命令
 pub struct InitCommand;

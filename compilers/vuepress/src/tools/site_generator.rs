@@ -1,13 +1,15 @@
 //! 站点生成模块
 //! 提供静态站点生成的核心功能，支持多语言文档
 
-use crate::tools::{
-    theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    Result,
+use crate::{
+    Document,
+    tools::{
+        Result,
+        theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
+    },
+    types::{LocaleConfig, VutexConfig},
 };
-use crate::Document;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::types::{LocaleConfig, VutexConfig};
 
 /// 语言分组的文档映射
 pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
@@ -251,12 +253,7 @@ impl StaticSiteGenerator {
     /// 生成导航栏项目
     fn generate_nav_items(&self, lang: &str) -> Vec<NavItem> {
         let nav_source = if let Some(locale_config) = self.config.locales.get(lang) {
-            if let Some(ref nav) = locale_config.nav {
-                nav
-            }
-            else {
-                &self.config.theme.nav
-            }
+            if let Some(ref nav) = locale_config.nav { nav } else { &self.config.theme.nav }
         }
         else {
             &self.config.theme.nav
@@ -273,12 +270,7 @@ impl StaticSiteGenerator {
         let mut groups = Vec::new();
 
         let sidebar_source = if let Some(locale_config) = self.config.locales.get(lang) {
-            if let Some(ref sidebar) = locale_config.sidebar {
-                sidebar
-            }
-            else {
-                &self.config.theme.sidebar
-            }
+            if let Some(ref sidebar) = locale_config.sidebar { sidebar } else { &self.config.theme.sidebar }
         }
         else {
             &self.config.theme.sidebar

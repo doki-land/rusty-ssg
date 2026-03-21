@@ -55,4 +55,4 @@ dev = ["notify"]
 
 [[bin]]
 name = "jekyll"
-path = "src/bin/jekyll.rs"
+path = "bin/jekyll.rs"

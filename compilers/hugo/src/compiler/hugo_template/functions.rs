@@ -140,7 +140,8 @@ fn truncate(h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext, out:
         let mut result = value[0..length].to_string();
         result.push_str("...");
         result
-    } else {
+    }
+    else {
         value.to_string()
     };
     out.write(truncated.as_ref())?;
@@ -157,13 +158,10 @@ fn truncate(h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext, out:
 fn default_helper(h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext, out: &mut dyn Output) -> HelperResult {
     let value = h.param(0).map(|v| v.value()).unwrap_or(&Value::Null);
     let default_value = h.param(1).map(|v| v.value()).unwrap_or(&Value::Null);
-    
-    let result = if value.is_null() || (value.is_string() && value.as_str().unwrap_or("").is_empty()) {
-        default_value
-    } else {
-        value
-    };
-    
+
+    let result =
+        if value.is_null() || (value.is_string() && value.as_str().unwrap_or("").is_empty()) { default_value } else { value };
+
     let result_str = result.as_str().unwrap_or("");
     out.write(result_str)?;
     Ok(())

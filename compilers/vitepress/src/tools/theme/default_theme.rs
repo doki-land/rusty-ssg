@@ -1,8 +1,7 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::Result;
-use crate::types::VutexConfig;
+use crate::{Result, types::VutexConfig};
 
 /// 语言信息，包含语言代码、标签和是否为当前语言的状态
 #[derive(Debug, Clone)]
@@ -117,18 +116,20 @@ impl DefaultTheme {
     /// 渲染后的 HTML 字符串，如果渲染成功则返回 `Ok(String)`，否则返回错误
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
         let template = include_str!("../templates/page.html");
-        
+
         let mut html = template.to_string();
-        
+
         html = html.replace("{{ page_title }}", &context.page_title);
         html = html.replace("{{ site_title }}", &context.site_title);
-        
-        let nav_html = context.nav_items.iter()
+
+        let nav_html = context
+            .nav_items
+            .iter()
             .map(|item| format!("<li><a href=\"{}\">{}</a></li>", item.link, item.text))
             .collect::<Vec<_>>()
             .join("\n");
         html = html.replace("{% for item in &nav_items %}\n                    <li><a href=\"{{ item.link }}\">{{ item.text }}</a></li>\n                    {% endfor %}", &nav_html);
-        
+
         let mut sidebar_html = String::new();
         for group in &context.sidebar_groups {
             if !group.items.is_empty() {
@@ -140,15 +141,17 @@ impl DefaultTheme {
             }
         }
         html = html.replace("{% for group in &sidebar_groups %}\n                    {% if !group.items.is_empty() %}\n                    <li class=\"group-title\">{{ group.text }}</li>\n                    {% for item in &group.items %}\n                    <li>\n                        <a href=\"{{ item.link }}\"{% if item.link == current_path %} class=\"active\"{% endif %}>{{ item.text }}</a>\n                    </li>\n                    {% endfor %}\n                    {% endif %}\n                    {% endfor %}", &sidebar_html);
-        
-        let social_html = context.social_links.iter()
+
+        let social_html = context
+            .social_links
+            .iter()
             .map(|link| format!("<a href=\"{}\" class=\"social-link\">{}</a>", link.link, link.icon))
             .collect::<Vec<_>>()
             .join("\n");
         html = html.replace("{% for link in &social_links %}\n                    <a href=\"{{ link.link }}\" class=\"social-link\">{{ link.icon }}</a>\n                    {% endfor %}", &social_html);
-        
+
         html = html.replace("{{ content|safe }}", &context.content);
-        
+
         let mut footer_html = String::new();
         if context.has_footer {
             footer_html.push_str("<footer class=\"footer\">\n");
@@ -161,7 +164,7 @@ impl DefaultTheme {
             footer_html.push_str("</footer>");
         }
         html = html.replace("{% if has_footer %}\n                <footer class=\"footer\">\n                    {% if has_footer_message %}\n                    <p>{{ footer_message }}</p>\n                    {% endif %}\n                    {% if has_footer_copyright %}\n                    <p>{{ footer_copyright }}</p>\n                    {% endif %}\n                </footer>\n                {% endif %}", &footer_html);
-        
+
         Ok(html)
     }
 

@@ -15,14 +15,13 @@ pub use nargo_types::Error as NargoError;
 pub use types::{CodeWriter, CompileMode, CompileOptions, Cursor, ErrorKind, NargoValue, Position, Span};
 
 pub use types_config::{
-    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem as ConfigNavItem, PluginConfig, SidebarItem,
-    SocialLink, ThemeConfig, VutexConfig,
+    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem as ConfigNavItem,
+    PluginConfig, SidebarItem, SocialLink, ThemeConfig, VutexConfig,
 };
 
 pub use types::{Result, VutexError};
 
-pub use plugin::{PluginContext, PluginMeta, PluginRegistry, VutexPlugin};
-pub use plugin::katex::KaTeXPlugin;
+pub use plugin::{PluginContext, PluginMeta, PluginRegistry, VutexPlugin, katex::KaTeXPlugin};
 pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage};
 
 pub use compiler::VutexCompiler;

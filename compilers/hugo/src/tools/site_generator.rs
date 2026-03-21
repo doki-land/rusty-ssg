@@ -4,10 +4,9 @@
 use crate::{
     Document, Result,
     theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    types::{document::hugo_content::HugoContentLoader, HugoConfig},
-    types::taxonomies::TaxonomyBuilder,
+    tools::taxonomy_generator::TaxonomyPageGenerator,
+    types::{HugoConfig, document::hugo_content::HugoContentLoader, taxonomies::TaxonomyBuilder},
 };
-use crate::tools::taxonomy_generator::TaxonomyPageGenerator;
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射
@@ -111,21 +110,22 @@ impl StaticSiteGenerator {
 
     /// 生成分类法相关页面
     fn generate_taxonomy_pages(&self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
-        let content_dir = output_dir.parent()
+        let content_dir = output_dir
+            .parent()
             .and_then(|p| p.join("content").canonicalize().ok())
             .unwrap_or_else(|| output_dir.parent().unwrap_or(std::path::Path::new(".")).join("content"));
 
         if content_dir.exists() {
             let structure = crate::types::document::hugo_content::HugoDirectoryStructure::new(content_dir);
             let loader = crate::types::document::hugo_content::HugoContentLoader::new(structure);
-            
+
             if let Ok(index) = loader.load_all() {
                 let mut builder = TaxonomyBuilder::new().with_default_taxonomies();
                 let taxonomy_index = builder.build_from_pages(&index.pages);
-                
+
                 let base_url = self.config.base_url.clone();
                 let taxonomy_generator = TaxonomyPageGenerator::new(output_dir.clone(), base_url);
-                
+
                 let _ = taxonomy_generator.generate_all(taxonomy_index);
             }
         }

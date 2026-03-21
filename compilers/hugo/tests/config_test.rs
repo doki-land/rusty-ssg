@@ -137,30 +137,30 @@ fn test_config_serialization() {
 #[test]
 fn test_new_config_features() {
     let mut config = HugoConfig::default();
-    
+
     config.cache_dir = Some("cache".to_string());
     config.enable_emoji = Some(true);
     config.enable_git_info = Some(false);
-    
+
     let mut pagination = PaginationConfig::default();
     pagination.pager_size = Some(10);
     pagination.path = Some("page".to_string());
     config.pagination = Some(pagination);
-    
+
     let mut sitemap = SitemapConfig::default();
     sitemap.filename = Some("sitemap.xml".to_string());
     sitemap.priority = Some(0.5);
     sitemap.changefreq = Some("weekly".to_string());
     config.sitemap = Some(sitemap);
-    
+
     let mut rss = RssConfig::default();
     rss.limit = Some(20);
     config.rss = Some(rss);
-    
+
     let mut author = AuthorConfig::default();
     author.name = Some("John Doe".to_string());
     author.email = Some("john@example.com".to_string());
     config.author = Some(author);
-    
+
     assert!(config.validate().is_ok());
 }

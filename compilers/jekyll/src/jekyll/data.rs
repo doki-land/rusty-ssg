@@ -5,8 +5,10 @@
 use crate::errors::DataError;
 use oak_yaml;
 use serde_json::Value;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 /// 数据文件格式枚举
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -165,7 +167,8 @@ impl DataManager {
                 let path = entry.path();
 
                 if path.is_dir() {
-                    let sub_dir_name = path.file_name()
+                    let sub_dir_name = path
+                        .file_name()
                         .and_then(|n| n.to_str())
                         .ok_or_else(|| DataError::ReadError("Invalid directory name".to_string()))?;
                     let new_prefix = match prefix {
@@ -173,7 +176,8 @@ impl DataManager {
                         None => sub_dir_name.to_string(),
                     };
                     self.load_dir(&path, Some(&new_prefix))?;
-                } else if path.is_file() {
+                }
+                else if path.is_file() {
                     self.load_file(&path, prefix)?;
                 }
             }
@@ -193,18 +197,17 @@ impl DataManager {
     ///
     /// 返回 `DataError` 如果文件读取失败或解析失败
     fn load_file(&mut self, path: &Path, prefix: Option<&str>) -> Result<(), DataError> {
-        let ext = path.extension()
+        let ext = path
+            .extension()
             .and_then(|e| e.to_str())
             .ok_or_else(|| DataError::UnsupportedFormat("No file extension".to_string()))?;
 
-        let format = DataFormat::from_extension(ext)
-            .ok_or_else(|| DataError::UnsupportedFormat(ext.to_string()))?;
+        let format = DataFormat::from_extension(ext).ok_or_else(|| DataError::UnsupportedFormat(ext.to_string()))?;
 
         let content = Self::parse_file(path, format)?;
 
-        let file_stem = path.file_stem()
-            .and_then(|s| s.to_str())
-            .ok_or_else(|| DataError::ReadError("Invalid file name".to_string()))?;
+        let file_stem =
+            path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| DataError::ReadError("Invalid file name".to_string()))?;
 
         let key = match prefix {
             Some(p) => format!("{}.{}", p, file_stem),
@@ -246,8 +249,7 @@ impl DataManager {
     ///
     /// 返回 `DataError::YamlParseError` 如果解析失败
     fn parse_yaml(content: &str) -> Result<Value, DataError> {
-        oak_yaml::from_str(content)
-            .map_err(|e| DataError::YamlParseError(e.to_string()))
+        oak_yaml::from_str(content).map_err(|e| DataError::YamlParseError(e.to_string()))
     }
 
     /// 解析 JSON 内容
@@ -260,8 +262,7 @@ impl DataManager {
     ///
     /// 返回 `DataError::JsonParseError` 如果解析失败
     fn parse_json(content: &str) -> Result<Value, DataError> {
-        serde_json::from_str(content)
-            .map_err(|e| DataError::JsonParseError(e.to_string()))
+        serde_json::from_str(content).map_err(|e| DataError::JsonParseError(e.to_string()))
     }
 
     /// 解析 CSV 内容
@@ -274,13 +275,9 @@ impl DataManager {
     ///
     /// 返回 `DataError::CsvParseError` 如果解析失败
     fn parse_csv(content: &str) -> Result<Value, DataError> {
-        let mut reader = csv::ReaderBuilder::new()
-            .has_headers(true)
-            .from_reader(content.as_bytes());
+        let mut reader = csv::ReaderBuilder::new().has_headers(true).from_reader(content.as_bytes());
 
-        let headers = reader.headers()
-            .map_err(|e| DataError::CsvParseError(e.to_string()))?
-            .clone();
+        let headers = reader.headers().map_err(|e| DataError::CsvParseError(e.to_string()))?.clone();
 
         let mut records = Vec::new();
 
@@ -384,7 +381,8 @@ impl DataManager {
 
         if rest.is_empty() {
             obj.insert(first.to_string(), value);
-        } else {
+        }
+        else {
             let entry = obj.entry(first.to_string()).or_insert_with(|| Value::Object(serde_json::Map::new()));
             if let Value::Object(inner_obj) = entry {
                 Self::insert_nested(inner_obj, rest, value);

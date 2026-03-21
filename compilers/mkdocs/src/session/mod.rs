@@ -25,12 +25,7 @@ impl CompileSession {
     ///
     /// 使用默认配置初始化会话。
     pub fn new() -> Self {
-        Self {
-            config: MkDocsConfig::default(),
-            documents: HashMap::new(),
-            source_dir: None,
-            output_dir: None,
-        }
+        Self { config: MkDocsConfig::default(), documents: HashMap::new(), source_dir: None, output_dir: None }
     }
 
     /// 使用指定配置创建新的 MkDocs 编译会话
@@ -39,12 +34,7 @@ impl CompileSession {
     ///
     /// * `config` - MkDocs 配置对象
     pub fn with_config(config: MkDocsConfig) -> Self {
-        Self {
-            config,
-            documents: HashMap::new(),
-            source_dir: None,
-            output_dir: None,
-        }
+        Self { config, documents: HashMap::new(), source_dir: None, output_dir: None }
     }
 
     /// 设置源目录

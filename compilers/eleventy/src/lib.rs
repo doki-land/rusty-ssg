@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 
 //! Eleventy static site generator compiler
-//! 
+//!
 //! 一个 100% 兼容 Eleventy 的 Rust 静态站点生成器实现
 
 pub mod build;

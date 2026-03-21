@@ -10,14 +10,16 @@ pub mod types;
 
 pub use types::{config, errors};
 
-pub use nargo_types::{CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span};
-
-pub use types::{
-    AlternatePalette, FontConfig, IconConfig, MkDocsConfig, NavItem, NavValue, PaletteConfig,
-    PluginConfig, PluginOptions, ThemeConfig, ToggleConfig,
+pub use nargo_types::{
+    CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span,
 };
 
-pub use types::{Result, MkDocsError};
+pub use types::{
+    AlternatePalette, FontConfig, IconConfig, MkDocsConfig, NavItem, NavValue, PaletteConfig, PluginConfig, PluginOptions,
+    ThemeConfig, ToggleConfig,
+};
+
+pub use types::{MkDocsError, Result};
 
 pub use compiler::{HtmlRenderer, HtmlRendererConfig, MkDocsCompiler};
 pub use plugin_host::{PluginHost, PluginHostError};
@@ -39,9 +41,9 @@ pub use session::CompileSession;
 //     VersionCommand,
 // };
 
+use nargo_types::Document;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use nargo_types::Document;
 
 /// 编译结果
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,13 +120,7 @@ pub fn compile_batch(documents: &HashMap<String, String>) -> CompileResult {
         use nargo_types::{DocumentMeta, FrontMatter};
         let html = renderer.render(content);
         let doc = Document {
-            meta: DocumentMeta {
-                path: path.clone(),
-                title: None,
-                lang: None,
-                last_updated: None,
-                extra: HashMap::new(),
-            },
+            meta: DocumentMeta { path: path.clone(), title: None, lang: None, last_updated: None, extra: HashMap::new() },
             content: html,
             frontmatter: FrontMatter::new(),
             rendered_content: None,
@@ -136,7 +132,8 @@ pub fn compile_batch(documents: &HashMap<String, String>) -> CompileResult {
     let duration = start_time.elapsed();
     if errors.is_empty() {
         CompileResult::success(result_documents, duration.as_millis() as u64)
-    } else {
+    }
+    else {
         CompileResult::failure(errors, duration.as_millis() as u64)
     }
 }

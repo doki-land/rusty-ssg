@@ -4,9 +4,8 @@
 use crate::{
     Document,
     tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    types::{LocaleConfig, VutexConfig},
+    types::{LocaleConfig, Result, VutexConfig},
 };
-use crate::types::Result;
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射
@@ -40,11 +39,12 @@ impl StaticSiteGenerator {
         let mut all_docs_by_lang: HashMap<String, Vec<(String, Document)>> = HashMap::new();
 
         for (path, doc) in documents {
-            let (lang, _) = self.extract_language_from_path(path, &default_lang);
+            let (lang, _): (String, String) = self.extract_language_from_path(path, &default_lang);
             all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
         }
 
         for (lang, docs) in all_docs_by_lang.into_iter() {
+            let lang: String = lang;
             let nav_items = self.generate_nav_items(&lang);
 
             let mut all_sidebar_links = Vec::new();

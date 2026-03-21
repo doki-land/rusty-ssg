@@ -18,7 +18,11 @@ use std::path::PathBuf;
 
 /// Jekyll CLI 主命令
 #[derive(Parser, Debug)]
-#[command(name = "jekyll", about = "Jekyll 静态站点生成器", long_about = "Rusty Jekyll 是一个用 Rust 编写的 Jekyll 兼容静态站点生成器，提供快速、安全的站点构建体验。")]
+#[command(
+    name = "jekyll",
+    about = "Jekyll 静态站点生成器",
+    long_about = "Rusty Jekyll 是一个用 Rust 编写的 Jekyll 兼容静态站点生成器，提供快速、安全的站点构建体验。"
+)]
 pub struct JekyllCli {
     /// 启用详细输出
     #[arg(short, long, global = true)]

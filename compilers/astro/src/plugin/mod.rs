@@ -1,9 +1,9 @@
 //! 插件模块
 
-pub mod manager;
 pub mod example;
-pub use manager::PluginManager;
+pub mod manager;
 pub use example::ExamplePlugin;
+pub use manager::PluginManager;
 
 /// 插件错误类型
 #[derive(Debug)]
@@ -39,4 +39,3 @@ pub trait Plugin: Send + Sync {
         None
     }
 }
-

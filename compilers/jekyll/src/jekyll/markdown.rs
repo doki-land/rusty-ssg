@@ -64,11 +64,7 @@ impl MarkdownProcessor {
     ///
     /// 返回包含所有处理器的静态数组切片
     pub fn all() -> &'static [MarkdownProcessor] {
-        &[
-            MarkdownProcessor::CommonMark,
-            MarkdownProcessor::Kramdown,
-            MarkdownProcessor::Gfm,
-        ]
+        &[MarkdownProcessor::CommonMark, MarkdownProcessor::Kramdown, MarkdownProcessor::Gfm]
     }
 
     /// 获取处理器的默认 Markdown 语言配置
@@ -675,11 +671,7 @@ impl MarkdownConverter {
 
         let renderer = MarkdownRenderer::with_config(renderer_config);
 
-        Self {
-            processor,
-            options,
-            renderer,
-        }
+        Self { processor, options, renderer }
     }
 
     /// 创建使用 CommonMark 处理器的转换器
@@ -780,9 +772,7 @@ impl MarkdownConverter {
     ///
     /// 返回 `MarkdownError` 如果处理失败
     pub fn convert(&self, markdown: &str) -> Result<String, MarkdownError> {
-        self.renderer
-            .render(markdown)
-            .map_err(|e| MarkdownError::HighlightError(e.to_string()))
+        self.renderer.render(markdown).map_err(|e| MarkdownError::HighlightError(e.to_string()))
     }
 
     /// 从文件转换 Markdown 为 HTML
@@ -798,13 +788,9 @@ impl MarkdownConverter {
     /// # Errors
     ///
     /// 返回 `std::io::Error` 如果文件读取失败，或 `MarkdownError` 如果处理失败
-    pub fn convert_file(
-        &self,
-        file_path: &std::path::Path,
-    ) -> Result<String, std::io::Error> {
+    pub fn convert_file(&self, file_path: &std::path::Path) -> Result<String, std::io::Error> {
         let markdown = std::fs::read_to_string(file_path)?;
-        self.convert(&markdown)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+        self.convert(&markdown).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
     }
 
     /// 从 Jekyll 配置创建 Markdown 转换器

@@ -2,11 +2,11 @@
 //!
 //! 提供分类页面和术语页面的生成功能，包括 HTML 渲染和文件输出。
 
-use crate::types::document::hugo_content::HugoPage;
-use crate::types::taxonomies::{Taxonomy, TaxonomyIndex, TaxonomyTerm};
-use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
+use crate::types::{
+    document::hugo_content::HugoPage,
+    taxonomies::{Taxonomy, TaxonomyIndex, TaxonomyTerm},
+};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 术语页面上下文
 #[derive(Debug, Clone)]
@@ -69,10 +69,7 @@ pub struct TaxonomyPageGenerator {
 impl TaxonomyPageGenerator {
     /// 创建新的分类法页面生成器
     pub fn new(output_dir: PathBuf, base_url: Option<String>) -> Self {
-        Self {
-            output_dir,
-            base_url,
-        }
+        Self { output_dir, base_url }
     }
 
     /// 生成所有分类法页面
@@ -109,9 +106,7 @@ impl TaxonomyPageGenerator {
         let context = self.build_taxonomy_context(taxonomy);
         let html = self.render_taxonomy_page(&context);
 
-        let file_path = self.output_dir
-            .join(&taxonomy.name)
-            .join("index.html");
+        let file_path = self.output_dir.join(&taxonomy.name).join("index.html");
 
         if let Some(parent) = file_path.parent() {
             fs::create_dir_all(parent)?;
@@ -127,10 +122,7 @@ impl TaxonomyPageGenerator {
         let context = self.build_term_context(taxonomy, term);
         let html = self.render_term_page(&context);
 
-        let file_path = self.output_dir
-            .join(&taxonomy.name)
-            .join(&term.slug)
-            .join("index.html");
+        let file_path = self.output_dir.join(&taxonomy.name).join(&term.slug).join("index.html");
 
         if let Some(parent) = file_path.parent() {
             fs::create_dir_all(parent)?;
@@ -143,7 +135,8 @@ impl TaxonomyPageGenerator {
 
     /// 构建分类页面上下文
     fn build_taxonomy_context(&self, taxonomy: &Taxonomy) -> TaxonomyPageContext {
-        let terms: Vec<TermInfo> = taxonomy.get_sorted_terms()
+        let terms: Vec<TermInfo> = taxonomy
+            .get_sorted_terms()
             .iter()
             .map(|term| TermInfo {
                 name: term.name.clone(),
@@ -153,16 +146,13 @@ impl TaxonomyPageGenerator {
             })
             .collect();
 
-        TaxonomyPageContext {
-            taxonomy_name: taxonomy.name.clone(),
-            taxonomy_singular: taxonomy.singular.clone(),
-            terms,
-        }
+        TaxonomyPageContext { taxonomy_name: taxonomy.name.clone(), taxonomy_singular: taxonomy.singular.clone(), terms }
     }
 
     /// 构建术语页面上下文
     fn build_term_context(&self, taxonomy: &Taxonomy, term: &TaxonomyTerm) -> TermPageContext {
-        let pages: Vec<PageInfo> = term.pages
+        let pages: Vec<PageInfo> = term
+            .pages
             .iter()
             .map(|page| PageInfo {
                 title: page.title().unwrap_or("Untitled").to_string(),
@@ -189,12 +179,10 @@ impl TaxonomyPageGenerator {
 
     /// 渲染分类页面 HTML
     fn render_taxonomy_page(&self, context: &TaxonomyPageContext) -> String {
-        let terms_html: Vec<String> = context.terms
+        let terms_html: Vec<String> = context
+            .terms
             .iter()
-            .map(|term| format!(
-                r#"<li><a href="{}">{}</a> ({})</li>"#,
-                term.url, term.name, term.page_count
-            ))
+            .map(|term| format!(r#"<li><a href="{}">{}</a> ({})</li>"#, term.url, term.name, term.page_count))
             .collect();
 
         format!(
@@ -221,14 +209,12 @@ impl TaxonomyPageGenerator {
 
     /// 渲染术语页面 HTML
     fn render_term_page(&self, context: &TermPageContext) -> String {
-        let pages_html: Vec<String> = context.pages
+        let pages_html: Vec<String> = context
+            .pages
             .iter()
             .map(|page| {
                 let date_str = page.date.as_ref().map(|d| format!(" - {}", d)).unwrap_or_default();
-                format!(
-                    r#"<li><a href="{}">{}{}</a></li>"#,
-                    page.url, page.title, date_str
-                )
+                format!(r#"<li><a href="{}">{}{}</a></li>"#, page.url, page.title, date_str)
             })
             .collect();
 

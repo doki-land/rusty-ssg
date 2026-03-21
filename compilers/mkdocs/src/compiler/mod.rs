@@ -1,8 +1,10 @@
 //! MkDocs 编译器模块
 
 use crate::types::{MkDocsConfig, Result};
-use std::path::{Path, PathBuf};
-use std::fs;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use walkdir::WalkDir;
 
 pub mod html_renderer;
@@ -75,7 +77,7 @@ impl MkDocsCompiler {
     /// 编译结果，包含 HTML 内容
     pub fn compile_file(&self, file_path: impl AsRef<Path>) -> Result<String> {
         let file_path = file_path.as_ref();
-        
+
         if !file_path.exists() {
             return Err(crate::types::errors::MkDocsError::PathError {
                 message: format!("File not found: {}", file_path.display()),
@@ -84,7 +86,7 @@ impl MkDocsCompiler {
 
         let content = fs::read_to_string(file_path)?;
         let html = self.html_renderer.render(&content);
-        
+
         Ok(html)
     }
 
@@ -98,22 +100,21 @@ impl MkDocsCompiler {
     pub fn compile_file_and_save(&self, file_path: impl AsRef<Path>) -> Result<u64> {
         let start_time = std::time::Instant::now();
         let file_path = file_path.as_ref();
-        
+
         let html = self.compile_file(file_path)?;
-        
-        let relative_path = file_path.strip_prefix(&self.source_dir)
-            .map_err(|e| crate::types::errors::MkDocsError::PathError {
-                message: format!("Failed to get relative path: {}", e),
-            })?;
-        
+
+        let relative_path = file_path.strip_prefix(&self.source_dir).map_err(|e| {
+            crate::types::errors::MkDocsError::PathError { message: format!("Failed to get relative path: {}", e) }
+        })?;
+
         let output_path = self.output_dir.join(relative_path).with_extension("html");
-        
+
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        
+
         fs::write(&output_path, html)?;
-        
+
         Ok(start_time.elapsed().as_millis() as u64)
     }
 
@@ -123,13 +124,13 @@ impl MkDocsCompiler {
     /// 编译时间列表（毫秒）
     pub fn compile_all(&self) -> Result<Vec<u64>> {
         let mut results = Vec::new();
-        
+
         fs::create_dir_all(&self.output_dir)?;
-        
+
         for entry in WalkDir::new(&self.source_dir) {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.is_file() {
                 if let Some(ext) = path.extension() {
                     if ext == "md" || ext == "markdown" {
@@ -141,7 +142,7 @@ impl MkDocsCompiler {
                 }
             }
         }
-        
+
         Ok(results)
     }
 
@@ -155,29 +156,26 @@ impl MkDocsCompiler {
         for entry in WalkDir::new(&self.source_dir) {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.is_file() {
-                let is_markdown = path.extension()
-                    .map(|ext| ext == "md" || ext == "markdown")
-                    .unwrap_or(false);
-                
+                let is_markdown = path.extension().map(|ext| ext == "md" || ext == "markdown").unwrap_or(false);
+
                 if !is_markdown {
-                    let relative_path = path.strip_prefix(&self.source_dir)
-                        .map_err(|e| crate::types::errors::MkDocsError::PathError {
-                            message: format!("Failed to get relative path: {}", e),
-                        })?;
-                    
+                    let relative_path = path.strip_prefix(&self.source_dir).map_err(|e| {
+                        crate::types::errors::MkDocsError::PathError { message: format!("Failed to get relative path: {}", e) }
+                    })?;
+
                     let output_path = self.output_dir.join(relative_path);
-                    
+
                     if let Some(parent) = output_path.parent() {
                         fs::create_dir_all(parent)?;
                     }
-                    
+
                     fs::copy(path, output_path)?;
                 }
             }
         }
-        
+
         Ok(())
     }
 

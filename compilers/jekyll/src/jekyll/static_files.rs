@@ -37,15 +37,9 @@ impl StaticFile {
     pub fn new<P: AsRef<Path>, Q: AsRef<Path>>(source_path: P, root_path: Q) -> Self {
         let source_path = source_path.as_ref().to_path_buf();
         let root_path = root_path.as_ref();
-        let relative_path = source_path
-            .strip_prefix(root_path)
-            .unwrap_or_else(|_| source_path.as_path())
-            .to_path_buf();
+        let relative_path = source_path.strip_prefix(root_path).unwrap_or_else(|_| source_path.as_path()).to_path_buf();
 
-        Self {
-            source_path,
-            relative_path,
-        }
+        Self { source_path, relative_path }
     }
 
     /// 获取源文件路径
@@ -135,10 +129,7 @@ impl StaticFileProcessor {
     /// # Errors
     ///
     /// 返回 `StaticFileError` 如果文件复制或目录创建失败
-    pub fn copy_static_files<P: AsRef<Path>>(
-        &self,
-        destination: P,
-    ) -> Result<usize, StaticFileError> {
+    pub fn copy_static_files<P: AsRef<Path>>(&self, destination: P) -> Result<usize, StaticFileError> {
         let destination = destination.as_ref();
         let files = self.collect_static_files()?;
         let mut copied = 0;
@@ -161,23 +152,14 @@ impl StaticFileProcessor {
     /// # Errors
     ///
     /// 返回 `StaticFileError` 如果文件复制或目录创建失败
-    fn copy_file<P: AsRef<Path>>(
-        &self,
-        file: &StaticFile,
-        destination: P,
-    ) -> Result<(), StaticFileError> {
+    fn copy_file<P: AsRef<Path>>(&self, file: &StaticFile, destination: P) -> Result<(), StaticFileError> {
         let dest_path = file.destination_path(destination);
-        let dest_dir = dest_path.parent().ok_or_else(|| {
-            StaticFileError::PathMatchError("Invalid destination path".to_string())
-        })?;
+        let dest_dir =
+            dest_path.parent().ok_or_else(|| StaticFileError::PathMatchError("Invalid destination path".to_string()))?;
 
         if !dest_dir.exists() {
             std::fs::create_dir_all(dest_dir).map_err(|e| {
-                StaticFileError::DirectoryCreateError(format!(
-                    "Failed to create directory {}: {}",
-                    dest_dir.display(),
-                    e
-                ))
+                StaticFileError::DirectoryCreateError(format!("Failed to create directory {}: {}", dest_dir.display(), e))
             })?;
         }
 
@@ -295,16 +277,13 @@ impl StaticFileProcessor {
         }
 
         if pattern_normalized.contains('*') {
-            let regex_pattern = pattern_normalized
-                .replace('.', "\\.")
-                .replace('*', ".*");
+            let regex_pattern = pattern_normalized.replace('.', "\\.").replace('*', ".*");
             if let Ok(re) = regex::Regex::new(&format!("^{}$", regex_pattern)) {
                 return re.is_match(&path_normalized);
             }
         }
 
-        path_normalized == pattern_normalized
-            || path_normalized.starts_with(&format!("{}/", pattern_normalized))
+        path_normalized == pattern_normalized || path_normalized.starts_with(&format!("{}/", pattern_normalized))
     }
 
     /// 获取默认的排除列表
@@ -333,9 +312,8 @@ impl StaticFileProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{fs::File, io::Write};
     use tempfile::tempdir;
-    use std::fs::File;
-    use std::io::Write;
 
     #[test]
     fn test_static_file_new() {
@@ -354,10 +332,7 @@ mod tests {
         let file = StaticFile::new(source, root);
         let dest = Path::new("/test/output");
 
-        assert_eq!(
-            file.destination_path(dest),
-            Path::new("/test/output/assets/image.jpg")
-        );
+        assert_eq!(file.destination_path(dest), Path::new("/test/output/assets/image.jpg"));
     }
 
     #[test]

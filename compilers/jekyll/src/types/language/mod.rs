@@ -1,6 +1,8 @@
 //! VuTeX 语言定义
 
-use oak_core::{Language, LanguageCategory, UniversalTokenRole, UniversalElementRole, TokenType, ElementType, TokenRole, ElementRole};
+use oak_core::{
+    ElementRole, ElementType, Language, LanguageCategory, TokenRole, TokenType, UniversalElementRole, UniversalTokenRole,
+};
 
 /// VuTeX 语言定义
 #[derive(Debug, Clone, Copy, Default)]

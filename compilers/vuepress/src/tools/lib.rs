@@ -1,12 +1,11 @@
 #![warn(missing_docs)]
 #![doc = "VuTeX 文档系统 CLI 工具库"]
 
-pub use crate::Document;
-pub use crate::compiler::VutexCompiler;
-pub use crate::CompileResult;
-pub use crate::CompileSession;
-pub use crate::PluginHost;
-pub use crate::types::{Result, VutexConfig, VutexError};
+pub use crate::{
+    CompileResult, CompileSession, Document, PluginHost,
+    compiler::VutexCompiler,
+    types::{Result, VutexConfig, VutexError},
+};
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -78,5 +77,3 @@ pub struct CheckArgs {
     #[arg(short, long)]
     pub source: Option<PathBuf>,
 }
-
-

@@ -2,11 +2,7 @@
 #![doc = "MkDocs 文档系统 CLI 入口点"]
 
 use clap::Parser;
-use mkdocs::{
-    MkDocsCli,
-    MkDocsCommands,
-    types::Result,
-};
+use mkdocs::{MkDocsCli, MkDocsCommands, types::Result};
 
 /// 主函数入口
 #[tokio::main]

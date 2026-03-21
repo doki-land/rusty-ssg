@@ -1,12 +1,10 @@
-
 //! 默认值配置模块
 //!
 //! 该模块提供 Jekyll defaults 配置的解析和应用功能，支持为不同类型和路径的文档设置默认值。
 //! 支持的筛选条件包括：路径模式、集合类型、布局类型等。
 
 use serde_json::Value;
-use std::collections::HashMap;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use super::{FrontMatter, JekyllConfig};
 
@@ -63,20 +61,13 @@ impl DefaultConfig {
     ///
     /// 返回 `DefaultsError` 如果解析失败
     pub fn from_map(map: &HashMap<String, Value>) -> Result<Self, DefaultsError> {
-        let scope = map
-            .get("scope")
-            .and_then(|v| v.as_object())
-            .map(Scope::from_map)
-            .unwrap_or_else(|| Ok(Scope::default()))?;
+        let scope =
+            map.get("scope").and_then(|v| v.as_object()).map(Scope::from_map).unwrap_or_else(|| Ok(Scope::default()))?;
 
         let values = map
             .get("values")
             .and_then(|v| v.as_object())
-            .map(|obj| {
-                obj.iter()
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .collect()
-            })
+            .map(|obj| obj.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
             .unwrap_or_default();
 
         Ok(Self { scope, values })
@@ -117,26 +108,13 @@ impl Scope {
     ///
     /// 返回 `DefaultsError` 如果解析失败
     pub fn from_map(map: &serde_json::Map<String, Value>) -> Result<Self, DefaultsError> {
-        let path = map
-            .get("path")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
+        let path = map.get("path").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-        let collection = map
-            .get("collection")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
+        let collection = map.get("collection").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-        let layout = map
-            .get("layout")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
+        let layout = map.get("layout").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-        Ok(Self {
-            path,
-            collection,
-            layout,
-        })
+        Ok(Self { path, collection, layout })
     }
 
     /// 检查文档是否匹配该作用域
@@ -150,12 +128,7 @@ impl Scope {
     /// # Returns
     ///
     /// 如果文档匹配该作用域返回 true
-    pub fn matches(
-        &self,
-        document_path: &Path,
-        collection: Option<&str>,
-        current_layout: Option<&str>,
-    ) -> bool {
+    pub fn matches(&self, document_path: &Path, collection: Option<&str>, current_layout: Option<&str>) -> bool {
         let mut matches = true;
 
         if let Some(ref pattern) = self.path {
@@ -212,7 +185,8 @@ impl Scope {
                     if let Some('*') = chars.peek() {
                         chars.next();
                         result.push_str(".*");
-                    } else {
+                    }
+                    else {
                         result.push_str("[^/]*");
                     }
                 }
@@ -236,9 +210,7 @@ impl Scope {
 impl DefaultsManager {
     /// 创建新的默认值管理器
     pub fn new() -> Self {
-        Self {
-            defaults: Vec::new(),
-        }
+        Self { defaults: Vec::new() }
     }
 
     /// 从 Jekyll 配置创建默认值管理器
@@ -281,12 +253,7 @@ impl DefaultsManager {
     /// * `document_path` - 文档的相对路径
     /// * `collection` - 文档所属的集合（如果有）
     /// * `front_matter` - 要应用默认值的 Front Matter（会被修改）
-    pub fn apply_defaults(
-        &self,
-        document_path: &Path,
-        collection: Option<&str>,
-        front_matter: &mut FrontMatter,
-    ) {
+    pub fn apply_defaults(&self, document_path: &Path, collection: Option<&str>, front_matter: &mut FrontMatter) {
         let current_layout = front_matter.get_str("layout").map(|s| s.to_string());
 
         for default_config in &self.defaults {
@@ -382,18 +349,12 @@ mod tests {
     fn test_apply_defaults() {
         let mut manager = DefaultsManager::new();
 
-        let values = HashMap::from_iter(vec![
-            ("layout".to_string(), json!("default")),
-            ("author".to_string(), json!("Test Author")),
-        ]);
+        let values =
+            HashMap::from_iter(vec![("layout".to_string(), json!("default")), ("author".to_string(), json!("Test Author"))]);
 
         manager.add_default(DefaultConfig::new(Scope::new(), values));
 
-        let mut front_matter = FrontMatter::new(
-            String::new(),
-            HashMap::new(),
-            String::new(),
-        );
+        let mut front_matter = FrontMatter::new(String::new(), HashMap::new(), String::new());
 
         manager.apply_defaults(Path::new("test.md"), None, &mut front_matter);
 
@@ -405,23 +366,15 @@ mod tests {
     fn test_apply_defaults_no_override() {
         let mut manager = DefaultsManager::new();
 
-        let values = HashMap::from_iter(vec![
-            ("layout".to_string(), json!("default")),
-        ]);
+        let values = HashMap::from_iter(vec![("layout".to_string(), json!("default"))]);
 
         manager.add_default(DefaultConfig::new(Scope::new(), values));
 
-        let mut front_matter = FrontMatter::new(
-            String::new(),
-            HashMap::from_iter(vec![
-                ("layout".to_string(), json!("custom")),
-            ]),
-            String::new(),
-        );
+        let mut front_matter =
+            FrontMatter::new(String::new(), HashMap::from_iter(vec![("layout".to_string(), json!("custom"))]), String::new());
 
         manager.apply_defaults(Path::new("test.md"), None, &mut front_matter);
 
         assert_eq!(front_matter.get_str("layout"), Some("custom"));
     }
 }
-

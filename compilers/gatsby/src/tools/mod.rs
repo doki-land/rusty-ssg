@@ -8,10 +8,7 @@ pub mod theme;
 
 pub use site_generator::{ConfigLoader, StaticSiteGenerator};
 pub use template::UnifiedTemplateManager;
-pub use theme::{
-    DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink,
-    TemplateEngineType,
-};
+pub use theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, TemplateEngineType};
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -114,4 +111,3 @@ pub struct CheckArgs {
     #[arg(short, long)]
     pub source: Option<PathBuf>,
 }
-

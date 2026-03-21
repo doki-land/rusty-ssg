@@ -1,9 +1,7 @@
 //! Markdown 渲染测试
 
-use mkdocs::compiler::HtmlRenderer;
-use mkdocs::compile_single;
+use mkdocs::{compile_batch, compile_single, compiler::HtmlRenderer};
 use std::collections::HashMap;
-use mkdocs::compile_batch;
 
 #[test]
 fn test_markdown_render_basic() {
@@ -128,10 +126,10 @@ fn test_html_renderer_with_config() {
     use mkdocs::compiler::HtmlRendererConfig;
     let mut config = HtmlRendererConfig::default();
     config.options.insert("key".to_string(), "value".to_string());
-    
+
     let renderer = HtmlRenderer::with_config(config);
     assert_eq!(renderer.config().options.get("key"), Some(&"value".to_string()));
-    
+
     let html = renderer.render("# 测试");
     assert!(!html.is_empty());
 }

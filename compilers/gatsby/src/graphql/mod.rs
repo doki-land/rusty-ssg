@@ -3,9 +3,9 @@
 
 use std::collections::{HashMap, HashSet};
 
+use crate::types::graphql::*;
 use async_graphql_value::{ConstValue, Name};
 use indexmap::IndexMap;
-use crate::types::graphql::*;
 
 /// GraphQL 执行引擎
 pub struct GraphQLExecutor {
@@ -26,11 +26,7 @@ impl GraphQLExecutor {
     ///
     /// * `schema` - GraphQL Schema 定义
     pub fn new(schema: GraphQLSchema) -> Self {
-        GraphQLExecutor {
-            schema,
-            node_store: NodeStore::new(),
-            resolvers: HashMap::new(),
-        }
+        GraphQLExecutor { schema, node_store: NodeStore::new(), resolvers: HashMap::new() }
     }
 
     /// 获取节点存储的可变引用
@@ -144,28 +140,20 @@ impl GraphQLExecutor {
     }
 
     /// 执行字段
-    fn execute_field(
-        &self,
-        field: &FieldSelection,
-        node_store: &NodeStore,
-    ) -> GraphQLResult<ConstValue> {
+    fn execute_field(&self, field: &FieldSelection, node_store: &NodeStore) -> GraphQLResult<ConstValue> {
         match field.name.as_str() {
             "allNodes" => {
                 let nodes = node_store.get_all_nodes();
-                let values: Vec<ConstValue> = nodes
-                    .iter()
-                    .map(|node| self.node_to_value(node))
-                    .collect();
+                let values: Vec<ConstValue> = nodes.iter().map(|node| self.node_to_value(node)).collect();
                 Ok(ConstValue::List(values))
             }
-            "id" => {
-                Ok(ConstValue::Null)
-            }
+            "id" => Ok(ConstValue::Null),
             _ => {
                 let resolver_key = format!("Query.{}", field.name);
                 if let Some(resolver) = self.resolvers.get(&resolver_key) {
                     resolver(field, node_store)
-                } else {
+                }
+                else {
                     Ok(ConstValue::Null)
                 }
             }
@@ -208,12 +196,7 @@ pub struct SchemaBuilder {
 impl SchemaBuilder {
     /// 创建新的 Schema 构建器
     pub fn new() -> Self {
-        SchemaBuilder {
-            query_type: None,
-            mutation_type: None,
-            subscription_type: None,
-            types: Vec::new(),
-        }
+        SchemaBuilder { query_type: None, mutation_type: None, subscription_type: None, types: Vec::new() }
     }
 
     /// 设置查询类型
@@ -262,9 +245,7 @@ impl SchemaBuilder {
     ///
     /// 如果未设置查询类型，返回 `GraphQLError::ValidationError`
     pub fn build(self) -> GraphQLResult<GraphQLSchema> {
-        let query_type = self
-            .query_type
-            .ok_or_else(|| GraphQLError::ValidationError("Query type is required".to_string()))?;
+        let query_type = self.query_type.ok_or_else(|| GraphQLError::ValidationError("Query type is required".to_string()))?;
 
         Ok(GraphQLSchema {
             query_type,
@@ -425,17 +406,12 @@ impl NodeBuilder {
     ///
     /// 如果缺少必要字段，返回 `GraphQLError::ValidationError`
     pub fn build(self) -> GraphQLResult<Node> {
-        let id = self
-            .id
-            .ok_or_else(|| GraphQLError::ValidationError("Node ID is required".to_string()))?;
+        let id = self.id.ok_or_else(|| GraphQLError::ValidationError("Node ID is required".to_string()))?;
 
-        let type_name = self
-            .type_name
-            .ok_or_else(|| GraphQLError::ValidationError("Node type is required".to_string()))?;
+        let type_name = self.type_name.ok_or_else(|| GraphQLError::ValidationError("Node type is required".to_string()))?;
 
-        let content_digest = self
-            .content_digest
-            .ok_or_else(|| GraphQLError::ValidationError("Content digest is required".to_string()))?;
+        let content_digest =
+            self.content_digest.ok_or_else(|| GraphQLError::ValidationError("Content digest is required".to_string()))?;
 
         let mut node = Node::new(id, type_name, content_digest);
         node.fields = self.fields;
@@ -472,8 +448,10 @@ impl ContentDigest {
     ///
     /// * `content` - 要生成摘要的内容
     pub fn generate(content: &str) -> String {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
+        use std::{
+            collections::hash_map::DefaultHasher,
+            hash::{Hash, Hasher},
+        };
 
         let mut hasher = DefaultHasher::new();
         content.hash(&mut hasher);

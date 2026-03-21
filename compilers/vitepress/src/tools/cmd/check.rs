@@ -1,7 +1,10 @@
 //! Check 命令实现
 
-use crate::{types::Result, compiler::VutexCompiler};
-use crate::tools::{CheckArgs, ConfigLoader};
+use crate::{
+    compiler::VutexCompiler,
+    tools::{CheckArgs, ConfigLoader},
+    types::Result,
+};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
 use walkdir::WalkDir;

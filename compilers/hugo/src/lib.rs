@@ -32,15 +32,14 @@ pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 
 pub use tools::{
-    BuildArgs, CheckArgs, Commands, DevArgs, HugoCli, HugoCommands, InitArgs, NewArgs, VutexCli, cmd,
-    site_generator,
+    BuildArgs, CheckArgs, Commands, DevArgs, HugoCli, HugoCommands, InitArgs, NewArgs, VutexCli, cmd, site_generator,
     site_generator::{ConfigLoader, StaticSiteGenerator},
     theme,
     theme::{DefaultTheme, NavItem as ThemeNavItem, PageContext, SidebarGroup, SidebarLink},
 };
 
 #[cfg(feature = "dev")]
-pub use tools::{ServerArgs};
+pub use tools::ServerArgs;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

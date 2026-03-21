@@ -1,9 +1,8 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::Result;
+use crate::{Result, types::VutexConfig};
 use askama::Template;
-use crate::types::VutexConfig;
 use nargo_template::{TemplateEngine, TemplateManager, ToJsonValue};
 use serde_json::json;
 use std::collections::HashMap;
@@ -176,7 +175,7 @@ impl DefaultTheme {
     /// 新的默认主题实例
     pub fn with_engine(config: VutexConfig, engine_type: TemplateEngineType) -> Result<Self> {
         let mut template_manager = TemplateManager::new();
-        
+
         // 注册模板
         match engine_type {
             TemplateEngineType::Askama => {
@@ -187,7 +186,7 @@ impl DefaultTheme {
                 template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
             }
         }
-        
+
         Ok(Self { config, engine_type, template_manager })
     }
 
@@ -204,11 +203,14 @@ impl DefaultTheme {
         match self.engine_type {
             TemplateEngineType::Askama => {
                 // 使用 Askama 内置渲染
-                context.render().map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
+                context
+                    .render()
+                    .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
             }
             TemplateEngineType::Dejavu => {
                 let json_context = context.to_json_value();
-                self.template_manager.render(TemplateEngine::DejaVu, "page", &json_context)
+                self.template_manager
+                    .render(TemplateEngine::DejaVu, "page", &json_context)
                     .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
             }
         }
@@ -222,7 +224,7 @@ impl DefaultTheme {
     pub fn site_title(&self) -> &str {
         self.config.title.as_deref().unwrap_or("VuTeX Documentation")
     }
-    
+
     /// 获取当前使用的模板引擎类型
     ///
     /// # Returns

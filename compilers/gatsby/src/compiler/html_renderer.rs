@@ -25,13 +25,7 @@ pub struct HtmlRendererConfig {
 
 impl Default for HtmlRendererConfig {
     fn default() -> Self {
-        Self {
-            gfm: true,
-            tables: true,
-            tasklists: true,
-            strikethrough: true,
-            autolink: true,
-        }
+        Self { gfm: true, tables: true, tasklists: true, strikethrough: true, autolink: true }
     }
 }
 
@@ -121,11 +115,7 @@ impl HtmlRenderer {
         lang_config.allow_task_lists = config.tasklists;
         lang_config.allow_strikethrough = config.strikethrough;
 
-        Self {
-            config,
-            lang_config,
-            options: HashMap::new(),
-        }
+        Self { config, lang_config, options: HashMap::new() }
     }
 
     /// 获取渲染器配置

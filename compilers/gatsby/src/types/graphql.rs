@@ -171,13 +171,7 @@ impl Node {
     pub fn new(id: NodeId, type_name: NodeType, content_digest: String) -> Self {
         Node {
             id,
-            internal: Internal {
-                type_name,
-                content_digest,
-                content: None,
-                description: None,
-                owner: None,
-            },
+            internal: Internal { type_name, content_digest, content: None, description: None, owner: None },
             fields: HashMap::new(),
             children: Vec::new(),
             parent: None,
@@ -449,12 +443,7 @@ impl GraphQLArgument {
     /// * `name` - 参数名称
     /// * `argument_type` - 参数类型
     pub fn new(name: String, argument_type: GraphQLFieldType) -> Self {
-        GraphQLArgument {
-            name,
-            argument_type,
-            description: None,
-            default_value: None,
-        }
+        GraphQLArgument { name, argument_type, description: None, default_value: None }
     }
 
     /// 设置参数描述
@@ -595,13 +584,7 @@ impl GraphQLSchema {
     ///
     /// * `query_type` - 查询类型名称
     pub fn new(query_type: String) -> Self {
-        GraphQLSchema {
-            query_type,
-            mutation_type: None,
-            subscription_type: None,
-            types: Vec::new(),
-            directives: Vec::new(),
-        }
+        GraphQLSchema { query_type, mutation_type: None, subscription_type: None, types: Vec::new(), directives: Vec::new() }
     }
 
     /// 设置变更类型
@@ -717,11 +700,7 @@ impl GraphQLResponse {
     ///
     /// * `data` - 响应数据
     pub fn success(data: ConstValue) -> Self {
-        GraphQLResponse {
-            data: Some(data),
-            errors: None,
-            extensions: None,
-        }
+        GraphQLResponse { data: Some(data), errors: None, extensions: None }
     }
 
     /// 创建错误响应
@@ -730,11 +709,7 @@ impl GraphQLResponse {
     ///
     /// * `errors` - 错误列表
     pub fn error(errors: Vec<GraphQLError>) -> Self {
-        GraphQLResponse {
-            data: None,
-            errors: Some(errors),
-            extensions: None,
-        }
+        GraphQLResponse { data: None, errors: Some(errors), extensions: None }
     }
 
     /// 添加扩展信息
@@ -789,16 +764,10 @@ impl NodeStore {
 
         self.nodes.insert(node_id.clone(), node);
 
-        self.type_index
-            .entry(type_name)
-            .or_insert_with(HashSet::new)
-            .insert(node_id.clone());
+        self.type_index.entry(type_name).or_insert_with(HashSet::new).insert(node_id.clone());
 
         if let Some(parent_id) = &self.nodes[&node_id].parent {
-            self.parent_index
-                .entry(parent_id.clone())
-                .or_insert_with(HashSet::new)
-                .insert(node_id);
+            self.parent_index.entry(parent_id.clone()).or_insert_with(HashSet::new).insert(node_id);
         }
 
         Ok(())
@@ -828,10 +797,7 @@ impl NodeStore {
     ///
     /// * `type_name` - 节点类型名称
     pub fn get_nodes_by_type(&self, type_name: &NodeType) -> Vec<&Node> {
-        self.type_index
-            .get(type_name)
-            .map(|ids| ids.iter().filter_map(|id| self.nodes.get(id)).collect())
-            .unwrap_or_default()
+        self.type_index.get(type_name).map(|ids| ids.iter().filter_map(|id| self.nodes.get(id)).collect()).unwrap_or_default()
     }
 
     /// 获取所有类型

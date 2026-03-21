@@ -1,10 +1,7 @@
-
 fn main() {
     use gatsby::{
-        GatsbyConfig, GatsbyCompiler, compile_single,
-        MarkdownDataSource, SiteMetadataDataSource,
-        SchemaBuilder, NodeBuilder, ContentDigest,
-        NodeId, NodeType,
+        ContentDigest, GatsbyCompiler, GatsbyConfig, MarkdownDataSource, NodeBuilder, NodeId, NodeType, SchemaBuilder,
+        SiteMetadataDataSource, compile_single,
     };
     use std::collections::HashMap;
 
@@ -12,12 +9,9 @@ fn main() {
 
     // 测试 1: 配置加载
     println!("测试 1: 配置加载");
-    let config = GatsbyConfig::new()
-        .with_site_metadata(
-            gatsby::SiteMetadata::new()
-                .with_title("Test Site".to_string())
-                .with_description("Test Description".to_string())
-        );
+    let config = GatsbyConfig::new().with_site_metadata(
+        gatsby::SiteMetadata::new().with_title("Test Site".to_string()).with_description("Test Description".to_string()),
+    );
     println!("✓ 配置创建成功");
     println!("  - 标题: {:?}", config.site_metadata.as_ref().unwrap().title);
     println!("  - 描述: {:?}", config.site_metadata.as_ref().unwrap().description);
@@ -35,7 +29,7 @@ layout: "default"
 
 This is a test page.
 "#;
-    
+
     let result = compile_single(markdown, "test.md");
     match result {
         Ok(doc) => {
@@ -84,9 +78,7 @@ This is a test page.
 
     // 测试 5: GraphQL Schema 构建
     println!("测试 5: GraphQL Schema 构建");
-    let schema_result = SchemaBuilder::new()
-        .query_type("Query".to_string())
-        .build();
+    let schema_result = SchemaBuilder::new().query_type("Query".to_string()).build();
     match schema_result {
         Ok(schema) => {
             println!("✓ GraphQL Schema 构建成功");
@@ -101,12 +93,8 @@ This is a test page.
     let id = NodeId::new("test-node".to_string());
     let type_name = NodeType::new("TestType".to_string());
     let digest = ContentDigest::generate("test content");
-    
-    let node_result = NodeBuilder::new()
-        .id(id.clone())
-        .type_name(type_name.clone())
-        .content_digest(digest)
-        .build();
+
+    let node_result = NodeBuilder::new().id(id.clone()).type_name(type_name.clone()).content_digest(digest).build();
     match node_result {
         Ok(node) => {
             println!("✓ 节点构建成功");
@@ -120,17 +108,25 @@ This is a test page.
     // 测试 7: 批量编译
     println!("测试 7: 批量编译文档");
     let mut documents = HashMap::new();
-    documents.insert("page1.md".to_string(), r#"---
+    documents.insert(
+        "page1.md".to_string(),
+        r#"---
 title: "Page 1"
 ---
 Content 1
-"#.to_string());
-    documents.insert("page2.md".to_string(), r#"---
+"#
+        .to_string(),
+    );
+    documents.insert(
+        "page2.md".to_string(),
+        r#"---
 title: "Page 2"
 ---
 Content 2
-"#.to_string());
-    
+"#
+        .to_string(),
+    );
+
     let compile_result = gatsby::compile_batch(&documents);
     println!("✓ 批量编译完成");
     println!("  - 成功: {}", compile_result.success);

@@ -1,10 +1,10 @@
 //! HTML 渲染器模块
 //! 提供将 Markdown 文本渲染为 HTML 的功能
 
-use oak_core::{parser::session::ParseSession, source::SourceText, Builder};
+use oak_core::{Builder, parser::session::ParseSession, source::SourceText};
 use oak_markdown::{
-    ast::{Block, Blockquote, CodeBlock, Heading, Html, Inline, List, ListItem, MarkdownRoot, Paragraph, Table, TableCell},
     MarkdownBuilder, MarkdownLanguage,
+    ast::{Block, Blockquote, CodeBlock, Heading, Html, Inline, List, ListItem, MarkdownRoot, Paragraph, Table, TableCell},
 };
 
 /// HTML 渲染器配置
@@ -177,10 +177,11 @@ impl HtmlRenderer {
     ///
     /// 渲染后的 HTML 字符串
     fn render_code_block(&self, code_block: &CodeBlock) -> String {
-        let class = if let Some(lang) = &code_block.language { 
-            format!(" class=\"language-{}\"", self.escape_html(lang)) 
-        } else { 
-            String::new() 
+        let class = if let Some(lang) = &code_block.language {
+            format!(" class=\"language-{}\"", self.escape_html(lang))
+        }
+        else {
+            String::new()
         };
         let escaped_content = self.escape_html(&code_block.content);
         format!("<pre><code{}>{}</code></pre>\n", class, escaped_content)
@@ -328,11 +329,13 @@ impl HtmlRenderer {
             Inline::Italic(text) => format!("<em>{}</em>", self.escape_html(text)),
             Inline::Code(text) => format!("<code>{}</code>", self.escape_html(text)),
             Inline::Link { text, url, title } => {
-                let title_attr = if let Some(t) = title { format!(" title=\"{}\"", self.escape_html(t)) } else { String::new() };
+                let title_attr =
+                    if let Some(t) = title { format!(" title=\"{}\"", self.escape_html(t)) } else { String::new() };
                 format!("<a href=\"{}\"{}>{}</a>", self.escape_html(url), title_attr, self.escape_html(text))
             }
             Inline::Image { alt, url, title } => {
-                let title_attr = if let Some(t) = title { format!(" title=\"{}\"", self.escape_html(t)) } else { String::new() };
+                let title_attr =
+                    if let Some(t) = title { format!(" title=\"{}\"", self.escape_html(t)) } else { String::new() };
                 format!("<img src=\"{}\" alt=\"{}\"{} />", self.escape_html(url), self.escape_html(alt), title_attr)
             }
             Inline::Abbreviation { key, .. } => key.clone(),

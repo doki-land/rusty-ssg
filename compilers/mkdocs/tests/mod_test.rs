@@ -1,8 +1,10 @@
 //! 综合测试
 
-use mkdocs::types::{MkDocsConfig, CompileResult};
-use mkdocs::compiler::HtmlRenderer;
-use mkdocs::{compile_single, compile_batch};
+use mkdocs::{
+    compile_batch, compile_single,
+    compiler::HtmlRenderer,
+    types::{CompileResult, MkDocsConfig},
+};
 use std::collections::HashMap;
 
 #[test]
@@ -17,7 +19,7 @@ site_description: A comprehensive test
 
     let renderer = HtmlRenderer::new();
 
-    let markdown = "# " .to_string() + &config.site_name + "\n\n" + &config.site_description.clone().unwrap_or_default();
+    let markdown = "# ".to_string() + &config.site_name + "\n\n" + &config.site_description.clone().unwrap_or_default();
     let html = renderer.render(&markdown);
     assert!(!html.is_empty());
 }
@@ -55,10 +57,10 @@ fn test_batch_with_real_example() {
     documents.insert("docs/api.md".to_string(), "## API Reference\nAPI docs".to_string());
 
     let result = compile_batch(&documents);
-    
+
     assert!(result.success);
     assert_eq!(result.documents.len(), 3);
-    
+
     for (path, doc) in &result.documents {
         assert!(doc.content.len() > 0);
         assert_eq!(doc.path, *path);
@@ -67,10 +69,7 @@ fn test_batch_with_real_example() {
 
 #[test]
 fn test_error_handling() {
-    let invalid_config = MkDocsConfig {
-        site_name: "".to_string(),
-        ..Default::default()
-    };
+    let invalid_config = MkDocsConfig { site_name: "".to_string(), ..Default::default() };
 
     let validation = invalid_config.validate();
     assert!(validation.is_err());

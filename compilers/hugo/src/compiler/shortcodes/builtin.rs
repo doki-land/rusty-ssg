@@ -330,11 +330,7 @@ fn handle_alert(shortcode: &Shortcode, _context: &ShortcodeContext) -> Shortcode
     let title = shortcode.params.get_named("title").unwrap_or("Alert");
     let content = shortcode.inner.as_deref().unwrap_or("");
 
-    Ok(format!(
-        "<div class=\"alert alert-warning\"><strong>{}</strong>{}</div>",
-        escape_html(title),
-        content
-    ))
+    Ok(format!("<div class=\"alert alert-warning\"><strong>{}</strong>{}</div>", escape_html(title), content))
 }
 
 /// 处理 notice 短代码
@@ -349,11 +345,7 @@ fn handle_notice(shortcode: &Shortcode, _context: &ShortcodeContext) -> Shortcod
     let title = shortcode.params.get_named("title").unwrap_or("Notice");
     let content = shortcode.inner.as_deref().unwrap_or("");
 
-    Ok(format!(
-        "<div class=\"alert alert-info\"><strong>{}</strong>{}</div>",
-        escape_html(title),
-        content
-    ))
+    Ok(format!("<div class=\"alert alert-info\"><strong>{}</strong>{}</div>", escape_html(title), content))
 }
 
 /// 处理 tip 短代码
@@ -368,11 +360,7 @@ fn handle_tip(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeRe
     let title = shortcode.params.get_named("title").unwrap_or("Tip");
     let content = shortcode.inner.as_deref().unwrap_or("");
 
-    Ok(format!(
-        "<div class=\"alert alert-success\"><strong>{}</strong>{}</div>",
-        escape_html(title),
-        content
-    ))
+    Ok(format!("<div class=\"alert alert-success\"><strong>{}</strong>{}</div>", escape_html(title), content))
 }
 
 /// 处理 warning 短代码
@@ -387,11 +375,7 @@ fn handle_warning(shortcode: &Shortcode, _context: &ShortcodeContext) -> Shortco
     let title = shortcode.params.get_named("title").unwrap_or("Warning");
     let content = shortcode.inner.as_deref().unwrap_or("");
 
-    Ok(format!(
-        "<div class=\"alert alert-warning\"><strong>{}</strong>{}</div>",
-        escape_html(title),
-        content
-    ))
+    Ok(format!("<div class=\"alert alert-warning\"><strong>{}</strong>{}</div>", escape_html(title), content))
 }
 
 /// 处理 error 短代码
@@ -406,11 +390,7 @@ fn handle_error(shortcode: &Shortcode, _context: &ShortcodeContext) -> Shortcode
     let title = shortcode.params.get_named("title").unwrap_or("Error");
     let content = shortcode.inner.as_deref().unwrap_or("");
 
-    Ok(format!(
-        "<div class=\"alert alert-danger\"><strong>{}</strong>{}</div>",
-        escape_html(title),
-        content
-    ))
+    Ok(format!("<div class=\"alert alert-danger\"><strong>{}</strong>{}</div>", escape_html(title), content))
 }
 
 /// 处理 info 短代码
@@ -425,11 +405,7 @@ fn handle_info(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeR
     let title = shortcode.params.get_named("title").unwrap_or("Info");
     let content = shortcode.inner.as_deref().unwrap_or("");
 
-    Ok(format!(
-        "<div class=\"alert alert-info\"><strong>{}</strong>{}</div>",
-        escape_html(title),
-        content
-    ))
+    Ok(format!("<div class=\"alert alert-info\"><strong>{}</strong>{}</div>", escape_html(title), content))
 }
 
 /// 处理 details 短代码
@@ -447,12 +423,7 @@ fn handle_details(shortcode: &Shortcode, _context: &ShortcodeContext) -> Shortco
 
     let open_attr = if open == "true" { " open" } else { "" };
 
-    Ok(format!(
-        "<details{}><summary>{}</summary>{}</details>",
-        open_attr,
-        escape_html(summary),
-        content
-    ))
+    Ok(format!("<details{}><summary>{}</summary>{}</details>", open_attr, escape_html(summary), content))
 }
 
 /// 处理 blockquote 短代码
@@ -521,12 +492,7 @@ fn handle_tab(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeRe
 
     let active_class = if active == "true" { " active" } else { "" };
 
-    Ok(format!(
-        "<div class=\"tab{}\" data-tab-name=\"{}\">{}</div>",
-        active_class,
-        escape_attr(name),
-        content
-    ))
+    Ok(format!("<div class=\"tab{}\" data-tab-name=\"{}\">{}</div>", active_class, escape_attr(name), content))
 }
 
 /// 处理 code 短代码
@@ -552,7 +518,8 @@ fn handle_code(shortcode: &Shortcode, _context: &ShortcodeContext) -> ShortcodeR
 
     if class.is_empty() {
         Ok(format!("<pre><code>{}</code></pre>", escape_html(code)))
-    } else {
+    }
+    else {
         Ok(format!("<pre><code class=\"{}\">{}</code></pre>", class, escape_html(code)))
     }
 }
@@ -595,7 +562,6 @@ fn handle_tiktok(shortcode: &Shortcode, _context: &ShortcodeContext) -> Shortcod
 
     Ok(format!(
         "<blockquote class=\"tiktok-embed\" cite=\"https://www.tiktok.com/@{}\" data-video-id=\"{}\"><section></section></blockquote><script async src=\"https://www.tiktok.com/embed.js\"></script>",
-        video_id,
-        video_id
+        video_id, video_id
     ))
 }

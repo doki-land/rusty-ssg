@@ -1,19 +1,19 @@
 //! Dev 命令实现
-//! 
+//!
 //! 提供 Jekyll 开发服务器功能，支持文件监听、自动重新构建和静态文件服务。
 
 #[cfg(feature = "dev")]
 use crate::DevArgs;
-use console::style;
-use std::{fs, path::PathBuf};
 use crate::types::Result;
+use console::style;
 #[cfg(feature = "dev")]
-use notify::{RecommendedWatcher, RecursiveMode, Watcher, Event};
+use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
+use std::{fs, path::PathBuf};
 #[cfg(feature = "dev")]
 use tokio::sync::mpsc;
 
 /// Dev 命令执行器
-/// 
+///
 /// 负责启动 Jekyll 开发服务器，监听文件变化并自动重新构建站点。
 #[cfg(feature = "dev")]
 pub struct DevCommand;
@@ -21,15 +21,15 @@ pub struct DevCommand;
 #[cfg(feature = "dev")]
 impl DevCommand {
     /// 执行 dev 命令
-    /// 
+    ///
     /// 根据提供的参数启动 Jekyll 开发服务器。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `args` - 开发服务器参数，包含端口、绑定地址、是否自动打开浏览器等配置
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     pub async fn execute(args: DevArgs) -> Result<()> {
         println!("{}", style("Starting Jekyll development server...").cyan());
@@ -57,7 +57,8 @@ impl DevCommand {
         println!("  {} Initial build...", style("→").blue());
         if let Err(e) = Self::build_site(&source_dir, &output_dir).await {
             println!("  {} Initial build failed: {}", style("✗").red(), e);
-        } else {
+        }
+        else {
             println!("  {} Initial build completed", style("✓").green());
         }
 
@@ -90,19 +91,19 @@ impl DevCommand {
     }
 
     /// 构建站点
-    /// 
+    ///
     /// 执行站点构建过程，与 build 命令类似。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `source_dir` - 源目录路径
     /// * `_output_dir` - 输出目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     async fn build_site(source_dir: &PathBuf, _output_dir: &PathBuf) -> Result<()> {
-        use crate::jekyll::{JekyllStructure, JekyllConfigLoader, PostManager};
+        use crate::jekyll::{JekyllConfigLoader, JekyllStructure, PostManager};
 
         let structure = JekyllStructure::new(source_dir)?;
         let config = JekyllConfigLoader::load_from_dir(source_dir)?;
@@ -115,16 +116,16 @@ impl DevCommand {
     }
 
     /// 设置文件监视
-    /// 
+    ///
     /// 配置文件系统监视器，监听源目录的变化。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `source_dir` - 要监视的源目录路径
     /// * `tx` - 用于发送文件变化事件的通道
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回配置好的文件监视器或错误结果
     fn setup_watcher(source_dir: &PathBuf, tx: mpsc::Sender<notify::Result<Event>>) -> Result<RecommendedWatcher> {
         let mut watcher = notify::recommended_watcher(move |res| {
@@ -138,11 +139,11 @@ impl DevCommand {
     }
 
     /// 处理文件变化
-    /// 
+    ///
     /// 当检测到文件变化时，触发重新构建。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `event` - 文件系统事件
     /// * `source_dir` - 源目录路径
     /// * `output_dir` - 输出目录路径
@@ -153,11 +154,12 @@ impl DevCommand {
                     println!("  {} File changed, rebuilding...", style("→").blue());
                     if let Err(e) = Self::build_site(source_dir, output_dir).await {
                         println!("  {} Rebuild failed: {}", style("✗").red(), e);
-                    } else {
+                    }
+                    else {
                         println!("  {} Rebuild completed", style("✓").green());
                     }
                 }
-            },
+            }
             Err(e) => {
                 println!("  {} Watcher error: {}", style("⚠").yellow(), e);
             }
@@ -165,11 +167,11 @@ impl DevCommand {
     }
 
     /// 索引页面处理器
-    /// 
+    ///
     /// 处理根路径请求，返回开发服务器欢迎页面。
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// HTTP 响应对象
     fn index_handler() -> http::Response<wae_https::Body> {
         let content = r#"
@@ -232,54 +234,48 @@ impl DevCommand {
     }
 
     /// 自动打开浏览器
-    /// 
+    ///
     /// 在默认浏览器中打开开发服务器地址。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `host` - 服务器绑定地址
     /// * `port` - 服务器监听端口
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn open_browser(host: &str, port: u16) -> Result<()> {
         let url = format!("http://{}:{}", host, port);
         println!("  {} Opening browser at {}", style("→").blue(), url);
-        
+
         #[cfg(target_os = "windows")]
         {
-            std::process::Command::new("cmd")
-                .args(&["/C", "start", &url])
-                .spawn()?;
+            std::process::Command::new("cmd").args(&["/C", "start", &url]).spawn()?;
         }
-        
+
         #[cfg(target_os = "macos")]
         {
-            std::process::Command::new("open")
-                .arg(&url)
-                .spawn()?;
+            std::process::Command::new("open").arg(&url).spawn()?;
         }
-        
+
         #[cfg(target_os = "linux")]
         {
-            std::process::Command::new("xdg-open")
-                .arg(&url)
-                .spawn()?;
+            std::process::Command::new("xdg-open").arg(&url).spawn()?;
         }
-        
+
         Ok(())
     }
 }
 
 /// 执行 dev 命令的公开入口点
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `args` - 开发服务器参数
-/// 
+///
 /// # Returns
-/// 
+///
 /// 返回成功或错误结果
 #[cfg(feature = "dev")]
 pub async fn execute(args: crate::DevArgs) -> crate::types::Result<()> {

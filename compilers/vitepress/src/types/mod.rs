@@ -13,8 +13,8 @@ pub use nargo_types::{
 };
 
 pub use config::{
-    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, Sidebar, SidebarItem,
-    SocialLink, ThemeConfig, VutexConfig,
+    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, Sidebar,
+    SidebarItem, SocialLink, ThemeConfig, VutexConfig,
 };
 pub use errors::{Result, VutexError};
 pub use ipc::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};

@@ -212,10 +212,7 @@ fn default_true() -> bool {
 impl MkDocsConfig {
     /// 从 YAML 字符串解析配置
     pub fn from_yaml(content: &str) -> Result<Self, crate::types::errors::MkDocsError> {
-        serde_yaml::from_str(content)
-            .map_err(|e| crate::types::errors::MkDocsError::ConfigParseError {
-                source: e,
-            })
+        serde_yaml::from_str(content).map_err(|e| crate::types::errors::MkDocsError::ConfigParseError { source: e })
     }
 
     /// 从文件加载配置

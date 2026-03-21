@@ -1,9 +1,9 @@
 //! 示例插件
 
-use crate::plugin::{Plugin, PluginError, PluginConfig};
+use crate::plugin::{Plugin, PluginConfig, PluginError};
 
 /// 示例插件
-/// 
+///
 /// 用于演示插件系统的使用方式
 pub struct ExamplePlugin {
     /// 插件配置

@@ -1,9 +1,9 @@
 //! 模板引擎模块
 
-use std::collections::HashMap;
+use handlebars::{Context, Handlebars, Helper, HelperResult, Output, RenderContext};
 use liquid::{ParserBuilder, Template, model::Value as LiquidValue};
-use handlebars::{Handlebars, Helper, Context, HelperResult, Output, RenderContext};
-use pulldown_cmark::{Parser, Options, html::push_html};
+use pulldown_cmark::{Options, Parser, html::push_html};
+use std::collections::HashMap;
 
 /// 模板引擎错误类型
 #[derive(Debug)]
@@ -20,10 +20,10 @@ pub enum TemplateError {
 pub trait TemplateEngine: Send + Sync {
     /// 渲染模板
     fn render(&self, template: &str, data: &serde_json::Value) -> Result<String, TemplateError>;
-    
+
     /// 注册过滤器
     fn register_filter(&mut self, name: &str, filter: fn(&str) -> String);
-    
+
     /// 注册全局变量
     fn register_global(&mut self, name: &str, value: serde_json::Value);
 }
@@ -32,7 +32,7 @@ pub trait TemplateEngine: Send + Sync {
 pub struct SimpleTemplateEngine {
     /// 过滤器
     filters: HashMap<String, fn(&str) -> String>,
-    
+
     /// 全局变量
     globals: HashMap<String, serde_json::Value>,
 }
@@ -40,17 +40,14 @@ pub struct SimpleTemplateEngine {
 impl SimpleTemplateEngine {
     /// 创建新的简单模板引擎
     pub fn new() -> Self {
-        Self {
-            filters: HashMap::new(),
-            globals: HashMap::new(),
-        }
+        Self { filters: HashMap::new(), globals: HashMap::new() }
     }
 }
 
 impl TemplateEngine for SimpleTemplateEngine {
     fn render(&self, template: &str, data: &serde_json::Value) -> Result<String, TemplateError> {
         let mut result = template.to_string();
-        
+
         // 替换变量
         if let Some(obj) = data.as_object() {
             for (key, value) in obj {
@@ -58,20 +55,20 @@ impl TemplateEngine for SimpleTemplateEngine {
                 result = result.replace(&placeholder, &value.to_string());
             }
         }
-        
+
         // 替换全局变量
         for (key, value) in &self.globals {
             let placeholder = format!("{{{{ {} }}}}", key);
             result = result.replace(&placeholder, &value.to_string());
         }
-        
+
         Ok(result)
     }
-    
+
     fn register_filter(&mut self, name: &str, filter: fn(&str) -> String) {
         self.filters.insert(name.to_string(), filter);
     }
-    
+
     fn register_global(&mut self, name: &str, value: serde_json::Value) {
         self.globals.insert(name.to_string(), value);
     }
@@ -81,7 +78,7 @@ impl TemplateEngine for SimpleTemplateEngine {
 pub struct LiquidTemplateEngine {
     /// Liquid 模板
     template: Template,
-    
+
     /// 全局变量
     globals: HashMap<String, serde_json::Value>,
 }
@@ -91,11 +88,8 @@ impl LiquidTemplateEngine {
     pub fn new(template: &str) -> Result<Self, TemplateError> {
         let parser = ParserBuilder::with_stdlib().build().map_err(|e| TemplateError::ParseError(e.to_string()))?;
         let template = parser.parse(template).map_err(|e| TemplateError::ParseError(e.to_string()))?;
-        
-        Ok(Self {
-            template,
-            globals: HashMap::new(),
-        })
+
+        Ok(Self { template, globals: HashMap::new() })
     }
 }
 
@@ -104,29 +98,29 @@ impl TemplateEngine for LiquidTemplateEngine {
         // 这里使用传入的 template，而不是预编译的模板
         let parser = ParserBuilder::with_stdlib().build().map_err(|e| TemplateError::ParseError(e.to_string()))?;
         let template = parser.parse(template).map_err(|e| TemplateError::ParseError(e.to_string()))?;
-        
+
         let mut globals = liquid::object!({});
-        
+
         // 添加全局变量
         for (key, value) in &self.globals {
             globals.insert(key.into(), self.convert_value(value));
         }
-        
+
         // 添加数据
         if let Some(obj) = data.as_object() {
             for (key, value) in obj {
                 globals.insert(key.into(), self.convert_value(value));
             }
         }
-        
+
         let result = template.render(&globals).map_err(|e| TemplateError::RenderError(e.to_string()))?;
         Ok(result)
     }
-    
+
     fn register_filter(&mut self, _name: &str, _filter: fn(&str) -> String) {
         // 暂时不支持注册过滤器
     }
-    
+
     fn register_global(&mut self, name: &str, value: serde_json::Value) {
         self.globals.insert(name.to_string(), value);
     }
@@ -141,9 +135,11 @@ impl LiquidTemplateEngine {
             serde_json::Value::Number(n) => {
                 if n.is_i64() {
                     LiquidValue::scalar(n.as_i64().unwrap())
-                } else if n.is_f64() {
+                }
+                else if n.is_f64() {
                     LiquidValue::scalar(n.as_f64().unwrap())
-                } else {
+                }
+                else {
                     LiquidValue::scalar(n.to_string())
                 }
             }
@@ -177,10 +173,8 @@ impl HandlebarsTemplateEngine {
     pub fn new() -> Self {
         let mut handlebars = Handlebars::new();
         handlebars.set_strict_mode(true);
-        
-        Self {
-            handlebars,
-        }
+
+        Self { handlebars }
     }
 }
 
@@ -189,16 +183,21 @@ impl TemplateEngine for HandlebarsTemplateEngine {
         let result = self.handlebars.render_template(template, data).map_err(|e| TemplateError::RenderError(e.to_string()))?;
         Ok(result)
     }
-    
+
     fn register_filter(&mut self, name: &str, filter: fn(&str) -> String) {
-        self.handlebars.register_helper(name, Box::new(move |h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext, out: &mut dyn Output| -> HelperResult {
-            let param = h.param(0).unwrap().value().as_str().unwrap_or("");
-            let result = filter(param);
-            out.write(&result)?;
-            Ok(())
-        }));
+        self.handlebars.register_helper(
+            name,
+            Box::new(
+                move |h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext, out: &mut dyn Output| -> HelperResult {
+                    let param = h.param(0).unwrap().value().as_str().unwrap_or("");
+                    let result = filter(param);
+                    out.write(&result)?;
+                    Ok(())
+                },
+            ),
+        );
     }
-    
+
     fn register_global(&mut self, name: &str, value: serde_json::Value) {
         // Handlebars doesn't have a direct register_data method, so we'll handle this differently
         // For now, we'll just ignore this as it's not critical for basic functionality
@@ -219,10 +218,8 @@ impl MarkdownTemplateEngine {
         options.insert(Options::ENABLE_FOOTNOTES);
         options.insert(Options::ENABLE_STRIKETHROUGH);
         options.insert(Options::ENABLE_TASKLISTS);
-        
-        Self {
-            options,
-        }
+
+        Self { options }
     }
 }
 
@@ -233,11 +230,11 @@ impl TemplateEngine for MarkdownTemplateEngine {
         push_html(&mut html_output, parser);
         Ok(html_output)
     }
-    
+
     fn register_filter(&mut self, _name: &str, _filter: fn(&str) -> String) {
         // Markdown 不支持过滤器
     }
-    
+
     fn register_global(&mut self, _name: &str, _value: serde_json::Value) {
         // Markdown 不支持全局变量
     }
@@ -247,7 +244,7 @@ impl TemplateEngine for MarkdownTemplateEngine {
 pub struct TemplateEngineFactory {
     /// 引擎映射
     engines: HashMap<String, Box<dyn TemplateEngine>>,
-    
+
     /// 文件扩展名到引擎的映射
     extension_map: HashMap<String, String>,
 }
@@ -255,81 +252,86 @@ pub struct TemplateEngineFactory {
 impl TemplateEngineFactory {
     /// 创建新的模板引擎工厂
     pub fn new() -> Self {
-        let mut factory = Self {
-            engines: HashMap::new(),
-            extension_map: HashMap::new(),
-        };
-        
+        let mut factory = Self { engines: HashMap::new(), extension_map: HashMap::new() };
+
         // 注册默认模板引擎
         factory.register_default_engines();
         factory
     }
-    
+
     /// 注册默认模板引擎
     fn register_default_engines(&mut self) {
         // 注册简单模板引擎
         self.register_engine("simple", Box::new(SimpleTemplateEngine::new()));
-        
+
         // 注册 Liquid 模板引擎
         self.register_engine("liquid", Box::new(LiquidTemplateEngine::new("").unwrap()));
-        
+
         // 注册 Handlebars 模板引擎
         self.register_engine("handlebars", Box::new(HandlebarsTemplateEngine::new()));
-        
+
         // 注册 Markdown 模板引擎
         self.register_engine("markdown", Box::new(MarkdownTemplateEngine::new()));
-        
+
         // 注册文件扩展名映射
         self.extension_map.insert("liquid".to_string(), "liquid".to_string());
         self.extension_map.insert("hbs".to_string(), "handlebars".to_string());
         self.extension_map.insert("md".to_string(), "markdown".to_string());
         self.extension_map.insert("markdown".to_string(), "markdown".to_string());
     }
-    
+
     /// 注册模板引擎
     pub fn register_engine(&mut self, name: &str, engine: Box<dyn TemplateEngine>) {
         self.engines.insert(name.to_string(), engine);
     }
-    
+
     /// 注册文件扩展名映射
     pub fn register_extension(&mut self, extension: &str, engine_name: &str) {
         self.extension_map.insert(extension.to_string(), engine_name.to_string());
     }
-    
+
     /// 获取模板引擎
     pub fn get_engine(&self, name: &str) -> Option<&Box<dyn TemplateEngine>> {
         self.engines.get(name)
     }
-    
+
     /// 获取可变模板引擎
     pub fn get_engine_mut(&mut self, name: &str) -> Option<&mut Box<dyn TemplateEngine>> {
         self.engines.get_mut(name)
     }
-    
+
     /// 根据文件扩展名获取模板引擎
     pub fn get_engine_by_extension(&self, extension: &str) -> Option<&Box<dyn TemplateEngine>> {
         if let Some(engine_name) = self.extension_map.get(extension) {
             self.engines.get(engine_name)
-        } else {
+        }
+        else {
             // 默认使用简单模板引擎
             self.engines.get("simple")
         }
     }
-    
+
     /// 渲染模板
     pub fn render(&self, engine_name: &str, template: &str, data: &serde_json::Value) -> Result<String, TemplateError> {
         if let Some(engine) = self.engines.get(engine_name) {
             engine.render(template, data)
-        } else {
+        }
+        else {
             Err(TemplateError::TemplateNotFoundError(format!("Template engine not found: {}", engine_name)))
         }
     }
-    
+
     /// 根据文件扩展名渲染模板
-    pub fn render_by_extension(&self, extension: &str, template: &str, data: &serde_json::Value) -> Result<String, TemplateError> {
+    pub fn render_by_extension(
+        &self,
+        extension: &str,
+        template: &str,
+        data: &serde_json::Value,
+    ) -> Result<String, TemplateError> {
         if let Some(engine) = self.get_engine_by_extension(extension) {
             engine.render(template, data)
-        } else {
+        }
+        else {
             Err(TemplateError::TemplateNotFoundError(format!("No template engine found for extension: {}", extension)))
         }
     }

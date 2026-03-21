@@ -1,40 +1,41 @@
 //! Init 命令实现
-//! 
+//!
 //! 提供 Jekyll 项目初始化功能，支持创建标准的 Jekyll 目录结构
 //! 和配置文件，包含可选的示例内容。
 
-use crate::InitArgs;
+use crate::{InitArgs, types::Result};
 use console::style;
 use std::{fs, path::PathBuf};
-use crate::types::Result;
 
 /// Init 命令执行器
-/// 
+///
 /// 负责初始化新的 Jekyll 项目，创建标准目录结构和配置文件。
 pub struct InitCommand;
 
 impl InitCommand {
     /// 执行 init 命令
-    /// 
+    ///
     /// 根据提供的参数初始化新的 Jekyll 项目。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `args` - 初始化命令参数，包含项目名称、目标目录等配置
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     pub async fn execute(args: InitArgs) -> Result<()> {
         println!("{}", style("Initializing Jekyll project...").cyan());
 
         let project_name = args.name.unwrap_or_else(|| "my-jekyll-site".to_string());
-        
+
         let project_dir = if let Some(dest) = args.destination {
             dest
-        } else if args.force {
+        }
+        else if args.force {
             PathBuf::from(".")
-        } else {
+        }
+        else {
             PathBuf::from(project_name.clone())
         };
 
@@ -52,7 +53,8 @@ impl InitCommand {
 
         if args.blank {
             Self::create_blank_structure(&project_dir)?;
-        } else {
+        }
+        else {
             Self::create_standard_structure(&project_dir, !args.skip_example)?;
         }
 
@@ -64,7 +66,8 @@ impl InitCommand {
         if project_dir != PathBuf::from(".") {
             println!("  To build your site, run: cd {} && jekyll build", project_dir.display());
             println!("  To serve your site locally, run: cd {} && jekyll dev", project_dir.display());
-        } else {
+        }
+        else {
             println!("  To build your site, run: jekyll build");
             println!("  To serve your site locally, run: jekyll dev");
         }
@@ -73,15 +76,15 @@ impl InitCommand {
     }
 
     /// 创建空白项目结构
-    /// 
+    ///
     /// 仅创建最基本的目录和配置文件。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_blank_structure(project_dir: &PathBuf) -> Result<()> {
         let dirs = ["_posts", "_layouts", "_includes"];
@@ -109,16 +112,16 @@ url: "http://localhost:4000"
     }
 
     /// 创建标准项目结构
-    /// 
+    ///
     /// 创建完整的 Jekyll 目录结构、配置文件和示例内容。
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
     /// * `include_example` - 是否包含示例内容
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_standard_structure(project_dir: &PathBuf, include_example: bool) -> Result<()> {
         let dirs = ["_posts", "_layouts", "_includes", "_data", "_drafts", "_sass", "assets"];
@@ -144,13 +147,13 @@ url: "http://localhost:4000"
     }
 
     /// 创建配置文件 _config.yml
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_config_file(project_dir: &PathBuf) -> Result<()> {
         let config_path = project_dir.join("_config.yml");
@@ -185,13 +188,13 @@ exclude:
     }
 
     /// 创建首页文件 index.md
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_index_file(project_dir: &PathBuf) -> Result<()> {
         let index_path = project_dir.join("index.md");
@@ -218,13 +221,13 @@ This is a simple Jekyll site created with Rusty Jekyll.
     }
 
     /// 创建默认布局文件
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_default_layout(project_dir: &PathBuf) -> Result<()> {
         let default_layout_path = project_dir.join("_layouts").join("default.html");
@@ -256,13 +259,13 @@ This is a simple Jekyll site created with Rusty Jekyll.
     }
 
     /// 创建样式文件
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_stylesheet(project_dir: &PathBuf) -> Result<()> {
         let css_dir = project_dir.join("assets").join("css");
@@ -325,13 +328,13 @@ a:hover {
     }
 
     /// 创建示例文章
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_example_post(project_dir: &PathBuf) -> Result<()> {
         let example_post_path = project_dir.join("_posts").join("2024-01-01-welcome-to-jekyll.md");
@@ -368,13 +371,13 @@ Happy blogging!
     }
 
     /// 创建 .gitignore 文件
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `project_dir` - 项目目录路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 返回成功或错误结果
     fn create_gitignore(project_dir: &PathBuf) -> Result<()> {
         let gitignore_path = project_dir.join(".gitignore");
@@ -408,13 +411,13 @@ Thumbs.db
 }
 
 /// 执行 init 命令的公开入口点
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `args` - 初始化命令参数
-/// 
+///
 /// # Returns
-/// 
+///
 /// 返回成功或错误结果
 pub async fn execute(args: crate::InitArgs) -> crate::types::Result<()> {
     InitCommand::execute(args).await

@@ -1,19 +1,17 @@
 //! Dev 命令实现
 
-use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VutexCompiler};
-use wae_https::{HttpsServerBuilder, static_files_router};
+use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VutexCompiler, plugin_host::PluginHost, types::Result};
 use console::style;
-use fs_extra::dir::{copy, CopyOptions};
+use fs_extra::dir::{CopyOptions, copy};
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
     collections::HashMap,
     fs,
+    net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
-    net::SocketAddr,
 };
-use crate::plugin_host::PluginHost;
-use crate::types::Result;
+use wae_https::{HttpsServerBuilder, static_files_router};
 use walkdir::WalkDir;
 
 /// Dev 命令
@@ -219,10 +217,7 @@ impl DevCommand {
         println!("  Local:   http://{}/", addr);
         println!("\n  {} Press Ctrl+C to stop", style("ℹ").blue());
 
-        let server = HttpsServerBuilder::new()
-            .addr(addr)
-            .router(router)
-            .build();
+        let server = HttpsServerBuilder::new().addr(addr).router(router).build();
 
         server.serve().await.map_err(|e| crate::types::VutexError::io_error(e.to_string()))?;
 

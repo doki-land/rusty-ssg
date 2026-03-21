@@ -3,8 +3,10 @@
 
 use clap::Parser;
 use vitepress::{
-    tools::{Commands, VitePressCli},
-    tools::cmd::{BuildCommand, CheckCommand, InitCommand},
+    tools::{
+        Commands, VitePressCli,
+        cmd::{BuildCommand, CheckCommand, InitCommand},
+    },
     types::Result,
 };
 

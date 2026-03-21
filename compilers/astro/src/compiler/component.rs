@@ -1,11 +1,7 @@
 //! 组件系统模块
 
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-use crate::compiler::html_renderer::Context;
-use crate::compiler::framework_parser::FrameworkParserManager;
+use crate::compiler::{framework_parser::FrameworkParserManager, html_renderer::Context};
+use std::{collections::HashMap, fs::File, io::Read, path::Path};
 
 /// 前端框架类型
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,13 +41,7 @@ pub struct Component {
 impl Component {
     /// 创建新组件
     pub fn new(name: &str, template: &str, framework: Framework) -> Self {
-        Self {
-            name: name.to_string(),
-            template: template.to_string(),
-            script: None,
-            style: None,
-            framework,
-        }
+        Self { name: name.to_string(), template: template.to_string(), script: None, style: None, framework }
     }
 
     /// 创建 Astro 组件
@@ -133,7 +123,7 @@ impl Component {
     fn render_astro(&self, props: &Context) -> String {
         // 处理组件模板中的变量插值
         let mut result = self.template.clone();
-        
+
         // 处理变量插值
         let mut i = 0;
         while i < result.len() {
@@ -143,7 +133,7 @@ impl Component {
                 if let Some(end_idx) = result[start..].find("}}}") {
                     let end = start + end_idx + 3;
                     let var_name = result[start + 3..start + end_idx].trim();
-                    
+
                     if let Some(value) = props.get(var_name) {
                         let value_str = Self::value_to_string(value);
                         result.replace_range(start..end, &value_str);
@@ -158,7 +148,7 @@ impl Component {
                 if let Some(end_idx) = result[start..].find("}}") {
                     let end = start + end_idx + 2;
                     let var_name = result[start + 2..start + end_idx].trim();
-                    
+
                     if let Some(value) = props.get(var_name) {
                         let value_str = Self::value_to_string(value);
                         let escaped = Self::escape_html(&value_str);
@@ -168,10 +158,10 @@ impl Component {
                     }
                 }
             }
-            
+
             i += 1;
         }
-        
+
         result
     }
 
@@ -179,77 +169,49 @@ impl Component {
     fn render_react(&self, props: &Context) -> String {
         // 生成 React 组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-react-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-react-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 渲染 Vue 组件
     fn render_vue(&self, props: &Context) -> String {
         // 生成 Vue 组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-vue-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-vue-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 渲染 Svelte 组件
     fn render_svelte(&self, props: &Context) -> String {
         // 生成 Svelte 组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-svelte-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-svelte-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 渲染 Solid 组件
     fn render_solid(&self, props: &Context) -> String {
         // 生成 Solid 组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-solid-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-solid-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 渲染 Preact 组件
     fn render_preact(&self, props: &Context) -> String {
         // 生成 Preact 组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-preact-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-preact-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 渲染 Lit 组件
     fn render_lit(&self, props: &Context) -> String {
         // 生成 Lit 组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-lit-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-lit-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 渲染其他框架组件
     fn render_other(&self, props: &Context) -> String {
         // 生成其他框架组件的 HTML 包装
         let props_json = serde_json::to_string(props).unwrap();
-        format!(
-            r#"<div data-component="{}" data-props="{}"></div>"#,
-            self.name,
-            Self::escape_html(&props_json)
-        )
+        format!(r#"<div data-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
     /// 将 serde_json::Value 转换为字符串
@@ -262,12 +224,7 @@ impl Component {
 
     /// HTML 转义
     fn escape_html(content: &str) -> String {
-        content
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&#39;")
+        content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
     }
 }
 
@@ -282,10 +239,7 @@ pub struct ComponentRegistry {
 impl ComponentRegistry {
     /// 创建新的组件注册表
     pub fn new() -> Self {
-        Self {
-            components: HashMap::new(),
-            framework_parser_manager: FrameworkParserManager::new(),
-        }
+        Self { components: HashMap::new(), framework_parser_manager: FrameworkParserManager::new() }
     }
 
     /// 注册组件
@@ -294,10 +248,10 @@ impl ComponentRegistry {
     }
 
     /// 从文件路径导入组件
-    /// 
+    ///
     /// # 参数
     /// - `file_path`: 组件文件路径
-    /// 
+    ///
     /// # 返回值
     /// 导入的组件名称
     pub fn import_component(&mut self, file_path: &Path) -> Result<String, String> {
@@ -305,34 +259,35 @@ impl ComponentRegistry {
         let mut file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
         let mut content = String::new();
         file.read_to_string(&mut content).map_err(|e| format!("Failed to read file: {}", e))?;
-        
+
         // 解析组件
-        let component = self.framework_parser_manager
+        let component = self
+            .framework_parser_manager
             .parse_component(file_path, &content)
             .map_err(|e| format!("Failed to parse component: {}", e))?;
-        
+
         // 注册组件
         let component_name = component.name().to_string();
         self.register(component);
-        
+
         Ok(component_name)
     }
 
     /// 从文件路径批量导入组件
-    /// 
+    ///
     /// # 参数
     /// - `file_paths`: 组件文件路径列表
-    /// 
+    ///
     /// # 返回值
     /// 导入的组件名称列表
     pub fn import_components(&mut self, file_paths: &[&Path]) -> Result<Vec<String>, String> {
         let mut imported_components = Vec::new();
-        
+
         for file_path in file_paths {
             let component_name = self.import_component(file_path)?;
             imported_components.push(component_name);
         }
-        
+
         Ok(imported_components)
     }
 
@@ -367,9 +322,7 @@ pub struct ComponentParser {
 impl ComponentParser {
     /// 创建新的组件解析器
     pub fn new() -> Self {
-        Self {
-            registry: ComponentRegistry::new(),
-        }
+        Self { registry: ComponentRegistry::new() }
     }
 
     /// 解析组件文件

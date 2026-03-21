@@ -1,7 +1,7 @@
 //! 简单测试程序验证 VutexCompiler 功能
 
-use vuepress::VutexCompiler;
 use std::collections::HashMap;
+use vuepress::VutexCompiler;
 
 fn main() {
     println!("=== 测试 VutexCompiler ===\n");
@@ -43,7 +43,7 @@ fn main() {
             println!("   文档标题: {:?}", doc.title());
             println!("   内容长度: {} 字符", doc.content.len());
             println!("   渲染内容: {:?}", doc.rendered_content.is_some());
-            
+
             if let Some(rendered) = &doc.rendered_content {
                 println!("   渲染结果长度: {} 字符", rendered.len());
             }
@@ -63,7 +63,8 @@ fn main() {
         println!("   ✓ 批量编译成功！");
         println!("   编译文档数: {}", result.documents.len());
         println!("   编译时间: {}ms", result.compile_time_ms);
-    } else {
+    }
+    else {
         eprintln!("   ✗ 批量编译失败: {:?}", result.errors);
     }
 

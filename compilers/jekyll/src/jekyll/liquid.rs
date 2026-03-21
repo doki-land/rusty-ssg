@@ -13,95 +13,16 @@ use crate::{
 };
 use chrono::{DateTime, Local, Utc};
 use liquid::{
-    partials::{EagerCompiler, PartialSource},
-    value::{Object, Value},
-    Compiler, Renderable,
+    ParserBuilder, Template,
+    model::{Object, Value},
 };
 use serde_json;
-use std::{
-    borrow::Cow,
-    collections::HashMap,
-    fs,
-    path::Path,
-};
-
-/// Jekyll 专用的 PartialSource，用于从 Jekyll 目录结构中加载模板
-#[derive(Debug, Clone)]
-struct JekyllPartialSource {
-    /// Jekyll 目录结构
-    structure: JekyllStructure,
-}
-
-impl JekyllPartialSource {
-    /// 创建新的 JekyllPartialSource
-    ///
-    /// # Arguments
-    ///
-    /// * `structure` - Jekyll 目录结构
-    ///
-    /// # Returns
-    ///
-    /// 返回新创建的 JekyllPartialSource 实例
-    fn new(structure: JekyllStructure) -> Self {
-        Self { structure }
-    }
-}
-
-impl PartialSource for JekyllPartialSource {
-    fn contains(&self, name: &str) -> bool {
-        let Some(includes_dir) = self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes) else {
-            return false;
-        };
-        let Some(layouts_dir) = self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts) else {
-            return false;
-        };
-
-        let possible_paths = vec![
-            includes_dir.join(name),
-            includes_dir.join(format!("{}.html", name)),
-            includes_dir.join(format!("{}.liquid", name)),
-            layouts_dir.join(name),
-            layouts_dir.join(format!("{}.html", name)),
-            layouts_dir.join(format!("{}.liquid", name)),
-        ];
-
-        possible_paths.iter().any(|path| path.exists() && path.is_file())
-    }
-
-    fn names(&self) -> Vec<&str> {
-        Vec::new()
-    }
-
-    fn try_get<'a>(&'a self, name: &str) -> Option<Cow<'a, str>> {
-        let includes_dir = self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes)?;
-        let layouts_dir = self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts)?;
-
-        let possible_paths = vec![
-            includes_dir.join(name),
-            includes_dir.join(format!("{}.html", name)),
-            includes_dir.join(format!("{}.liquid", name)),
-            layouts_dir.join(name),
-            layouts_dir.join(format!("{}.html", name)),
-            layouts_dir.join(format!("{}.liquid", name)),
-        ];
-
-        for path in possible_paths {
-            if path.exists() && path.is_file() {
-                if let Ok(content) = fs::read_to_string(path) {
-                    return Some(Cow::Owned(content));
-                }
-            }
-        }
-
-        None
-    }
-}
+use std::{collections::HashMap, fs, path::Path};
 
 /// Liquid 模板引擎核心
 ///
 /// 该结构体是 Jekyll Liquid 模板引擎的核心实现，负责：
 /// - 编译和渲染 Liquid 模板
-/// - 管理模板缓存
 /// - 提供 Jekyll 风格的上下文对象
 /// - 处理模板继承和包含
 pub struct LiquidEngine {
@@ -109,8 +30,8 @@ pub struct LiquidEngine {
     structure: JekyllStructure,
     /// Jekyll 配置
     config: JekyllConfig,
-    /// Liquid 编译器
-    compiler: Compiler<'static>,
+    /// Liquid 解析器
+    parser: ParserBuilder,
 }
 
 impl LiquidEngine {
@@ -125,17 +46,9 @@ impl LiquidEngine {
     ///
     /// 返回新创建的 LiquidEngine 实例
     pub fn new(structure: JekyllStructure, config: JekyllConfig) -> Self {
-        let partial_source = JekyllPartialSource::new(structure.clone());
-        let partial_compiler = EagerCompiler::new(partial_source);
+        let parser = ParserBuilder::with_stdlib();
 
-        let mut compiler = Compiler::new();
-        compiler = compiler.partials(partial_compiler);
-
-        Self {
-            structure,
-            config,
-            compiler,
-        }
+        Self { structure, config, parser }
     }
 
     /// 渲染 Liquid 模板
@@ -153,14 +66,12 @@ impl LiquidEngine {
     ///
     /// 返回 `LiquidError` 如果解析或渲染失败
     pub fn render_template(&self, template: &str, context: &Object) -> Result<String, LiquidError> {
-        let compiled = self
-            .compiler
-            .parse(template)
-            .map_err(|e| LiquidError::ParseError(format!("Failed to parse template: {}", e)))?;
+        let parser = self.parser.build().map_err(|e| LiquidError::ParseError(format!("Failed to build parser: {}", e)))?;
+        let compiled =
+            parser.parse(template).map_err(|e| LiquidError::ParseError(format!("Failed to parse template: {}", e)))?;
 
-        let output = compiled
-            .render(context)
-            .map_err(|e| LiquidError::RenderError(format!("Failed to render template: {}", e)))?;
+        let output =
+            compiled.render(context).map_err(|e| LiquidError::RenderError(format!("Failed to render template: {}", e)))?;
 
         Ok(output)
     }
@@ -181,14 +92,14 @@ impl LiquidEngine {
     /// 返回 `LiquidError` 如果文件读取、解析或渲染失败
     pub fn render_template_file(&self, template_path: &Path, context: &Object) -> Result<String, LiquidError> {
         let template_content = fs::read_to_string(template_path)?;
-        let compiled = self
-            .compiler
-            .parse(&template_content)
-            .map_err(|e| LiquidError::ParseError(format!("Failed to parse template file {}: {}", template_path.display(), e)))?;
+        let parser = self.parser.build().map_err(|e| LiquidError::ParseError(format!("Failed to build parser: {}", e)))?;
+        let compiled = parser.parse(&template_content).map_err(|e| {
+            LiquidError::ParseError(format!("Failed to parse template file {}: {}", template_path.display(), e))
+        })?;
 
-        let output = compiled
-            .render(context)
-            .map_err(|e| LiquidError::RenderError(format!("Failed to render template file {}: {}", template_path.display(), e)))?;
+        let output = compiled.render(context).map_err(|e| {
+            LiquidError::RenderError(format!("Failed to render template file {}: {}", template_path.display(), e))
+        })?;
 
         Ok(output)
     }
@@ -426,11 +337,7 @@ impl LiquidEngine {
             }
         }
 
-        if url.is_empty() {
-            Some("/".to_string())
-        } else {
-            Some(url)
-        }
+        if url.is_empty() { Some("/".to_string()) } else { Some(url) }
     }
 
     /// 将 serde_json::Value 转换为 liquid::Value
@@ -452,9 +359,11 @@ impl LiquidEngine {
             serde_json::Value::Number(n) => {
                 if let Some(i) = n.as_i64() {
                     Value::scalar(i)
-                } else if let Some(f) = n.as_f64() {
+                }
+                else if let Some(f) = n.as_f64() {
                     Value::scalar(f)
-                } else {
+                }
+                else {
                     Value::Nil
                 }
             }

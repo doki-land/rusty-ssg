@@ -5,11 +5,10 @@ use clap::Parser;
 use vuepress::types::Result;
 
 // 直接从工具模块导入必要的类型
-use vuepress::tools::VutexCli;
-use vuepress::tools::Commands;
-use vuepress::tools::cmd::BuildCommand;
-use vuepress::tools::cmd::CheckCommand;
-use vuepress::tools::cmd::InitCommand;
+use vuepress::tools::{
+    Commands, VutexCli,
+    cmd::{BuildCommand, CheckCommand, InitCommand},
+};
 
 #[cfg(feature = "dev")]
 use vuepress::tools::cmd::DevCommand;

@@ -1,8 +1,7 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::tools::UnifiedTemplateManager;
-use crate::{types::GatsbyConfig, Result};
+use crate::{Result, tools::UnifiedTemplateManager, types::GatsbyConfig};
 use nargo_template::{TemplateEngine, ToJsonValue};
 use serde_json::json;
 use std::collections::HashMap;
@@ -186,11 +185,7 @@ impl DefaultTheme {
             }
         }
 
-        Ok(Self {
-            config,
-            engine_type,
-            template_manager,
-        })
+        Ok(Self { config, engine_type, template_manager })
     }
 
     /// 渲染页面
@@ -221,11 +216,7 @@ impl DefaultTheme {
     ///
     /// 站点标题字符串
     pub fn site_title(&self) -> &str {
-        self.config
-            .site_metadata
-            .as_ref()
-            .and_then(|sm| sm.title.as_deref())
-            .unwrap_or("Gatsby Documentation")
+        self.config.site_metadata.as_ref().and_then(|sm| sm.title.as_deref()).unwrap_or("Gatsby Documentation")
     }
 
     /// 获取当前使用的模板引擎类型

@@ -300,8 +300,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::YamlParseError` 如果 YAML 解析失败
     pub fn load_from_yaml_str(yaml_str: &str) -> Result<Self, ConfigError> {
-        let config: Self =
-            oak_yaml::language::from_str(yaml_str).map_err(|e| ConfigError::yaml_parse_error(e.to_string()))?;
+        let config: Self = oak_yaml::language::from_str(yaml_str).map_err(|e| ConfigError::yaml_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
     }

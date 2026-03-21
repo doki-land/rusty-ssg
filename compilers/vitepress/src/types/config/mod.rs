@@ -801,9 +801,7 @@ impl Default for MarkdownConfig {
             component: None,
             emoji: None,
             frontmatter: None,
-            headers: Some(HeadersPluginOptions {
-                level: Some(vec![2, 3]),
-            }),
+            headers: Some(HeadersPluginOptions { level: Some(vec![2, 3]) }),
             import_code: None,
             links: Some(LinksPluginOptions {
                 internal_tag: Some("RouteLink".to_string()),
@@ -814,13 +812,8 @@ impl Default for MarkdownConfig {
             }),
             sfc: None,
             title: None,
-            toc: Some(TocPluginOptions {
-                level: Some(vec![2, 3]),
-            }),
-            v_pre: Some(CodeBlockVPreOptions {
-                block: Some(true),
-                inline: Some(true),
-            }),
+            toc: Some(TocPluginOptions { level: Some(vec![2, 3]) }),
+            v_pre: Some(CodeBlockVPreOptions { block: Some(true), inline: Some(true) }),
             line_numbers: Some(false),
             code_theme: None,
             custom: None,

@@ -136,17 +136,12 @@ pub struct MarkdownOptions {
 impl Default for MarkdownOptions {
     fn default() -> Self {
         Self {
-            anchor: Some(AnchorPluginOptions {
-                level: vec![1, 2, 3, 4, 5, 6],
-                permalink: Some("headerLink".to_string()),
-            }),
+            anchor: Some(AnchorPluginOptions { level: vec![1, 2, 3, 4, 5, 6], permalink: Some("headerLink".to_string()) }),
             assets: None,
             component: None,
             emoji: None,
             frontmatter: None,
-            headers: Some(HeadersPluginOptions {
-                level: vec![2, 3],
-            }),
+            headers: Some(HeadersPluginOptions { level: vec![2, 3] }),
             import_code: None,
             links: Some(LinksPluginOptions {
                 internal_tag: "RouteLink".to_string(),
@@ -157,13 +152,8 @@ impl Default for MarkdownOptions {
             }),
             sfc: None,
             title: None,
-            toc: Some(TocPluginOptions {
-                level: vec![2, 3],
-            }),
-            v_pre: Some(CodeBlockVPreOptions {
-                block: true,
-                inline: true,
-            }),
+            toc: Some(TocPluginOptions { level: vec![2, 3] }),
+            v_pre: Some(CodeBlockVPreOptions { block: true, inline: true }),
         }
     }
 }

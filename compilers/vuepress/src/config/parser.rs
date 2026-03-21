@@ -1,10 +1,8 @@
 //! VuePress 配置文件解析器
-//! 
+//!
 //! 支持解析 CommonJS 和 ES 模块格式的配置文件，处理配置文件中的导入和依赖
 
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+use std::{fs::File, io::Read, path::Path};
 
 use crate::config::types::VuePressConfig;
 use oak_toml;
@@ -18,9 +16,7 @@ pub struct ConfigParser {
 impl ConfigParser {
     /// 创建新的配置解析器
     pub fn new(config_path: &str) -> Self {
-        Self {
-            config_path: config_path.to_string(),
-        }
+        Self { config_path: config_path.to_string() }
     }
 
     /// 解析配置文件

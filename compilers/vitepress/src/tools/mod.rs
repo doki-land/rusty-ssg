@@ -5,7 +5,7 @@ pub mod cmd;
 pub mod site_generator;
 pub mod theme;
 
-pub use site_generator::{ConfigLoader, StaticSiteGenerator, LanguageDocuments};
+pub use site_generator::{ConfigLoader, LanguageDocuments, StaticSiteGenerator};
 pub use theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, SocialLink};
 
 use clap::Parser;

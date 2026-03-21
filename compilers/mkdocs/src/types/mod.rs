@@ -9,7 +9,7 @@ pub mod errors;
 
 // 重新导出常用类型
 pub use config::{
-    AlternatePalette, FontConfig, IconConfig, MkDocsConfig, NavItem, NavValue, PaletteConfig,
-    PluginConfig, PluginOptions, ThemeConfig, ToggleConfig,
+    AlternatePalette, FontConfig, IconConfig, MkDocsConfig, NavItem, NavValue, PaletteConfig, PluginConfig, PluginOptions,
+    ThemeConfig, ToggleConfig,
 };
 pub use errors::{MkDocsError, Result};

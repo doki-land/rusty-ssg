@@ -11,8 +11,8 @@ use std::{
     path::Path,
 };
 
-use serde::{Deserialize, Serialize};
 use nargo_types::Document;
+use serde::{Deserialize, Serialize};
 
 /// 配置加载和验证相关的错误类型
 #[derive(Debug, Clone)]
@@ -285,20 +285,16 @@ impl GatsbyConfig {
     pub fn load_from_dir<P: AsRef<Path>>(dir: P) -> std::result::Result<Self, ConfigError> {
         let dir = dir.as_ref();
 
-        let filenames = [
-            "gatsby-config.js",
-            "gatsby-config.json",
-            "gatsby-config.yaml",
-            "gatsby-config.yml",
-            "gatsby-config.toml",
-        ];
+        let filenames =
+            ["gatsby-config.js", "gatsby-config.json", "gatsby-config.yaml", "gatsby-config.yml", "gatsby-config.toml"];
 
         for filename in filenames {
             let path = dir.join(filename);
             if path.exists() {
                 if filename.ends_with(".js") {
                     return Ok(Self::default());
-                } else {
+                }
+                else {
                     return Self::load_from_file(path);
                 }
             }
