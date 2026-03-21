@@ -75,7 +75,7 @@
   - `programmatic` TR-6.2: 验证框架组件的正确渲染
 - **Notes**: 可能需要集成相应的框架运行时
 
-## [/] 任务 7: 实现插件系统
+## [x] 任务 7: 实现插件系统
 - **Priority**: P2
 - **Depends On**: 任务 2
 - **Description**:
@@ -88,7 +88,7 @@
   - `programmatic` TR-7.2: 验证插件 API 的使用
 - **Notes**: 插件系统需要灵活且可扩展
 
-## [ ] 任务 8: 开发命令行工具
+## [/] 任务 8: 开发命令行工具
 - **Priority**: P1
 - **Depends On**: 任务 1-6
 - **Description**:

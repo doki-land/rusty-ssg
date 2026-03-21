@@ -15,10 +15,11 @@ use chrono::{DateTime, Local, Utc};
 use liquid::{
     partials::{EagerCompiler, PartialSource},
     value::{Object, Value},
-    Compiler, Renderable, Template,
+    Compiler, Renderable,
 };
 use serde_json;
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fs,
     path::Path,
@@ -71,7 +72,7 @@ impl PartialSource for JekyllPartialSource {
         Vec::new()
     }
 
-    fn try_get<'a>(&'a self, name: &str) -> Option<liquid::Cow<'a, str>> {
+    fn try_get<'a>(&'a self, name: &str) -> Option<Cow<'a, str>> {
         let includes_dir = self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes)?;
         let layouts_dir = self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts)?;
 
@@ -87,20 +88,12 @@ impl PartialSource for JekyllPartialSource {
         for path in possible_paths {
             if path.exists() && path.is_file() {
                 if let Ok(content) = fs::read_to_string(path) {
-                    return Some(liquid::Cow::Owned(content));
+                    return Some(Cow::Owned(content));
                 }
             }
         }
 
         None
-    }
-
-    fn partial(&self, name: &str) -> Option<liquid::Cow<'_, str>> {
-        self.try_get(name)
-    }
-
-    fn name(&self) -> &str {
-        "jekyll"
     }
 }
 
@@ -111,7 +104,6 @@ impl PartialSource for JekyllPartialSource {
 /// - 管理模板缓存
 /// - 提供 Jekyll 风格的上下文对象
 /// - 处理模板继承和包含
-#[derive(Clone)]
 pub struct LiquidEngine {
     /// Jekyll 目录结构
     structure: JekyllStructure,
@@ -119,8 +111,6 @@ pub struct LiquidEngine {
     config: JekyllConfig,
     /// Liquid 编译器
     compiler: Compiler<'static>,
-    /// 已编译的模板缓存
-    template_cache: HashMap<String, Template>,
 }
 
 impl LiquidEngine {
@@ -145,7 +135,6 @@ impl LiquidEngine {
             structure,
             config,
             compiler,
-            template_cache: HashMap::new(),
         }
     }
 
@@ -190,22 +179,14 @@ impl LiquidEngine {
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果文件读取、解析或渲染失败
-    pub fn render_template_file(&mut self, template_path: &Path, context: &Object) -> Result<String, LiquidError> {
-        let template_key = template_path.to_string_lossy().to_string();
+    pub fn render_template_file(&self, template_path: &Path, context: &Object) -> Result<String, LiquidError> {
+        let template_content = fs::read_to_string(template_path)?;
+        let compiled = self
+            .compiler
+            .parse(&template_content)
+            .map_err(|e| LiquidError::ParseError(format!("Failed to parse template file {}: {}", template_path.display(), e)))?;
 
-        let template = if let Some(t) = self.template_cache.get(&template_key) {
-            t
-        } else {
-            let template_content = fs::read_to_string(template_path)?;
-            let compiled = self
-                .compiler
-                .parse(&template_content)
-                .map_err(|e| LiquidError::ParseError(format!("Failed to parse template file {}: {}", template_path.display(), e)))?;
-            self.template_cache.insert(template_key.clone(), compiled);
-            self.template_cache.get(&template_key).unwrap()
-        };
-
-        let output = template
+        let output = compiled
             .render(context)
             .map_err(|e| LiquidError::RenderError(format!("Failed to render template file {}: {}", template_path.display(), e)))?;
 
@@ -230,7 +211,7 @@ impl LiquidEngine {
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果布局未找到或渲染失败
-    pub fn render_layout(&mut self, layout_name: &str, content: &str, context: &Object) -> Result<String, LiquidError> {
+    pub fn render_layout(&self, layout_name: &str, content: &str, context: &Object) -> Result<String, LiquidError> {
         let layout_path = match self.structure.directory_path(crate::jekyll::JekyllDirectory::Layouts) {
             Some(layouts_dir) => {
                 let mut path = layouts_dir.to_path_buf();
@@ -269,7 +250,7 @@ impl LiquidEngine {
     /// # Errors
     ///
     /// 返回 `LiquidError` 如果包含文件未找到或渲染失败
-    pub fn render_include(&mut self, include_name: &str, context: &Object) -> Result<String, LiquidError> {
+    pub fn render_include(&self, include_name: &str, context: &Object) -> Result<String, LiquidError> {
         let include_path = match self.structure.directory_path(crate::jekyll::JekyllDirectory::Includes) {
             Some(includes_dir) => {
                 let mut path = includes_dir.to_path_buf();
@@ -490,13 +471,6 @@ impl LiquidEngine {
                 Value::Object(liquid_obj)
             }
         }
-    }
-
-    /// 清除模板缓存
-    ///
-    /// 清除所有已编译的模板缓存，下次渲染时会重新编译模板。
-    pub fn clear_cache(&mut self) {
-        self.template_cache.clear();
     }
 
     /// 获取 Jekyll 目录结构

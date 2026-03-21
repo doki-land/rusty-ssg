@@ -287,10 +287,10 @@ impl DefaultsManager {
         collection: Option<&str>,
         front_matter: &mut FrontMatter,
     ) {
-        let current_layout = front_matter.get_str("layout");
+        let current_layout = front_matter.get_str("layout").map(|s| s.to_string());
 
         for default_config in &self.defaults {
-            if default_config.scope.matches(document_path, collection, current_layout) {
+            if default_config.scope.matches(document_path, collection, current_layout.as_deref()) {
                 Self::merge_values(&mut front_matter.variables, &default_config.values);
             }
         }

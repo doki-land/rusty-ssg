@@ -386,7 +386,7 @@ impl DataManager {
             obj.insert(first.to_string(), value);
         } else {
             let entry = obj.entry(first.to_string()).or_insert_with(|| Value::Object(serde_json::Map::new()));
-            if let Value::Object(ref mut inner_obj) = entry {
+            if let Value::Object(inner_obj) = entry {
                 Self::insert_nested(inner_obj, rest, value);
             }
         }
