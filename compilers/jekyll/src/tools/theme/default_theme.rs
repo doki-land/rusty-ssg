@@ -1,10 +1,10 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::{Result, types::VutexConfig};
+use crate::types::{Result, VutexConfig};
 use nargo_template::{TemplateEngine, ToJsonValue};
-use serde_json::{json, Value};
-
+use serde_json::json;
+use std::collections::HashMap;
 /// 模板引擎类型
 /// 支持多种模板引擎
 #[derive(Debug, Clone, PartialEq, Eq)]

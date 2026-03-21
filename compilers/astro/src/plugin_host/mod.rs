@@ -84,7 +84,7 @@ impl PluginHost {
     /// 
     /// # 返回值
     /// - `Result<(), PluginError>`: 初始化结果
-    pub fn init_plugins(&mut self) -> Result<(), PluginError> {
+    pub fn init_plugins(&self) -> Result<(), PluginError> {
         self.plugin_manager.init_all()
     }
 

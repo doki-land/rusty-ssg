@@ -217,7 +217,7 @@ impl CheckCommand {
         let mut checked_count = 0;
 
         for file in &markdown_files {
-            let file_name = file.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            let _file_name = file.file_name().and_then(|n| n.to_str()).unwrap_or("");
             
             if !include_drafts {
                 let drafts_dir = source_dir.join("_drafts");

@@ -2,10 +2,11 @@
 //! 提供静态站点生成的核心功能，支持多语言文档
 
 use crate::{
-    Document, Result,
+    Document,
     tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     types::{LocaleConfig, VutexConfig},
 };
+use crate::types::Result;
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射

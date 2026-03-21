@@ -24,12 +24,12 @@ pub struct PluginConfig {
 }
 
 /// 插件 trait
-pub trait Plugin {
+pub trait Plugin: Send + Sync {
     /// 插件名称
     fn name(&self) -> &str;
 
     /// 初始化插件
-    fn init(&mut self) -> Result<(), PluginError>;
+    fn init(&self) -> Result<(), PluginError>;
 
     /// 执行插件
     fn execute(&self, content: &str) -> Result<String, PluginError>;

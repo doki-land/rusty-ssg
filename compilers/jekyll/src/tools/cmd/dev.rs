@@ -96,12 +96,12 @@ impl DevCommand {
     /// # Arguments
     /// 
     /// * `source_dir` - 源目录路径
-    /// * `output_dir` - 输出目录路径
+    /// * `_output_dir` - 输出目录路径
     /// 
     /// # Returns
     /// 
     /// 返回成功或错误结果
-    async fn build_site(source_dir: &PathBuf, output_dir: &PathBuf) -> Result<()> {
+    async fn build_site(source_dir: &PathBuf, _output_dir: &PathBuf) -> Result<()> {
         use crate::jekyll::{JekyllStructure, JekyllConfigLoader, PostManager};
 
         let structure = JekyllStructure::new(source_dir)?;

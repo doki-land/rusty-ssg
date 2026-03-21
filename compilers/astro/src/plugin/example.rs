@@ -24,7 +24,7 @@ impl Plugin for ExamplePlugin {
     }
 
     /// 初始化插件
-    fn init(&mut self) -> Result<(), PluginError> {
+    fn init(&self) -> Result<(), PluginError> {
         println!("Example plugin initialized with config: {:?}", self.config);
         Ok(())
     }

@@ -7,7 +7,7 @@ use super::{Plugin, PluginError};
 /// 插件管理器
 /// 
 /// 负责插件的注册、加载和执行
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct PluginManager {
     /// 已注册的插件
     plugins: HashMap<String, Arc<dyn Plugin + Send + Sync>>,
@@ -58,8 +58,8 @@ impl PluginManager {
     /// 
     /// # 返回值
     /// - `Result<(), PluginError>`: 初始化结果
-    pub fn init_all(&mut self) -> Result<(), PluginError> {
-        for plugin in self.plugins.values_mut() {
+    pub fn init_all(&self) -> Result<(), PluginError> {
+        for plugin in self.plugins.values() {
             plugin.init()?;
         }
         Ok(())
