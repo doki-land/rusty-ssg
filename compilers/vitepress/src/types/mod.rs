@@ -1,3 +1,6 @@
+//! VuTeX 类型定义模块
+//! 提供 VuTeX 文档编译器所需的所有类型定义，包括配置、错误、AST 等
+
 pub mod ast;
 pub mod config;
 pub mod document;
@@ -10,7 +13,7 @@ pub use nargo_types::{
 };
 
 pub use config::{
-    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
+    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, Sidebar, SidebarItem,
     SocialLink, ThemeConfig, VutexConfig,
 };
 pub use errors::{Result, VutexError};

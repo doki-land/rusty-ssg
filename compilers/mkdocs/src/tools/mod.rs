@@ -1,6 +1,9 @@
 #![warn(missing_docs)]
 #![doc = "MkDocs 文档系统 CLI 工具库"]
 
+use clap::Parser;
+use std::path::PathBuf;
+
 pub mod cmd;
 pub mod site_generator;
 pub mod template;
@@ -14,8 +17,14 @@ pub use site_generator::{ConfigLoader, StaticSiteGenerator};
 pub use template::UnifiedTemplateManager;
 pub use theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink};
 
-use clap::Parser;
-use std::path::PathBuf;
+pub use cmd::{
+    BuildCommand,
+    CheckCommand,
+    InitCommand,
+    NewCommand,
+    ServeCommand,
+    VersionCommand,
+};
 
 /// MkDocs 兼容 CLI 主命令
 #[derive(Parser, Debug)]

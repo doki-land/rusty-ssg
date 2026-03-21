@@ -1,0 +1,23 @@
+site_name: MkDocs MVP Example
+site_description: A minimal MkDocs site for testing
+site_author: Example Author
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.path
+
+nav:
+  - Home: index.md
+  - Guide:
+    - Getting Started: guide/getting-started.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.details
+  - pymdownx.superfences
+  - toc:
+      permalink: true

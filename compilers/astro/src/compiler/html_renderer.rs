@@ -1,6 +1,9 @@
 //! HTML 渲染器
 
 use std::collections::HashMap;
+use crate::compiler::ComponentRegistry;
+use crate::plugin_host::PluginHost;
+use pulldown_cmark::{Parser, Options, html};
 
 /// 模板上下文，用于存储变量和数据
 pub type Context = HashMap<String, serde_json::Value>;
@@ -9,18 +12,160 @@ pub type Context = HashMap<String, serde_json::Value>;
 pub struct HtmlRenderer {
     /// 渲染配置
     config: HashMap<String, String>,
+    /// 组件注册表
+    component_registry: ComponentRegistry,
+    /// 插件宿主
+    plugin_host: Option<PluginHost>,
 }
 
 impl HtmlRenderer {
     /// 创建新的 HTML 渲染器
     pub fn new() -> Self {
-        Self { config: HashMap::new() }
+        Self {
+            config: HashMap::new(),
+            component_registry: ComponentRegistry::new(),
+            plugin_host: None,
+        }
+    }
+
+    /// 设置组件注册表
+    pub fn set_component_registry(&mut self, registry: ComponentRegistry) {
+        self.component_registry = registry;
+    }
+
+    /// 获取组件注册表
+    pub fn component_registry(&self) -> &ComponentRegistry {
+        &self.component_registry
+    }
+
+    /// 设置插件宿主
+    pub fn set_plugin_host(&mut self, host: PluginHost) {
+        self.plugin_host = Some(host);
+    }
+
+    /// 获取插件宿主
+    pub fn plugin_host(&self) -> Option<&PluginHost> {
+        self.plugin_host.as_ref()
     }
 
     /// 渲染 Markdown 内容为 HTML
     pub fn render(&self, content: &str) -> String {
-        // 简单的渲染实现
-        content.to_string()
+        // 执行插件预处理
+        let preprocessed_content = self.execute_plugins(content);
+        
+        // 配置 Markdown 解析选项
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
+        options.insert(Options::ENABLE_FOOTNOTES);
+        options.insert(Options::ENABLE_STRIKETHROUGH);
+        options.insert(Options::ENABLE_TASKLISTS);
+        options.insert(Options::ENABLE_SMART_PUNCTUATION);
+        
+        // 创建解析器
+        let parser = Parser::new_ext(&preprocessed_content, options);
+        
+        // 转换为 HTML
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, parser);
+        
+        // 执行插件后处理
+        self.execute_plugins(&html_output)
+    }
+    
+    /// 渲染 MDX 内容为 HTML
+    /// 
+    /// # 参数
+    /// - `content`: MDX 内容
+    /// 
+    /// # 返回值
+    /// 渲染后的 HTML 内容
+    pub fn render_mdx(&self, content: &str) -> String {
+        // 简单的 MDX 处理实现
+        // 1. 提取并处理组件
+        // 2. 将剩余的 Markdown 内容转换为 HTML
+        // 3. 合并处理结果
+        
+        let processed_content = self.process_mdx_components(content);
+        self.render(&processed_content)
+    }
+    
+    /// 处理 MDX 中的组件
+    fn process_mdx_components(&self, content: &str) -> String {
+        // 简单的组件处理实现
+        // 这里我们假设组件格式为 <ComponentName prop1="value1" prop2={value2} />
+        // 或者 <ComponentName prop1="value1" prop2={value2}>内容</ComponentName>
+        
+        let mut result = content.to_string();
+        
+        // 处理框架特定的语法
+        // 1. 处理 React 组件语法
+        result = self.process_react_syntax(&result);
+        
+        // 2. 处理 Vue 组件语法
+        result = self.process_vue_syntax(&result);
+        
+        // 3. 处理 Svelte 组件语法
+        result = self.process_svelte_syntax(&result);
+        
+        result
+    }
+
+    /// 处理 React 组件语法
+    fn process_react_syntax(&self, content: &str) -> String {
+        // 处理 JSX 语法
+        let mut result = content.to_string();
+        
+        // 这里可以添加更复杂的 JSX 语法处理
+        // 例如：
+        // 1. 处理 JSX 表达式
+        // 2. 处理 JSX 属性
+        // 3. 处理 JSX 子元素
+        
+        result
+    }
+
+    /// 处理 Vue 组件语法
+    fn process_vue_syntax(&self, content: &str) -> String {
+        // 处理 Vue 模板语法
+        let mut result = content.to_string();
+        
+        // 这里可以添加更复杂的 Vue 语法处理
+        // 例如：
+        // 1. 处理 Vue 指令
+        // 2. 处理 Vue 插值
+        // 3. 处理 Vue 组件
+        
+        result
+    }
+
+    /// 处理 Svelte 组件语法
+    fn process_svelte_syntax(&self, content: &str) -> String {
+        // 处理 Svelte 模板语法
+        let mut result = content.to_string();
+        
+        // 这里可以添加更复杂的 Svelte 语法处理
+        // 例如：
+        // 1. 处理 Svelte 指令
+        // 2. 处理 Svelte 插值
+        // 3. 处理 Svelte 组件
+        
+        result
+    }
+
+    /// 执行插件
+    fn execute_plugins(&self, content: &str) -> String {
+        if let Some(plugin_host) = &self.plugin_host {
+            match plugin_host.execute_plugins(content) {
+                Ok(result) => result,
+                Err(e) => {
+                    // 插件执行失败时，返回原始内容
+                    eprintln!("Plugin execution failed: {:?}", e);
+                    content.to_string()
+                }
+            }
+        } else {
+            content.to_string()
+        }
     }
 
     /// 渲染 Astro 模板内容
@@ -32,7 +177,9 @@ impl HtmlRenderer {
     /// # 返回值
     /// 渲染后的 HTML 内容
     pub fn render_astro(&self, template: &str, context: &Context) -> String {
-        let result = template.to_string();
+        // 执行插件预处理
+        let preprocessed_template = self.execute_plugins(template);
+        let result = preprocessed_template;
         let mut new_result = String::new();
         let mut i = 0;
         let len = result.len();
@@ -113,6 +260,30 @@ impl HtmlRenderer {
                 }
             }
             
+            // 处理组件标签
+            if result[i..].starts_with("<") {
+                let start = i;
+                // 查找标签结束
+                if let Some(end_idx) = result[start..].find(">").or_else(|| result[start..].find(" />")) {
+                    let tag_end = start + end_idx + 1;
+                    let tag_content = &result[start..tag_end];
+                    
+                    // 解析组件标签
+                    if let Some(component_name) = self.parse_component_tag(tag_content) {
+                        // 提取组件 props
+                        let props = self.extract_component_props(tag_content, context);
+                        
+                        // 渲染组件
+                        if let Some(component) = self.component_registry.get(&component_name) {
+                            let component_html = component.render(&props);
+                            new_result.push_str(&component_html);
+                            i = tag_end;
+                            continue;
+                        }
+                    }
+                }
+            }
+            
             // 处理变量插值
             if result[i..].starts_with("{{{") {
                 let start = i;
@@ -156,7 +327,133 @@ impl HtmlRenderer {
         new_result = new_result.replace(" %}", "");
         new_result = new_result.replace("%}", "");
         
-        new_result
+        // 执行插件后处理
+        self.execute_plugins(&new_result)
+    }
+
+    /// 解析组件标签，提取组件名称
+    fn parse_component_tag(&self, tag: &str) -> Option<String> {
+        // 简单的组件标签解析
+        // 假设组件标签格式为 <ComponentName prop1="value1" prop2={value2} />
+        let tag = tag.trim();
+        if !tag.starts_with("<") {
+            return None;
+        }
+        
+        // 提取标签名称
+        let tag_name_start = 1;
+        let tag_name_end = tag[tag_name_start..]
+            .find(|c: char| c.is_whitespace() || c == '>')
+            .unwrap_or(tag.len() - 1);
+        
+        let component_name = &tag[tag_name_start..tag_name_start + tag_name_end];
+        
+        // 检查是否为组件（首字母大写）
+        if component_name.chars().next().unwrap_or('a').is_uppercase() {
+            Some(component_name.to_string())
+        } else {
+            None
+        }
+    }
+
+    /// 提取组件 props
+    fn extract_component_props(&self, tag: &str, context: &Context) -> Context {
+        let mut props = Context::new();
+        
+        // 简单的 props 提取
+        let tag = tag.trim();
+        let tag_content = tag[1..tag.len() - 1].trim();
+        
+        // 跳过标签名称
+        if let Some(space_idx) = tag_content.find(|c: char| c.is_whitespace()) {
+            let props_str = &tag_content[space_idx..].trim();
+            
+            // 分割 props
+            let mut props_parts = vec![];
+            let mut current_prop = String::new();
+            let mut in_quotes = false;
+            let mut quote_char = '"';
+            
+            for c in props_str.chars() {
+                if c == '"' || c == '\'' {
+                    if !in_quotes {
+                        in_quotes = true;
+                        quote_char = c;
+                    } else if c == quote_char {
+                        in_quotes = false;
+                    }
+                } else if !in_quotes && c == ' ' {
+                    if !current_prop.is_empty() {
+                        props_parts.push(current_prop);
+                        current_prop = String::new();
+                    }
+                    continue;
+                }
+                
+                current_prop.push(c);
+            }
+            
+            if !current_prop.is_empty() {
+                props_parts.push(current_prop);
+            }
+            
+            // 解析每个 prop
+            for prop_part in props_parts {
+                if let Some(equals_idx) = prop_part.find('=') {
+                    let prop_name = prop_part[..equals_idx].trim();
+                    let prop_value = prop_part[equals_idx + 1..].trim();
+                    
+                    // 处理属性值
+                    let processed_value = self.process_prop_value(prop_value, context);
+                    props.insert(prop_name.to_string(), processed_value);
+                }
+            }
+        }
+        
+        props
+    }
+
+    /// 处理组件属性值
+    fn process_prop_value(&self, value: &str, context: &Context) -> serde_json::Value {
+        let value = value.trim();
+        
+        // 处理字符串值
+        if (value.starts_with('"') && value.ends_with('"')) || (value.starts_with('\'') && value.ends_with('\'')) {
+            let str_value = &value[1..value.len() - 1];
+            serde_json::Value::String(str_value.to_string())
+        }
+        // 处理表达式值
+        else if value.starts_with('{') && value.ends_with('}') {
+            let expr = &value[1..value.len() - 1].trim();
+            // 简单的表达式处理，仅支持变量
+            if let Some(var_value) = context.get(expr as &str) {
+                var_value.clone()
+            } else {
+                serde_json::Value::Null
+            }
+        }
+        // 处理数字值
+        else if let Ok(num) = value.parse::<i64>() {
+            serde_json::Value::Number(serde_json::Number::from(num))
+        }
+        else if let Ok(num) = value.parse::<f64>() {
+            serde_json::Value::Number(serde_json::Number::from_f64(num).unwrap())
+        }
+        // 处理布尔值
+        else if value == "true" {
+            serde_json::Value::Bool(true)
+        }
+        else if value == "false" {
+            serde_json::Value::Bool(false)
+        }
+        // 处理 null
+        else if value == "null" {
+            serde_json::Value::Null
+        }
+        // 默认处理为字符串
+        else {
+            serde_json::Value::String(value.to_string())
+        }
     }
 
     /// 处理变量插值

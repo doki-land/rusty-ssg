@@ -1,7 +1,7 @@
 //! Dev 命令实现
 
 use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VutexCompiler};
-use wae_https::{Router, HttpsServerBuilder, static_files_router};
+use wae_https::{HttpsServerBuilder, static_files_router};
 use console::style;
 use fs_extra::dir::{copy, CopyOptions};
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -12,7 +12,7 @@ use std::{
     sync::{Arc, Mutex},
     net::SocketAddr,
 };
-use crate::compiler::PluginHost;
+use crate::plugin_host::PluginHost;
 use crate::types::Result;
 use walkdir::WalkDir;
 
@@ -224,7 +224,7 @@ impl DevCommand {
             .router(router)
             .build();
 
-        server.serve().await.map_err(|e| crate::types::VutexError::Custom(e.to_string()))?
+        server.serve().await.map_err(|e| crate::types::VutexError::io_error(e.to_string()))?;
 
         Ok(())
     }

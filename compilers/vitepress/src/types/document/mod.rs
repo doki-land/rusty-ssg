@@ -5,6 +5,7 @@ use nargo_types::{NargoValue, Span};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
+
 /// VuTeX 文档
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct VutexDocument {

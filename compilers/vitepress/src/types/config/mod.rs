@@ -620,27 +620,59 @@ pub enum IgnoreDeadLinkRule {
     Regex(String),
 }
 
-/// 语言配置
+/// 语言配置，支持所有 VitePress 多语言配置选项
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct LocaleConfig {
-    /// 语言标签
+    /// 语言标签，显示在语言切换菜单中
     pub label: String,
-    /// 语言描述
-    pub description: Option<String>,
-    /// 语言链接
+    /// 语言链接，用于语言切换
     pub link: Option<String>,
     /// 是否为默认语言
     pub default: Option<bool>,
-    /// 站点语言
+    /// 站点语言代码，如 `en-US`、`zh-CN`
     pub lang: Option<String>,
     /// 站点标题
     pub title: Option<String>,
+    /// 标题模板
+    pub title_template: Option<TitleTemplate>,
+    /// 站点描述
+    pub description: Option<String>,
     /// 头部标签配置
     pub head: Option<Vec<HeadConfig>>,
     /// 导航栏配置（语言特定）
     pub nav: Option<Vec<NavItem>>,
     /// 侧边栏配置（语言特定）
     pub sidebar: Option<Sidebar>,
+    /// 外观配置（语言特定）
+    pub appearance: Option<Appearance>,
+    /// 是否启用最后更新时间（语言特定）
+    pub last_updated: Option<bool>,
+    /// 页脚配置（语言特定）
+    pub footer: Option<FooterConfig>,
+    /// 编辑链接配置（语言特定）
+    pub edit_link: Option<EditLink>,
+    /// 最后更新时间配置（语言特定）
+    pub last_updated_options: Option<LastUpdatedOptions>,
+    /// 文档页脚配置（语言特定）
+    pub doc_footer: Option<DocFooter>,
+    /// 深色模式切换标签（移动端）
+    pub dark_mode_switch_label: Option<String>,
+    /// 浅色模式切换标题
+    pub light_mode_switch_title: Option<String>,
+    /// 深色模式切换标题
+    pub dark_mode_switch_title: Option<String>,
+    /// 侧边栏菜单标签（移动端）
+    pub sidebar_menu_label: Option<String>,
+    /// 返回顶部标签（移动端）
+    pub return_to_top_label: Option<String>,
+    /// 语言菜单标签
+    pub lang_menu_label: Option<String>,
+    /// 跳转到内容标签
+    pub skip_to_content_label: Option<String>,
+    /// 是否显示外部链接图标
+    pub external_link_icon: Option<bool>,
+    /// 大纲配置（语言特定）
+    pub outline: Option<OutlineConfig>,
 }
 
 /// 插件配置

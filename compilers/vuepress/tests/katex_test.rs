@@ -1,4 +1,5 @@
-use crate::plugin::katex::*;
+use vuepress::plugin::katex::KaTeXPlugin;
+use vuepress::plugin::{PluginContext, VutexPlugin};
 
 #[test]
 fn test_process_block_math() {

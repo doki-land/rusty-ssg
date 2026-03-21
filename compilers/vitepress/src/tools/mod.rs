@@ -11,11 +11,11 @@ pub use theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, Si
 use clap::Parser;
 use std::path::PathBuf;
 
-/// VuTeX CLI 主命令
+/// VitePress CLI 主命令
 #[derive(Parser, Debug)]
-#[command(name = "vutex")]
-#[command(about = "VuTeX 文档系统工具", long_about = None)]
-pub struct VutexCli {
+#[command(name = "vitepress")]
+#[command(about = "VitePress 文档系统工具", long_about = None)]
+pub struct VitePressCli {
     /// 子命令
     #[command(subcommand)]
     pub command: Commands,

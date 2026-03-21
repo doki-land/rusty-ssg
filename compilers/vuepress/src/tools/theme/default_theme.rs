@@ -31,11 +31,11 @@ pub struct LocaleInfo {
 
 impl ToJsonValue for LocaleInfo {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("code", self.code.clone());
-        map.insert("label", self.label.clone());
-        map.insert("is_current", self.is_current);
-        json!(map)
+        json!({
+            "code": self.code.clone(),
+            "label": self.label.clone(),
+            "is_current": self.is_current
+        })
     }
 }
 
@@ -50,10 +50,10 @@ pub struct SidebarGroup {
 
 impl ToJsonValue for SidebarGroup {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("items", self.items.to_json_value());
-        json!(map)
+        json!({
+            "text": self.text.clone(),
+            "items": self.items.to_json_value()
+        })
     }
 }
 
@@ -68,10 +68,10 @@ pub struct SidebarLink {
 
 impl ToJsonValue for SidebarLink {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("link", self.link.clone());
-        json!(map)
+        json!({
+            "text": self.text.clone(),
+            "link": self.link.clone()
+        })
     }
 }
 
@@ -86,10 +86,10 @@ pub struct NavItem {
 
 impl ToJsonValue for NavItem {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("link", self.link.clone());
-        json!(map)
+        json!({
+            "text": self.text.clone(),
+            "link": self.link.clone()
+        })
     }
 }
 
@@ -129,22 +129,22 @@ pub struct PageContext {
 
 impl ToJsonValue for PageContext {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("page_title", self.page_title.clone());
-        map.insert("site_title", self.site_title.clone());
-        map.insert("content", self.content.clone());
-        map.insert("nav_items", self.nav_items.to_json_value());
-        map.insert("sidebar_groups", self.sidebar_groups.to_json_value());
-        map.insert("current_path", self.current_path.clone());
-        map.insert("has_footer", self.has_footer);
-        map.insert("has_footer_message", self.has_footer_message);
-        map.insert("footer_message", self.footer_message.clone());
-        map.insert("has_footer_copyright", self.has_footer_copyright);
-        map.insert("footer_copyright", self.footer_copyright.clone());
-        map.insert("current_lang", self.current_lang.clone());
-        map.insert("available_locales", self.available_locales.to_json_value());
-        map.insert("root_path", self.root_path.clone());
-        json!(map)
+        json!({
+            "page_title": self.page_title.clone(),
+            "site_title": self.site_title.clone(),
+            "content": self.content.clone(),
+            "nav_items": self.nav_items.to_json_value(),
+            "sidebar_groups": self.sidebar_groups.to_json_value(),
+            "current_path": self.current_path.clone(),
+            "has_footer": self.has_footer,
+            "has_footer_message": self.has_footer_message,
+            "footer_message": self.footer_message.clone(),
+            "has_footer_copyright": self.has_footer_copyright,
+            "footer_copyright": self.footer_copyright.clone(),
+            "current_lang": self.current_lang.clone(),
+            "available_locales": self.available_locales.to_json_value(),
+            "root_path": self.root_path.clone()
+        })
     }
 }
 
@@ -204,11 +204,12 @@ impl DefaultTheme {
         match self.engine_type {
             TemplateEngineType::Askama => {
                 // 使用 Askama 内置渲染
-                context.render().map_err(|e| crate::tools::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
+                context.render().map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
             }
             TemplateEngineType::Dejavu => {
                 let json_context = context.to_json_value();
                 self.template_manager.render(TemplateEngine::DejaVu, "page", &json_context)
+                    .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
             }
         }
     }

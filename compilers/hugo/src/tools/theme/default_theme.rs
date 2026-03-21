@@ -8,6 +8,7 @@ use serde_json::json;
 use std::collections::HashMap;
 
 /// 模板引擎类型
+///
 /// 支持多种模板引擎
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TemplateEngineType {
@@ -22,6 +23,8 @@ pub enum TemplateEngineType {
 }
 
 /// 语言信息
+///
+/// 表示站点支持的语言信息，用于语言切换功能
 #[derive(Debug, Clone)]
 pub struct LocaleInfo {
     /// 语言代码
@@ -43,6 +46,8 @@ impl ToJsonValue for LocaleInfo {
 }
 
 /// 侧边栏组
+///
+/// 表示侧边栏中的一组链接
 #[derive(Debug, Clone)]
 pub struct SidebarGroup {
     /// 组标题
@@ -61,6 +66,8 @@ impl ToJsonValue for SidebarGroup {
 }
 
 /// 侧边栏链接
+///
+/// 表示侧边栏中的一个链接项
 #[derive(Debug, Clone)]
 pub struct SidebarLink {
     /// 链接文本
@@ -79,6 +86,8 @@ impl ToJsonValue for SidebarLink {
 }
 
 /// 导航栏项
+///
+/// 表示导航栏中的一个链接项
 #[derive(Debug, Clone)]
 pub struct NavItem {
     /// 显示文本
@@ -97,6 +106,8 @@ impl ToJsonValue for NavItem {
 }
 
 /// 页面模板上下文
+///
+/// 包含渲染页面所需的所有数据
 #[derive(Debug, Clone)]
 pub struct PageContext {
     /// 页面标题
@@ -151,6 +162,8 @@ impl ToJsonValue for PageContext {
 }
 
 /// 默认主题
+///
+/// 提供完整的文档站点主题实现
 pub struct DefaultTheme {
     /// 主题配置
     config: HugoConfig,
@@ -162,6 +175,14 @@ pub struct DefaultTheme {
 
 impl DefaultTheme {
     /// 创建新的默认主题实例（使用 DejaVu 引擎）
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - 主题配置
+    ///
+    /// # Returns
+    ///
+    /// 新的默认主题实例
     pub fn new(config: HugoConfig) -> Result<Self> {
         Self::with_engine(config, TemplateEngineType::DejaVu)
     }

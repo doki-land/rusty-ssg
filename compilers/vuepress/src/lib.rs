@@ -15,20 +15,21 @@ pub use nargo_types::Error as NargoError;
 pub use types::{CodeWriter, CompileMode, CompileOptions, Cursor, ErrorKind, NargoValue, Position, Span};
 
 pub use types_config::{
-    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
+    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem as ConfigNavItem, PluginConfig, SidebarItem,
     SocialLink, ThemeConfig, VutexConfig,
 };
 
 pub use types::{Result, VutexError};
 
-pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};
+pub use plugin::{PluginContext, PluginMeta, PluginRegistry, VutexPlugin};
+pub use plugin::katex::KaTeXPlugin;
+pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage};
 
 pub use compiler::VutexCompiler;
 pub use nargo_types::Document;
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
-
-pub use tools::cmd;
+pub use tools::*;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

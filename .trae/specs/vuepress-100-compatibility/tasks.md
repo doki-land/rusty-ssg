@@ -26,7 +26,7 @@
   - `programmatic` TR-2.2: 可以从文件加载 TOML 和 JSON 配置
 - **Notes**: 已修复包引用问题、类型不匹配问题、模块导入问题，配置相关代码和测试现在可以正常工作
 
-## [/] Task 3: 修复编译器核心功能
+## [x] Task 3: 修复编译器核心功能
 - **Priority**: P0
 - **Depends On**: Task 2
 - **Description**: 
@@ -38,8 +38,9 @@
 - **Test Requirements**:
   - `programmatic` TR-3.1: 编译器可以编译单个 Markdown 文档
   - `programmatic` TR-3.2: 编译器可以批量编译多个文档
+- **Notes**: 已修复 parse_document 导入，使用 nargo-parser 正确解析文档，修复了 compile_document 和 compile_batch 方法，Markdown 渲染正常工作
 
-## [ ] Task 4: 完善默认主题实现
+## [/] Task 4: 完善默认主题实现
 - **Priority**: P1
 - **Depends On**: Task 3
 - **Description**: 
@@ -51,9 +52,9 @@
   - `human-judgement` TR-4.1: 主题渲染的页面布局正确
   - `programmatic` TR-4.2: 主题相关代码编译无错误
 
-## [ ] Task 5: 完善静态站点生成器
+## [/] Task 5: 完善静态站点生成器
 - **Priority**: P1
-- **Depends On**: Task 4
+- **Depends On**: Task 3
 - **Description**: 
   - 确保 StaticSiteGenerator 功能完整
   - 验证多语言文档支持
@@ -63,9 +64,9 @@
   - `programmatic` TR-5.1: 可以生成完整的静态站点
   - `programmatic` TR-5.2: 输出的 HTML 文件结构正确
 
-## [ ] Task 6: 完善 CLI 命令实现
+## [/] Task 6: 完善 CLI 命令实现
 - **Priority**: P1
-- **Depends On**: Task 5
+- **Depends On**: Task 3
 - **Description**: 
   - 确保所有 CLI 命令（init, dev, build, check）完整实现
   - 验证命令行参数解析正确
@@ -75,9 +76,9 @@
   - `programmatic` TR-6.1: 所有 CLI 命令可以正常执行
   - `programmatic` TR-6.2: 命令行帮助信息完整
 
-## [ ] Task 7: 完善插件系统
+## [/] Task 7: 完善插件系统
 - **Priority**: P2
-- **Depends On**: Task 6
+- **Depends On**: Task 3
 - **Description**: 
   - 确保插件宿主功能正常
   - 验证 KaTeX 等内置插件工作正常
@@ -89,7 +90,7 @@
 
 ## [ ] Task 8: 测试示例项目
 - **Priority**: P2
-- **Depends On**: Task 7
+- **Depends On**: Task 4, Task 5, Task 6, Task 7
 - **Description**: 
   - 使用 examples/vuepress-mvp 进行完整测试
   - 验证 init, build 等流程可以完整执行

@@ -2,95 +2,93 @@
 //! 提供完整的文档站点主题和样式
 
 use crate::Result;
-use crate::types::VutexError;
 use crate::types::VutexConfig;
-use std::collections::HashMap;
 
-/// 语言信息
+/// 语言信息，包含语言代码、标签和是否为当前语言的状态
 #[derive(Debug, Clone)]
 pub struct LocaleInfo {
-    /// 语言代码
+    /// 语言代码，如 `en`、`zh-CN`
     pub code: String,
-    /// 语言标签
+    /// 语言标签，用于在界面上显示，如 "English"、"中文"
     pub label: String,
     /// 是否为当前语言
     pub is_current: bool,
 }
 
-/// 侧边栏组
+/// 侧边栏组，用于组织侧边栏链接
 #[derive(Debug, Clone)]
 pub struct SidebarGroup {
-    /// 组标题
+    /// 侧边栏组的标题文本
     pub text: String,
-    /// 组内项目
+    /// 侧边栏组内的链接项目列表
     pub items: Vec<SidebarLink>,
 }
 
-/// 侧边栏链接
+/// 侧边栏链接，表示侧边栏中的单个可点击链接
 #[derive(Debug, Clone)]
 pub struct SidebarLink {
-    /// 链接文本
+    /// 侧边栏链接的显示文本
     pub text: String,
-    /// 链接地址
+    /// 侧边栏链接的目标地址
     pub link: String,
 }
 
-/// 导航栏项
+/// 导航栏项，表示顶部导航栏中的单个导航项
 #[derive(Debug, Clone)]
 pub struct NavItem {
-    /// 显示文本
+    /// 导航栏项的显示文本
     pub text: String,
-    /// 链接
+    /// 导航栏项的链接地址
     pub link: String,
 }
 
-/// 社交链接
+/// 社交链接，表示站点社交信息的链接
 #[derive(Debug, Clone)]
 pub struct SocialLink {
-    /// 图标名称
+    /// 社交链接的图标名称或标识符
     pub icon: String,
-    /// 链接地址
+    /// 社交链接的目标地址
     pub link: String,
 }
 
-/// 页面模板上下文
+/// 页面模板上下文，包含渲染页面所需的所有数据
 #[derive(Debug, Clone)]
 pub struct PageContext {
-    /// 页面标题
+    /// 当前页面的完整标题，通常包含页面标题和站点标题
     pub page_title: String,
-    /// 站点标题
+    /// 站点的标题
     pub site_title: String,
-    /// 页面内容
+    /// 页面的主要内容，通常是经过 Markdown 渲染后的 HTML
     pub content: String,
-    /// 导航栏项目
+    /// 导航栏项目列表
     pub nav_items: Vec<NavItem>,
-    /// 侧边栏组
+    /// 侧边栏组列表
     pub sidebar_groups: Vec<SidebarGroup>,
-    /// 社交链接
+    /// 社交链接列表
     pub social_links: Vec<SocialLink>,
-    /// 当前页面路径
+    /// 当前页面的路径
     pub current_path: String,
-    /// 是否有页脚
+    /// 是否显示页脚
     pub has_footer: bool,
-    /// 是否有页脚消息
+    /// 是否显示页脚消息
     pub has_footer_message: bool,
-    /// 页脚消息
+    /// 页脚的消息文本
     pub footer_message: String,
-    /// 是否有页脚版权
+    /// 是否显示页脚版权信息
     pub has_footer_copyright: bool,
-    /// 页脚版权
+    /// 页脚的版权信息文本
     pub footer_copyright: String,
-    /// 当前语言
+    /// 当前语言代码
     pub current_lang: String,
-    /// 可用语言列表
+    /// 可用的语言信息列表，用于语言切换功能
     pub available_locales: Vec<LocaleInfo>,
-    /// 相对于根目录的路径前缀
+    /// 相对于根目录的路径前缀，用于生成相对路径链接
     pub root_path: String,
 }
 
-/// 默认主题
+/// 默认主题，用于渲染文档站点的页面
 pub struct DefaultTheme {
-    /// 主题配置
+    /// 主题配置，包含站点的配置信息
     config: VutexConfig,
 }
 
@@ -99,24 +97,24 @@ impl DefaultTheme {
     ///
     /// # Arguments
     ///
-    /// * `config` - 主题配置
+    /// * `config` - 站点配置，包含主题配置信息
     ///
     /// # Returns
     ///
-    /// 新的默认主题实例
+    /// 新的默认主题实例，如果创建成功则返回 `Ok(DefaultTheme)`，否则返回错误
     pub fn new(config: VutexConfig) -> Result<Self> {
         Ok(Self { config })
     }
 
-    /// 渲染页面
+    /// 使用页面上下文渲染完整的 HTML 页面
     ///
     /// # Arguments
     ///
-    /// * `context` - 页面上下文
+    /// * `context` - 页面上下文，包含渲染页面所需的所有数据
     ///
     /// # Returns
     ///
-    /// 渲染后的 HTML 字符串
+    /// 渲染后的 HTML 字符串，如果渲染成功则返回 `Ok(String)`，否则返回错误
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
         let template = include_str!("../templates/page.html");
         
@@ -171,7 +169,7 @@ impl DefaultTheme {
     ///
     /// # Returns
     ///
-    /// 站点标题字符串
+    /// 站点标题字符串，如果未配置则返回默认标题 "VitePress Documentation"
     pub fn site_title(&self) -> &str {
         self.config.title.as_deref().unwrap_or("VitePress Documentation")
     }
@@ -180,7 +178,7 @@ impl DefaultTheme {
     ///
     /// # Returns
     ///
-    /// 主题配置引用
+    /// 站点配置的不可变引用
     pub fn config(&self) -> &VutexConfig {
         &self.config
     }

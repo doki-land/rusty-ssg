@@ -29,7 +29,7 @@ pub use session::CompileSession;
 
 pub use tools::{cmd, site_generator};
 pub use tools::site_generator::{ConfigLoader, StaticSiteGenerator, LanguageDocuments};
-pub use tools::{BuildArgs, CheckArgs, Commands, DevArgs, InitArgs, VutexCli};
+pub use tools::{BuildArgs, CheckArgs, Commands, DevArgs, InitArgs, VitePressCli};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

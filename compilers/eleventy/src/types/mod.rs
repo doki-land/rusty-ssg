@@ -69,12 +69,12 @@ pub struct Cli {
     pub config: String,
     
     /// 输入目录
-    #[clap(long, default_value = ".")]
-    pub input: String,
+    #[clap(long)]
+    pub input: Option<String>,
     
     /// 输出目录
-    #[clap(long, default_value = "_site")]
-    pub output: String,
+    #[clap(long)]
+    pub output: Option<String>,
     
     /// 模板格式
     #[clap(long)]
@@ -139,8 +139,8 @@ pub enum Command {
     /// 启动开发服务器
     Serve {
         /// 端口
-        #[clap(short, long, default_value = "8080")]
-        port: u16,
+        #[clap(short, long)]
+        port: Option<u16>,
         
         /// 输入目录
         #[clap(short, long)]
@@ -175,4 +175,7 @@ pub enum Command {
     
     /// 显示版本信息
     Version,
+    
+    /// 测试数据系统
+    Test,
 }

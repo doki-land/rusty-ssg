@@ -1,9 +1,9 @@
 #![warn(missing_docs)]
-#![doc = "VuTeX 文档系统 CLI 入口点"]
+#![doc = "VitePress 文档系统 CLI 入口点"]
 
 use clap::Parser;
 use vitepress::{
-    tools::{Commands, VutexCli},
+    tools::{Commands, VitePressCli},
     tools::cmd::{BuildCommand, CheckCommand, InitCommand},
     types::Result,
 };
@@ -14,7 +14,7 @@ use vitepress::tools::cmd::DevCommand;
 /// 主函数入口
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = VutexCli::parse();
+    let cli = VitePressCli::parse();
 
     match cli.command {
         Commands::Build(args) => {

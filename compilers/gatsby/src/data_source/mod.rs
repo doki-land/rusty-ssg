@@ -4,7 +4,8 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use async_graphql_value::ConstValue;
+use async_graphql_value::{ConstValue, Name};
+use indexmap::IndexMap;
 use nargo_parser::parse_document;
 use nargo_types::Document;
 
@@ -44,7 +45,7 @@ impl MarkdownDataSource {
     /// * `doc` - 文档对象
     /// * `raw_content` - 原始内容
     pub fn create_node_from_document(&self, doc: Document, raw_content: &str) -> GraphQLResult<Node> {
-        let node_id = NodeId::new(doc.path.clone());
+        let node_id = NodeId::new(doc.meta.path.clone());
         let type_name = NodeType::new("MarkdownRemark".to_string());
         let content_digest = ContentDigest::generate(raw_content);
 
@@ -66,11 +67,7 @@ impl MarkdownDataSource {
             builder = builder.field("layout".to_string(), ConstValue::String(layout.clone()));
         }
 
-        if let Some(date) = &doc.frontmatter.date {
-            builder = builder.field("date".to_string(), ConstValue::String(date.clone()));
-        }
-
-        builder = builder.field("path".to_string(), ConstValue::String(doc.path.clone()));
+        builder = builder.field("path".to_string(), ConstValue::String(doc.meta.path.clone()));
 
         if let Some(rendered) = &doc.rendered_content {
             builder = builder.field("html".to_string(), ConstValue::String(rendered.clone()));
@@ -91,20 +88,21 @@ impl MarkdownDataSource {
         match value {
             nargo_types::NargoValue::String(s) => ConstValue::String(s.clone()),
             nargo_types::NargoValue::Number(n) => ConstValue::Number(
-                async_graphql_value::Number::from_f64(*n).unwrap_or_default()
+                async_graphql_value::Number::from_f64(*n).unwrap_or_else(|| async_graphql_value::Number::from(0))
             ),
-            nargo_types::NargoValue::Boolean(b) => ConstValue::Boolean(*b),
+            nargo_types::NargoValue::Bool(b) => ConstValue::Boolean(*b),
             nargo_types::NargoValue::Array(arr) => {
                 ConstValue::List(arr.iter().map(|v| self.nargo_value_to_const_value(v)).collect())
             }
             nargo_types::NargoValue::Object(obj) => {
-                let mut map = HashMap::new();
+                let mut index_map = IndexMap::new();
                 for (k, v) in obj {
-                    map.insert(k.clone(), self.nargo_value_to_const_value(v));
+                    index_map.insert(Name::new(k.clone()), self.nargo_value_to_const_value(v));
                 }
-                ConstValue::Object(map)
+                ConstValue::Object(index_map)
             }
             nargo_types::NargoValue::Null => ConstValue::Null,
+            _ => ConstValue::Null,
         }
     }
 }
@@ -147,18 +145,18 @@ impl SiteMetadataDataSource {
             .type_name(type_name)
             .content_digest(content_digest);
 
-        let mut site_metadata = HashMap::new();
+        let mut site_metadata = IndexMap::new();
 
         if let Some(t) = title {
-            site_metadata.insert("title".to_string(), ConstValue::String(t));
+            site_metadata.insert(Name::new("title"), ConstValue::String(t));
         }
 
         if let Some(d) = description {
-            site_metadata.insert("description".to_string(), ConstValue::String(d));
+            site_metadata.insert(Name::new("description"), ConstValue::String(d));
         }
 
         if let Some(u) = site_url {
-            site_metadata.insert("siteUrl".to_string(), ConstValue::String(u));
+            site_metadata.insert(Name::new("siteUrl"), ConstValue::String(u));
         }
 
         builder = builder.field("siteMetadata".to_string(), ConstValue::Object(site_metadata));

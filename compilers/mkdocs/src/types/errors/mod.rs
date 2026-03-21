@@ -136,9 +136,11 @@ impl From<serde_yaml::Error> for MkDocsError {
     }
 }
 
-impl From<std::io::Error> for MkDocsError {
-    fn from(source: std::io::Error) -> Self {
-        MkDocsError::IoError { source }
+impl From<walkdir::Error> for MkDocsError {
+    fn from(source: walkdir::Error) -> Self {
+        use std::io::ErrorKind;
+        let io_error = std::io::Error::new(ErrorKind::Other, source);
+        MkDocsError::IoError { source: io_error }
     }
 }
 

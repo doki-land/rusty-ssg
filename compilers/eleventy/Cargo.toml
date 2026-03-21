@@ -21,6 +21,9 @@ notify = "6.1.1"
 axum = "0.7.5"
 tower-http = { version = "0.5.1", features = ["cors", "fs"] }
 websocket = "0.27.0"
+liquid = "0.26"
+handlebars = "6.4.0"
+pulldown-cmark = "0.9.3"
 
 [dev-dependencies]
 tokio-test = "0.4.4"

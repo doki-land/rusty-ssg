@@ -2,7 +2,7 @@
 //!
 //! 使用 nargo-document 的 Markdown 渲染器将 Markdown 内容转换为 HTML。
 
-use nargo_document::generator::MarkdownRenderer as NargoMarkdownRenderer;
+use nargo_document::MarkdownRenderer as NargoMarkdownRenderer;
 use std::collections::HashMap;
 
 /// HTML 渲染器配置

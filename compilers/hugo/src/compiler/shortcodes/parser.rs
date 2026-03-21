@@ -71,12 +71,26 @@ impl ShortcodeParser {
                     remaining = &remaining[end..];
                 }
                 else {
-                    let end_pattern = format!("{{{{{}/{} {}}}}}", &captures["type"], name, &captures["end"]);
-
-                    if let Some(end_idx) = remaining[end..].find(&end_pattern) {
+                    let start_type = &captures["type"];
+                    let remaining_text = &remaining[end..];
+                    
+                    let mut found_end = None;
+                    for end_capture in SHORTCODE_END_RE.captures_iter(remaining_text) {
+                        let end_type = &end_capture["type"];
+                        let end_name = &end_capture["name"];
+                        
+                        if end_type == start_type && end_name == name {
+                            let match_start = end_capture.get(0).unwrap().start();
+                            let match_end = end_capture.get(0).unwrap().end();
+                            found_end = Some((match_start, match_end));
+                            break;
+                        }
+                    }
+                    
+                    if let Some((end_idx, end_match_len)) = found_end {
                         let inner = remaining[end..end + end_idx].to_string();
                         fragments.push(TextFragment::Shortcode(Shortcode { name, shortcode_type, params, inner: Some(inner) }));
-                        remaining = &remaining[end + end_idx + end_pattern.len()..];
+                        remaining = &remaining[end + end_idx + end_match_len..];
                     }
                     else {
                         fragments.push(TextFragment::Shortcode(Shortcode { name, shortcode_type, params, inner: None }));

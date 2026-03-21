@@ -5,7 +5,7 @@ pub mod compiler;
 pub mod plugin;
 pub mod plugin_host;
 pub mod session;
-pub mod tools;
+// pub mod tools;
 pub mod types;
 
 pub use types::{config, errors};
@@ -23,7 +23,21 @@ pub use compiler::{HtmlRenderer, HtmlRendererConfig, MkDocsCompiler};
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 
-pub use tools::cmd;
+// pub use tools::{
+//     MkDocsCli,
+//     MkDocsCommands,
+//     NewArgs,
+//     BuildArgs,
+//     ServeArgs,
+//     InitArgs,
+//     CheckArgs,
+//     BuildCommand,
+//     CheckCommand,
+//     InitCommand,
+//     NewCommand,
+//     ServeCommand,
+//     VersionCommand,
+// };
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -101,12 +115,20 @@ pub fn compile_batch(documents: &HashMap<String, String>) -> CompileResult {
     let mut errors = Vec::new();
 
     for (path, content) in documents {
+        use nargo_types::{DocumentMeta, FrontMatter};
         let html = renderer.render(content);
         let doc = Document {
-            path: path.clone(),
+            meta: DocumentMeta {
+                path: path.clone(),
+                title: None,
+                lang: None,
+                last_updated: None,
+                extra: HashMap::new(),
+            },
             content: html,
-            frontmatter: None,
-            metadata: None,
+            frontmatter: FrontMatter::new(),
+            rendered_content: None,
+            span: Default::default(),
         };
         result_documents.insert(path.clone(), doc);
     }

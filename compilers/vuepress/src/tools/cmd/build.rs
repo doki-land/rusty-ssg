@@ -3,7 +3,7 @@
 use crate::{BuildArgs, ConfigLoader, StaticSiteGenerator, VutexCompiler};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
-use crate::compiler::PluginHost;
+use crate::plugin_host::PluginHost;
 use crate::types::Result;
 use walkdir::WalkDir;
 

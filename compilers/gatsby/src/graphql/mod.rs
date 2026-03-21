@@ -3,7 +3,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use async_graphql_value::ConstValue;
+use async_graphql_value::{ConstValue, Name};
+use indexmap::IndexMap;
 use crate::types::graphql::*;
 
 /// GraphQL 执行引擎
@@ -87,7 +88,11 @@ impl GraphQLExecutor {
     fn execute_internal(&self, request: &GraphQLRequest) -> GraphQLResult<ConstValue> {
         let parsed_query = self.parse_query(&request.query)?;
         let data = self.execute_selection_set(&parsed_query, &self.node_store)?;
-        Ok(ConstValue::Object(data))
+        let mut index_map = IndexMap::new();
+        for (k, v) in data {
+            index_map.insert(Name::new(k), v);
+        }
+        Ok(ConstValue::Object(index_map))
     }
 
     /// 解析查询（简化实现）
@@ -169,14 +174,14 @@ impl GraphQLExecutor {
 
     /// 将节点转换为 ConstValue
     fn node_to_value(&self, node: &Node) -> ConstValue {
-        let mut object = HashMap::new();
-        object.insert("id".to_string(), ConstValue::String(node.id.to_string()));
+        let mut index_map = IndexMap::new();
+        index_map.insert(Name::new("id"), ConstValue::String(node.id.to_string()));
 
         for (key, value) in &node.fields {
-            object.insert(key.clone(), value.clone());
+            index_map.insert(Name::new(key.clone()), value.clone());
         }
 
-        ConstValue::Object(object)
+        ConstValue::Object(index_map)
     }
 
     /// 获取 Schema

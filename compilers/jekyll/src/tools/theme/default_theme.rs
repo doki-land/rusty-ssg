@@ -4,7 +4,6 @@
 use crate::{Result, types::VutexConfig};
 use nargo_template::{TemplateEngine, ToJsonValue};
 use serde_json::{json, Value};
-use std::collections::HashMap;
 
 /// 模板引擎类型
 /// 支持多种模板引擎

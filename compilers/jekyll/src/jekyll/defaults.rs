@@ -18,7 +18,7 @@ pub struct DefaultConfig {
     /// 作用域配置，用于筛选要应用默认值的文档
     pub scope: Scope,
     /// 要应用的默认值
-    pub values: HashMap&lt;String, Value&gt;,
+    pub values: HashMap<String, Value>,
 }
 
 /// 作用域配置
@@ -27,11 +27,11 @@ pub struct DefaultConfig {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Scope {
     /// 路径模式，用于匹配文档路径
-    pub path: Option&lt;String&gt;,
+    pub path: Option<String>,
     /// 集合类型，用于匹配特定集合的文档
-    pub collection: Option&lt;String&gt;,
+    pub collection: Option<String>,
     /// 布局类型，用于匹配特定布局的文档
-    pub layout: Option&lt;String&gt;,
+    pub layout: Option<String>,
 }
 
 /// 默认值管理器
@@ -39,7 +39,7 @@ pub struct Scope {
 /// 负责解析和应用 Jekyll 配置中的 defaults 配置
 pub struct DefaultsManager {
     /// 所有默认值配置项列表
-    defaults: Vec&lt;DefaultConfig&gt;,
+    defaults: Vec<DefaultConfig>,
 }
 
 impl DefaultConfig {
@@ -49,7 +49,7 @@ impl DefaultConfig {
     ///
     /// * `scope` - 作用域配置
     /// * `values` - 要应用的默认值
-    pub fn new(scope: Scope, values: HashMap&lt;String, Value&gt;) -&gt; Self {
+    pub fn new(scope: Scope, values: HashMap<String, Value>) -> Self {
         Self { scope, values }
     }
 
@@ -62,7 +62,7 @@ impl DefaultConfig {
     /// # Errors
     ///
     /// 返回 `DefaultsError` 如果解析失败
-    pub fn from_map(map: &amp;HashMap&lt;String, Value&gt;) -&gt; Result&lt;Self, DefaultsError&gt; {
+    pub fn from_map(map: &HashMap<String, Value>) -> Result<Self, DefaultsError> {
         let scope = map
             .get("scope")
             .and_then(|v| v.as_object())
@@ -85,24 +85,24 @@ impl DefaultConfig {
 
 impl Scope {
     /// 创建新的作用域配置
-    pub fn new() -&gt; Self {
+    pub fn new() -> Self {
         Self::default()
     }
 
     /// 设置路径模式
-    pub fn with_path(mut self, path: String) -&gt; Self {
+    pub fn with_path(mut self, path: String) -> Self {
         self.path = Some(path);
         self
     }
 
     /// 设置集合类型
-    pub fn with_collection(mut self, collection: String) -&gt; Self {
+    pub fn with_collection(mut self, collection: String) -> Self {
         self.collection = Some(collection);
         self
     }
 
     /// 设置布局类型
-    pub fn with_layout(mut self, layout: String) -&gt; Self {
+    pub fn with_layout(mut self, layout: String) -> Self {
         self.layout = Some(layout);
         self
     }
@@ -116,7 +116,7 @@ impl Scope {
     /// # Errors
     ///
     /// 返回 `DefaultsError` 如果解析失败
-    pub fn from_map(map: &amp;serde_json::Map&lt;String, Value&gt;) -&gt; Result&lt;Self, DefaultsError&gt; {
+    pub fn from_map(map: &serde_json::Map<String, Value>) -> Result<Self, DefaultsError> {
         let path = map
             .get("path")
             .and_then(|v| v.as_str())
@@ -151,23 +151,23 @@ impl Scope {
     ///
     /// 如果文档匹配该作用域返回 true
     pub fn matches(
-        &amp;self,
-        document_path: &amp;Path,
-        collection: Option&lt;&amp;str&gt;,
-        current_layout: Option&lt;&amp;str&gt;,
-    ) -&gt; bool {
+        &self,
+        document_path: &Path,
+        collection: Option<&str>,
+        current_layout: Option<&str>,
+    ) -> bool {
         let mut matches = true;
 
         if let Some(ref pattern) = self.path {
-            matches = matches &amp;&amp; Self::match_path(document_path, pattern);
+            matches = matches && Self::match_path(document_path, pattern);
         }
 
         if let Some(ref target_collection) = self.collection {
-            matches = matches &amp;&amp; collection.map(|c| c == target_collection).unwrap_or(false);
+            matches = matches && collection.map(|c| c == target_collection).unwrap_or(false);
         }
 
         if let Some(ref target_layout) = self.layout {
-            matches = matches &amp;&amp; current_layout.map(|l| l == target_layout).unwrap_or(false);
+            matches = matches && current_layout.map(|l| l == target_layout).unwrap_or(false);
         }
 
         matches
@@ -187,28 +187,28 @@ impl Scope {
     /// # Returns
     ///
     /// 如果路径匹配模式返回 true
-    fn match_path(path: &amp;Path, pattern: &amp;str) -&gt; bool {
+    fn match_path(path: &Path, pattern: &str) -> bool {
         let path_str = path.to_string_lossy();
         let path_str = path_str.replace(std::path::MAIN_SEPARATOR, "/");
         let pattern = pattern.replace(std::path::MAIN_SEPARATOR, "/");
 
-        let regex_pattern = Self::glob_to_regex(&amp;pattern);
-        let regex = match regex::Regex::new(&amp;regex_pattern) {
-            Ok(re) =&gt; re,
-            Err(_) =&gt; return false,
+        let regex_pattern = Self::glob_to_regex(&pattern);
+        let regex = match regex::Regex::new(&regex_pattern) {
+            Ok(re) => re,
+            Err(_) => return false,
         };
 
-        regex.is_match(&amp;path_str)
+        regex.is_match(&path_str)
     }
 
     /// 将 glob 模式转换为正则表达式
-    fn glob_to_regex(pattern: &amp;str) -&gt; String {
+    fn glob_to_regex(pattern: &str) -> String {
         let mut result = String::from("^");
         let mut chars = pattern.chars().peekable();
 
         while let Some(c) = chars.next() {
             match c {
-                '*' =&gt; {
+                '*' => {
                     if let Some('*') = chars.peek() {
                         chars.next();
                         result.push_str(".*");
@@ -216,15 +216,15 @@ impl Scope {
                         result.push_str("[^/]*");
                     }
                 }
-                '.' =&gt; result.push_str("\\."),
-                '?' =&gt; result.push('.'),
-                '\\' =&gt; {
+                '.' => result.push_str("\\."),
+                '?' => result.push('.'),
+                '\\' => {
                     if let Some(next) = chars.next() {
                         result.push('\\');
                         result.push(next);
                     }
                 }
-                _ =&gt; result.push(c),
+                _ => result.push(c),
             }
         }
 
@@ -235,7 +235,7 @@ impl Scope {
 
 impl DefaultsManager {
     /// 创建新的默认值管理器
-    pub fn new() -&gt; Self {
+    pub fn new() -> Self {
         Self {
             defaults: Vec::new(),
         }
@@ -250,10 +250,10 @@ impl DefaultsManager {
     /// # Errors
     ///
     /// 返回 `DefaultsError` 如果解析配置中的 defaults 失败
-    pub fn from_config(config: &amp;JekyllConfig) -&gt; Result&lt;Self, DefaultsError&gt; {
+    pub fn from_config(config: &JekyllConfig) -> Result<Self, DefaultsError> {
         let mut manager = Self::new();
 
-        if let Some(defaults) = &amp;config.defaults {
+        if let Some(defaults) = &config.defaults {
             for default_map in defaults {
                 let default_config = DefaultConfig::from_map(default_map)?;
                 manager.add_default(default_config);
@@ -268,7 +268,7 @@ impl DefaultsManager {
     /// # Arguments
     ///
     /// * `default` - 要添加的默认值配置项
-    pub fn add_default(&amp;mut self, default: DefaultConfig) {
+    pub fn add_default(&mut self, default: DefaultConfig) {
         self.defaults.push(default);
     }
 
@@ -282,16 +282,16 @@ impl DefaultsManager {
     /// * `collection` - 文档所属的集合（如果有）
     /// * `front_matter` - 要应用默认值的 Front Matter（会被修改）
     pub fn apply_defaults(
-        &amp;self,
-        document_path: &amp;Path,
-        collection: Option&lt;&amp;str&gt;,
-        front_matter: &amp;mut FrontMatter,
+        &self,
+        document_path: &Path,
+        collection: Option<&str>,
+        front_matter: &mut FrontMatter,
     ) {
         let current_layout = front_matter.get_str("layout");
 
-        for default_config in &amp;self.defaults {
+        for default_config in &self.defaults {
             if default_config.scope.matches(document_path, collection, current_layout) {
-                Self::merge_values(&amp;mut front_matter.variables, &amp;default_config.values);
+                Self::merge_values(&mut front_matter.variables, &default_config.values);
             }
         }
     }
@@ -304,7 +304,7 @@ impl DefaultsManager {
     ///
     /// * `target` - 目标映射（会被修改）
     /// * `source` - 源映射
-    fn merge_values(target: &amp;mut HashMap&lt;String, Value&gt;, source: &amp;HashMap&lt;String, Value&gt;) {
+    fn merge_values(target: &mut HashMap<String, Value>, source: &HashMap<String, Value>) {
         for (key, value) in source {
             if !target.contains_key(key) {
                 target.insert(key.clone(), value.clone());
@@ -313,13 +313,13 @@ impl DefaultsManager {
     }
 
     /// 获取所有默认值配置项
-    pub fn defaults(&amp;self) -&gt; &amp;[DefaultConfig] {
-        &amp;self.defaults
+    pub fn defaults(&self) -> &[DefaultConfig] {
+        &self.defaults
     }
 }
 
 impl Default for DefaultsManager {
-    fn default() -&gt; Self {
+    fn default() -> Self {
         Self::new()
     }
 }
@@ -334,10 +334,10 @@ pub enum DefaultsError {
 }
 
 impl std::fmt::Display for DefaultsError {
-    fn fmt(&amp;self, f: &amp;mut std::fmt::Formatter&lt;'_&gt;) -&gt; std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DefaultsError::InvalidFormat(msg) =&gt; write!(f, "Invalid defaults format: {}", msg),
-            DefaultsError::PathMatchError(msg) =&gt; write!(f, "Path match error: {}", msg),
+            DefaultsError::InvalidFormat(msg) => write!(f, "Invalid defaults format: {}", msg),
+            DefaultsError::PathMatchError(msg) => write!(f, "Path match error: {}", msg),
         }
     }
 }
@@ -357,7 +357,7 @@ mod tests {
             ("layout".to_string(), json!("post")),
         ]);
 
-        let scope = Scope::from_map(&amp;map).unwrap();
+        let scope = Scope::from_map(&map).unwrap();
         assert_eq!(scope.path, Some("posts/".to_string()));
         assert_eq!(scope.collection, Some("posts".to_string()));
         assert_eq!(scope.layout, Some("post".to_string()));
@@ -395,7 +395,7 @@ mod tests {
             String::new(),
         );
 
-        manager.apply_defaults(Path::new("test.md"), None, &amp;mut front_matter);
+        manager.apply_defaults(Path::new("test.md"), None, &mut front_matter);
 
         assert_eq!(front_matter.get_str("layout"), Some("default"));
         assert_eq!(front_matter.get_str("author"), Some("Test Author"));
@@ -419,8 +419,9 @@ mod tests {
             String::new(),
         );
 
-        manager.apply_defaults(Path::new("test.md"), None, &amp;mut front_matter);
+        manager.apply_defaults(Path::new("test.md"), None, &mut front_matter);
 
         assert_eq!(front_matter.get_str("layout"), Some("custom"));
     }
 }
+

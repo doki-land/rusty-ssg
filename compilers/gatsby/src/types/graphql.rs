@@ -9,7 +9,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 /// GraphQL 错误类型
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug, Clone, Serialize, Deserialize)]
 pub enum GraphQLError {
     /// 节点未找到错误
     #[error("Node not found: {0}")]

@@ -12,7 +12,7 @@
   - `programmatic` TR-1.2: 验证渲染输出与预期 HTML 一致
 - **Notes**: 从现有的简单实现开始，逐步增强功能
 
-## [/] 任务 2: 实现 Astro 语法解析器
+## [x] 任务 2: 实现 Astro 语法解析器
 - **Priority**: P0
 - **Depends On**: 任务 1
 - **Description**:
@@ -24,7 +24,7 @@
   - `programmatic` TR-2.2: 验证解析结果的正确性
 - **Notes**: 可以考虑使用解析器生成器或手动实现递归下降解析器
 
-## [ ] 任务 3: 实现组件系统
+## [x] 任务 3: 实现组件系统
 - **Priority**: P0
 - **Depends On**: 任务 2
 - **Description**:
@@ -36,7 +36,7 @@
   - `programmatic` TR-3.2: 验证 props 传递和状态管理
 - **Notes**: 组件系统是 Astro 的核心功能之一
 
-## [ ] 任务 4: 实现 Markdown 和 MDX 支持
+## [x] 任务 4: 实现 Markdown 和 MDX 支持
 - **Priority**: P1
 - **Depends On**: 任务 3
 - **Description**:
@@ -49,7 +49,7 @@
   - `programmatic` TR-4.2: 验证 MDX 组件集成
 - **Notes**: 可以使用现有的 Rust Markdown 库
 
-## [ ] 任务 5: 实现页面路由和布局系统
+## [x] 任务 5: 实现页面路由和布局系统
 - **Priority**: P1
 - **Depends On**: 任务 3
 - **Description**:
@@ -62,7 +62,7 @@
   - `programmatic` TR-5.2: 验证布局系统功能
 - **Notes**: 路由系统需要与文件系统结构对应
 
-## [ ] 任务 6: 实现前端框架集成
+## [x] 任务 6: 实现前端框架集成
 - **Priority**: P1
 - **Depends On**: 任务 3
 - **Description**:
@@ -75,7 +75,7 @@
   - `programmatic` TR-6.2: 验证框架组件的正确渲染
 - **Notes**: 可能需要集成相应的框架运行时
 
-## [ ] 任务 7: 实现插件系统
+## [/] 任务 7: 实现插件系统
 - **Priority**: P2
 - **Depends On**: 任务 2
 - **Description**:

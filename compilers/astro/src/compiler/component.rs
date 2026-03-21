@@ -1,0 +1,407 @@
+//! 组件系统模块
+
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+use crate::compiler::html_renderer::Context;
+use crate::compiler::framework_parser::FrameworkParserManager;
+
+/// 前端框架类型
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Framework {
+    /// Astro 组件
+    Astro,
+    /// React 组件
+    React,
+    /// Vue 组件
+    Vue,
+    /// Svelte 组件
+    Svelte,
+    /// Solid 组件
+    Solid,
+    /// Preact 组件
+    Preact,
+    /// Lit 组件
+    Lit,
+    /// 其他框架组件
+    Other(String),
+}
+
+/// 组件定义
+pub struct Component {
+    /// 组件名称
+    name: String,
+    /// 组件模板
+    template: String,
+    /// 组件脚本
+    script: Option<String>,
+    /// 组件样式
+    style: Option<String>,
+    /// 组件所属框架
+    framework: Framework,
+}
+
+impl Component {
+    /// 创建新组件
+    pub fn new(name: &str, template: &str, framework: Framework) -> Self {
+        Self {
+            name: name.to_string(),
+            template: template.to_string(),
+            script: None,
+            style: None,
+            framework,
+        }
+    }
+
+    /// 创建 Astro 组件
+    pub fn new_astro(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::Astro)
+    }
+
+    /// 创建 React 组件
+    pub fn new_react(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::React)
+    }
+
+    /// 创建 Vue 组件
+    pub fn new_vue(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::Vue)
+    }
+
+    /// 创建 Svelte 组件
+    pub fn new_svelte(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::Svelte)
+    }
+
+    /// 创建 Solid 组件
+    pub fn new_solid(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::Solid)
+    }
+
+    /// 创建 Preact 组件
+    pub fn new_preact(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::Preact)
+    }
+
+    /// 创建 Lit 组件
+    pub fn new_lit(name: &str, template: &str) -> Self {
+        Self::new(name, template, Framework::Lit)
+    }
+
+    /// 创建其他框架组件
+    pub fn new_other(name: &str, template: &str, framework_name: &str) -> Self {
+        Self::new(name, template, Framework::Other(framework_name.to_string()))
+    }
+
+    /// 设置组件脚本
+    pub fn set_script(&mut self, script: &str) {
+        self.script = Some(script.to_string());
+    }
+
+    /// 设置组件样式
+    pub fn set_style(&mut self, style: &str) {
+        self.style = Some(style.to_string());
+    }
+
+    /// 获取组件名称
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// 获取组件所属框架
+    pub fn framework(&self) -> &Framework {
+        &self.framework
+    }
+
+    /// 渲染组件
+    pub fn render(&self, props: &Context) -> String {
+        // 根据框架类型选择不同的渲染方式
+        match &self.framework {
+            Framework::Astro => self.render_astro(props),
+            Framework::React => self.render_react(props),
+            Framework::Vue => self.render_vue(props),
+            Framework::Svelte => self.render_svelte(props),
+            Framework::Solid => self.render_solid(props),
+            Framework::Preact => self.render_preact(props),
+            Framework::Lit => self.render_lit(props),
+            Framework::Other(_) => self.render_other(props),
+        }
+    }
+
+    /// 渲染 Astro 组件
+    fn render_astro(&self, props: &Context) -> String {
+        // 处理组件模板中的变量插值
+        let mut result = self.template.clone();
+        
+        // 处理变量插值
+        let mut i = 0;
+        while i < result.len() {
+            // 处理 {{{变量名}}} 格式（不转义）
+            if result[i..].starts_with("{{{") {
+                let start = i;
+                if let Some(end_idx) = result[start..].find("}}}") {
+                    let end = start + end_idx + 3;
+                    let var_name = result[start + 3..start + end_idx].trim();
+                    
+                    if let Some(value) = props.get(var_name) {
+                        let value_str = Self::value_to_string(value);
+                        result.replace_range(start..end, &value_str);
+                        i = start + value_str.len();
+                        continue;
+                    }
+                }
+            }
+            // 处理 {{变量名}} 格式（转义）
+            else if result[i..].starts_with("{{") && !result[i..].starts_with("{{{") {
+                let start = i;
+                if let Some(end_idx) = result[start..].find("}}") {
+                    let end = start + end_idx + 2;
+                    let var_name = result[start + 2..start + end_idx].trim();
+                    
+                    if let Some(value) = props.get(var_name) {
+                        let value_str = Self::value_to_string(value);
+                        let escaped = Self::escape_html(&value_str);
+                        result.replace_range(start..end, &escaped);
+                        i = start + escaped.len();
+                        continue;
+                    }
+                }
+            }
+            
+            i += 1;
+        }
+        
+        result
+    }
+
+    /// 渲染 React 组件
+    fn render_react(&self, props: &Context) -> String {
+        // 生成 React 组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-react-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 渲染 Vue 组件
+    fn render_vue(&self, props: &Context) -> String {
+        // 生成 Vue 组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-vue-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 渲染 Svelte 组件
+    fn render_svelte(&self, props: &Context) -> String {
+        // 生成 Svelte 组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-svelte-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 渲染 Solid 组件
+    fn render_solid(&self, props: &Context) -> String {
+        // 生成 Solid 组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-solid-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 渲染 Preact 组件
+    fn render_preact(&self, props: &Context) -> String {
+        // 生成 Preact 组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-preact-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 渲染 Lit 组件
+    fn render_lit(&self, props: &Context) -> String {
+        // 生成 Lit 组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-lit-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 渲染其他框架组件
+    fn render_other(&self, props: &Context) -> String {
+        // 生成其他框架组件的 HTML 包装
+        let props_json = serde_json::to_string(props).unwrap();
+        format!(
+            r#"<div data-component="{}" data-props="{}"></div>"#,
+            self.name,
+            Self::escape_html(&props_json)
+        )
+    }
+
+    /// 将 serde_json::Value 转换为字符串
+    fn value_to_string(value: &serde_json::Value) -> String {
+        match value {
+            serde_json::Value::String(s) => s.clone(),
+            _ => value.to_string(),
+        }
+    }
+
+    /// HTML 转义
+    fn escape_html(content: &str) -> String {
+        content
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;")
+    }
+}
+
+/// 组件注册表
+pub struct ComponentRegistry {
+    /// 组件映射
+    components: HashMap<String, Component>,
+    /// 框架解析器管理器
+    framework_parser_manager: FrameworkParserManager,
+}
+
+impl ComponentRegistry {
+    /// 创建新的组件注册表
+    pub fn new() -> Self {
+        Self {
+            components: HashMap::new(),
+            framework_parser_manager: FrameworkParserManager::new(),
+        }
+    }
+
+    /// 注册组件
+    pub fn register(&mut self, component: Component) {
+        self.components.insert(component.name().to_string(), component);
+    }
+
+    /// 从文件路径导入组件
+    /// 
+    /// # 参数
+    /// - `file_path`: 组件文件路径
+    /// 
+    /// # 返回值
+    /// 导入的组件名称
+    pub fn import_component(&mut self, file_path: &Path) -> Result<String, String> {
+        // 读取文件内容
+        let mut file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
+        let mut content = String::new();
+        file.read_to_string(&mut content).map_err(|e| format!("Failed to read file: {}", e))?;
+        
+        // 解析组件
+        let component = self.framework_parser_manager
+            .parse_component(file_path, &content)
+            .map_err(|e| format!("Failed to parse component: {}", e))?;
+        
+        // 注册组件
+        let component_name = component.name().to_string();
+        self.register(component);
+        
+        Ok(component_name)
+    }
+
+    /// 从文件路径批量导入组件
+    /// 
+    /// # 参数
+    /// - `file_paths`: 组件文件路径列表
+    /// 
+    /// # 返回值
+    /// 导入的组件名称列表
+    pub fn import_components(&mut self, file_paths: &[&Path]) -> Result<Vec<String>, String> {
+        let mut imported_components = Vec::new();
+        
+        for file_path in file_paths {
+            let component_name = self.import_component(file_path)?;
+            imported_components.push(component_name);
+        }
+        
+        Ok(imported_components)
+    }
+
+    /// 获取组件
+    pub fn get(&self, name: &str) -> Option<&Component> {
+        self.components.get(name)
+    }
+
+    /// 检查组件是否存在
+    pub fn exists(&self, name: &str) -> bool {
+        self.components.contains_key(name)
+    }
+
+    /// 获取框架解析器管理器
+    pub fn framework_parser_manager(&self) -> &FrameworkParserManager {
+        &self.framework_parser_manager
+    }
+}
+
+impl Default for ComponentRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// 组件解析器
+pub struct ComponentParser {
+    /// 组件注册表
+    registry: ComponentRegistry,
+}
+
+impl ComponentParser {
+    /// 创建新的组件解析器
+    pub fn new() -> Self {
+        Self {
+            registry: ComponentRegistry::new(),
+        }
+    }
+
+    /// 解析组件文件
+    pub fn parse_component(&mut self, content: &str) -> Result<Component, String> {
+        // 这里将实现组件文件解析逻辑
+        // 暂时返回一个简单的组件
+        Ok(Component::new_astro("TestComponent", content))
+    }
+
+    /// 从文件路径解析并注册组件
+    pub fn parse_and_register_from_path(&mut self, file_path: &Path) -> Result<String, String> {
+        self.registry.import_component(file_path)
+    }
+
+    /// 注册组件
+    pub fn register_component(&mut self, component: Component) {
+        self.registry.register(component);
+    }
+
+    /// 获取组件注册表
+    pub fn registry(&self) -> &ComponentRegistry {
+        &self.registry
+    }
+
+    /// 获取可变的组件注册表
+    pub fn registry_mut(&mut self) -> &mut ComponentRegistry {
+        &mut self.registry
+    }
+}
+
+impl Default for ComponentParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}

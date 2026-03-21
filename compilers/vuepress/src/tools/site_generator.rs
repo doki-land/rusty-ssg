@@ -1,11 +1,11 @@
 //! 站点生成模块
 //! 提供静态站点生成的核心功能，支持多语言文档
 
-use crate::{
+use crate::tools::{
     theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     Result,
 };
-use crate::types::Document;
+use crate::Document;
 use std::{collections::HashMap, fs, path::PathBuf};
 use crate::types::{LocaleConfig, VutexConfig};
 
@@ -37,14 +37,19 @@ impl StaticSiteGenerator {
         let locales = self.get_available_locales();
         let default_lang = self.get_default_language();
 
-        let mut all_docs_by_lang: HashMap<String, Vec<(String, Document)>> = HashMap::new();
+        let mut lang_keys: Vec<String> = Vec::new();
+        let mut lang_documents: HashMap<String, Vec<(String, Document)>> = HashMap::new();
 
         for (path, doc) in documents {
             let (lang, _) = self.extract_language_from_path(path, &default_lang);
-            all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
+            if !lang_keys.contains(&lang) {
+                lang_keys.push(lang.clone());
+            }
+            lang_documents.entry(lang).or_default().push((path.clone(), doc.clone()));
         }
 
-        for (lang, docs) in all_docs_by_lang {
+        for lang in lang_keys {
+            let docs = lang_documents.remove(&lang).unwrap();
             let nav_items = self.generate_nav_items(&lang);
 
             let mut all_sidebar_links = Vec::new();

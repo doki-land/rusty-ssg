@@ -20,6 +20,8 @@ walkdir = { workspace = true }
 nargo-types = { workspace = true }
 nargo-document = { workspace = true }
 nargo-parser = { workspace = true }
+nargo-template = { workspace = true }
+askama = "0.12"
 
 
 regex = { workspace = true }

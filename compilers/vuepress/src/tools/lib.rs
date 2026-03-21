@@ -1,14 +1,11 @@
 #![warn(missing_docs)]
 #![doc = "VuTeX 文档系统 CLI 工具库"]
 
-pub mod cmd;
-pub mod site_generator;
-pub mod theme;
-
-pub use crate::types::Document;
-pub use site_generator::{ConfigLoader, StaticSiteGenerator};
-pub use theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink};
-pub use crate::compiler::{CompileResult, CompileSession, PluginHost, VutexCompiler};
+pub use crate::Document;
+pub use crate::compiler::VutexCompiler;
+pub use crate::CompileResult;
+pub use crate::CompileSession;
+pub use crate::PluginHost;
 pub use crate::types::{Result, VutexConfig, VutexError};
 
 use clap::Parser;
@@ -81,3 +78,5 @@ pub struct CheckArgs {
     #[arg(short, long)]
     pub source: Option<PathBuf>,
 }
+
+

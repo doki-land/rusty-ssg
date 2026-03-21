@@ -31,9 +31,12 @@ async-graphql = "7.0"
 async-graphql-value = "7.0"
 thiserror = "1.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
+indexmap = "2.0"
 
 [dev-dependencies]
 tokio-test = "0.4.4"
+tempfile = "3.26.0"
+ntest = "0.9.5"
 
 [features]
 default = ["dev"]
@@ -42,3 +45,7 @@ dev = []
 [[bin]]
 name = "gatsby"
 path = "bin/gatsby.rs"
+
+[[example]]
+name = "run_validation"
+path = "examples/run_validation.rs"

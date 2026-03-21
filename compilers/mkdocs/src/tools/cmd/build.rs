@@ -1,6 +1,7 @@
 //! Build 命令实现
 
-use crate::{ConfigLoader, StaticSiteGenerator, MkDocsCompiler, types::Result};
+use crate::{BuildArgs, MkDocsCompiler, types::Result};
+use crate::tools::{ConfigLoader, StaticSiteGenerator};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
 use walkdir::WalkDir;

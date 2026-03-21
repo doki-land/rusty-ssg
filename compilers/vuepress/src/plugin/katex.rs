@@ -9,8 +9,8 @@ use regex::Regex;
 lazy_static! {
     /// 匹配块级公式 `$$...$$` 的正则表达式
     static ref BLOCK_MATH_RE: Regex = Regex::new(r"\$\$([\s\S]*?)\$\$").unwrap();
-    /// 匹配行内公式 `$...$` 的正则表达式，排除行内公式被块级公式包含的情况
-    static ref INLINE_MATH_RE: Regex = Regex::new(r"(?<!\$)\$(?!\$)([^$\n]+?)(?<!\$)\$(?!\$)").unwrap();
+    /// 匹配行内公式 `$...$` 的正则表达式，不包含连续的 $ 符号
+    static ref INLINE_MATH_RE: Regex = Regex::new(r"\$([^$\n]+?)\$").unwrap();
 }
 
 /// KaTeX 数学公式渲染插件
@@ -40,7 +40,7 @@ impl KaTeXPlugin {
     /// # Returns
     ///
     /// 替换后的文本内容
-    fn process_block_math(&self, content: &str) -> String {
+    pub fn process_block_math(&self, content: &str) -> String {
         BLOCK_MATH_RE
             .replace_all(content, |caps: &regex::Captures| {
                 let math = &caps[1];
@@ -51,6 +51,8 @@ impl KaTeXPlugin {
 
     /// 处理行内公式，将 `$...$` 替换为 `&lt;span class="katex-inline"&gt;...&lt;/span&gt;`
     ///
+    /// 注意：此函数应该在处理块级公式后调用，以避免混淆
+    ///
     /// # Arguments
     ///
     /// * `content` - 包含数学公式的文本内容
@@ -58,7 +60,7 @@ impl KaTeXPlugin {
     /// # Returns
     ///
     /// 替换后的文本内容
-    fn process_inline_math(&self, content: &str) -> String {
+    pub fn process_inline_math(&self, content: &str) -> String {
         INLINE_MATH_RE
             .replace_all(content, |caps: &regex::Captures| {
                 let math = &caps[1];
