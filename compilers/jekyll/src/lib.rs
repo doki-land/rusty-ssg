@@ -11,17 +11,13 @@
 
 pub mod compiler;
 pub mod errors;
-pub mod jekyll;
-pub mod plugin_host;
-pub mod session;
+pub mod plugin;
 pub mod tools;
 pub mod types;
+pub mod watcher;
 
 /// 导出错误类型
-pub use errors::{CollectionError, DataError, JekyllError, LiquidError, MarkdownError, PostError};
-
-/// 导出核心功能
-pub use jekyll::*;
+pub use errors::*;
 
 /// 导出工具模块
 pub use tools::*;
@@ -32,8 +28,8 @@ pub use types::*;
 /// 导出编译器模块
 pub use compiler::*;
 
-/// 导出插件宿主模块
-pub use plugin_host::*;
+/// 导出插件模块
+pub use plugin::*;
 
-/// 导出会话模块
-pub use session::*;
+/// 导出监听器模块
+pub use watcher::*;

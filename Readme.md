@@ -71,43 +71,6 @@ Rusty SSG is a monorepo containing Rust reimplementations of various static site
 - Documentation-focused
 - Customizable themes
 
-## Installation
-
-### From Source
-
-```bash
-# Clone the repository
-git clone https://github.com/doki-land/rusty-ssg.git
-cd rusty-ssg
-
-# Build and install a specific compiler
-git checkout dev
-cd compilers/{compiler-name}
-cargo install --path .
-```
-
-### From Crates.io (When Available)
-
-```bash
-cargo install {compiler-name}
-```
-
-## Usage
-
-Each compiler maintains a similar command structure to its original counterpart:
-
-```bash
-# Create a new site
-{compiler-name} init my-site
-cd my-site
-
-# Develop locally
-{compiler-name} dev
-
-# Build for production
-{compiler-name} build
-```
-
 ## Architecture
 
 All compilers follow a modular architecture designed for performance and extensibility:
@@ -117,13 +80,14 @@ flowchart TD
     A[CLI] --> B[Config Loader]
     B --> C[Content Scanner]
     C --> D[Parser]
-    D --> E[Renderer]
-    E --> F[Output Generator]
+    D --> I[nargo-template Analyzer]
+    I --> E[Renderer]
+    E --> J[nargo Bundler]
+    J --> F[Output Generator]
     G[Plugins] --> E
     H[Themes] --> E
-    I[nargo] --> E
-    J[oak] --> D
-    K[IPC] --> G
+    K[oak] --> D
+    L[IPC] --> G
 ```
 
 ### Core Components
@@ -132,11 +96,12 @@ flowchart TD
 - **Config Loader**: Reads and parses configuration files
 - **Content Scanner**: Discovers and processes content files
 - **Parser**: Converts source files to intermediate representation (uses oak)
+- **nargo-template Analyzer**: Analyzes content and templates
 - **Renderer**: Transforms intermediate representation to HTML
+- **nargo Bundler**: Bundles and optimizes output files
 - **Output Generator**: Writes final static files
 - **Plugins**: Extend functionality with custom plugins (uses IPC mode)
 - **Themes**: Provide reusable templates and styles
-- **nargo**: External library with analysis engines and bundlers
 - **oak**: External library for parsing
 - **IPC**: Inter-process communication for plugin system
 
