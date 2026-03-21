@@ -71,10 +71,10 @@ sha2 = "0.10.8"
 hexo = { path = "compilers/hexo" }
 
 # Nargo compilers
-nargo-types = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
-nargo-parser = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
-nargo-template = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
-nargo-document = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.1" }
+nargo-types = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-parser = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-template = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
+nargo-document = { git = "https://github.com/oovm/nargo.git", branch = "dev", version = "0.0.0" }
 # Wae server
 wae-https = { git = "https://github.com/oovm/wae.git", branch = "dev", version = "0.0.2" }
 
