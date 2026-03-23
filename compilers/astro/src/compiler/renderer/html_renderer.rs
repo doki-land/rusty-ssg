@@ -139,158 +139,281 @@ impl HtmlRenderer {
     pub fn render_astro(&self, template: &str, context: &Context) -> String {
         // 执行插件预处理
         let preprocessed_template = self.execute_plugins(template);
-        let result = preprocessed_template;
-        let mut new_result = String::new();
-        let mut i = 0;
-        let len = result.len();
+        
+        // 使用解析器解析模板
+        let mut parser = crate::compiler::parser::Parser::new(Box::leak(preprocessed_template.into_boxed_str()));
+        let ast = parser.parse();
+        
+        // 渲染 AST
+        let rendered = self.render_ast(&ast, context);
+        
+        // 执行插件后处理
+        self.execute_plugins(&rendered)
+    }
 
-        while i < len {
-            // 查找循环开始标签
-            let loop_start = "{% for ";
-            if result[i..].starts_with(loop_start) {
-                let start = i;
-                let loop_start_len = loop_start.len();
-
-                // 查找循环开始标签的结束
-                let end_tag = "%}";
-                if let Some(end_idx) = result[start + loop_start_len..].find(end_tag) {
-                    let loop_end = start + loop_start_len + end_idx + end_tag.len();
-                    let loop_expr = result[start + loop_start_len..start + loop_start_len + end_idx].trim();
-
-                    // 解析循环表达式
-                    if let Some(in_pos) = loop_expr.find(" in ") {
-                        let var_name = loop_expr[..in_pos].trim();
-                        let array_name = loop_expr[in_pos + 4..].trim();
-
-                        // 查找循环结束标签
-                        let endfor_tag = "{% endfor %}";
-                        if let Some(endfor_idx) = result[loop_end..].find(endfor_tag) {
-                            let endfor_end = loop_end + endfor_idx + endfor_tag.len();
-                            let block_content = &result[loop_end..loop_end + endfor_idx];
-
-                            // 处理循环
-                            if let Some(array) = context.get(array_name) {
-                                if let Some(array) = array.as_array() {
-                                    for item in array {
-                                        let mut item_context = context.clone();
-                                        item_context.insert(var_name.to_string(), item.clone());
-
-                                        // 处理变量插值
-                                        let processed_item = self.process_variables(block_content, &item_context);
-                                        new_result.push_str(&processed_item);
+    /// 渲染抽象语法树
+    fn render_ast(&self, nodes: &[AstNode], context: &Context) -> String {
+        let mut result = String::new();
+        
+        for node in nodes {
+            match node {
+                AstNode::Text(text) => result.push_str(text),
+                AstNode::Interpolation { expression, interpolation_type } => {
+                    let value = self.evaluate_expression(expression, context);
+                    let value_str = self.value_to_string(&value);
+                    match interpolation_type {
+                        InterpolationType::Escaped => {
+                            let escaped = self.escape_html(&value_str);
+                            result.push_str(&escaped);
+                        }
+                        InterpolationType::Unescaped => {
+                            result.push_str(&value_str);
+                        }
+                    }
+                }
+                AstNode::Directive { directive_type, arguments, content } => {
+                    match directive_type {
+                        DirectiveType::For => {
+                            if let Some(content) = content {
+                                if arguments.len() >= 3 {
+                                    let var_name = &arguments[0];
+                                    let array_name = &arguments[2];
+                                    
+                                    if let Some(array) = context.get(array_name) {
+                                        if let Some(array) = array.as_array() {
+                                            for item in array {
+                                                let mut item_context = context.clone();
+                                                item_context.insert(var_name.to_string(), item.clone());
+                                                
+                                                let processed_content = self.render_ast(content, &item_context);
+                                                result.push_str(&processed_content);
+                                            }
+                                        }
                                     }
                                 }
                             }
-
-                            i = endfor_end;
-                            continue;
+                        }
+                        DirectiveType::If => {
+                            if let Some(content) = content {
+                                if let Some(condition) = arguments.first() {
+                                    let condition_met = self.evaluate_condition(condition, context);
+                                    if condition_met {
+                                        let processed_content = self.render_ast(content, context);
+                                        result.push_str(&processed_content);
+                                    }
+                                }
+                            }
+                        }
+                        DirectiveType::Else => {
+                            if let Some(content) = content {
+                                let processed_content = self.render_ast(content, context);
+                                result.push_str(&processed_content);
+                            }
+                        }
+                        DirectiveType::Elif => {
+                            if let Some(content) = content {
+                                if let Some(condition) = arguments.first() {
+                                    let condition_met = self.evaluate_condition(condition, context);
+                                    if condition_met {
+                                        let processed_content = self.render_ast(content, context);
+                                        result.push_str(&processed_content);
+                                    }
+                                }
+                            }
+                        }
+                        DirectiveType::Import => {
+                            // 处理导入指令
+                        }
+                        DirectiveType::Layout => {
+                            // 处理布局指令
+                            if let Some(content) = content {
+                                let processed_content = self.render_ast(content, context);
+                                result.push_str(&processed_content);
+                            }
+                        }
+                        _ => {
+                            // 其他指令
                         }
                     }
                 }
-            }
-
-            // 处理条件语句
-            let if_start = "{% if ";
-            if result[i..].starts_with(if_start) {
-                let start = i;
-                let if_start_len = if_start.len();
-
-                // 查找条件开始标签的结束
-                let end_tag = "%}";
-                if let Some(end_idx) = result[start + if_start_len..].find(end_tag) {
-                    let if_end = start + if_start_len + end_idx + end_tag.len();
-                    let condition = result[start + if_start_len..start + if_start_len + end_idx].trim();
-
-                    // 查找条件结束标签
-                    let endif_tag = "{% endif %}";
-                    if let Some(endif_idx) = result[if_end..].find(endif_tag) {
-                        let endif_end = if_end + endif_idx + endif_tag.len();
-                        let block_content = &result[if_end..if_end + endif_idx];
-
-                        // 处理条件
-                        if context.contains_key(condition) {
-                            // 处理变量插值
-                            let processed_content = self.process_variables(block_content, context);
-                            new_result.push_str(&processed_content);
+                AstNode::Component { name, attributes, content, self_closing } => {
+                    // 提取组件 props
+                    let props = self.extract_component_props(attributes, context);
+                    
+                    // 渲染组件
+                    if let Some(component) = self.component_registry.get(name) {
+                        let component_html = component.render(&props);
+                        result.push_str(&component_html);
+                    } else {
+                        // 如果组件不存在，渲染为普通标签
+                        result.push_str(&format!("<{}", name));
+                        for (attr_name, attr_value) in attributes {
+                            result.push_str(&format!(" {}=\"{}\"", attr_name, self.escape_html(attr_value)));
                         }
-
-                        i = endif_end;
-                        continue;
-                    }
-                }
-            }
-
-            // 处理组件标签
-            if result[i..].starts_with("<") {
-                let start = i;
-                // 查找标签结束
-                if let Some(end_idx) = result[start..].find(">").or_else(|| result[start..].find(" />")) {
-                    let tag_end = start + end_idx + 1;
-                    let tag_content = &result[start..tag_end];
-
-                    // 解析组件标签
-                    if let Some(component_name) = self.parse_component_tag(tag_content) {
-                        // 提取组件 props
-                        let props = self.extract_component_props(tag_content, context);
-
-                        // 渲染组件
-                        if let Some(component) = self.component_registry.get(&component_name) {
-                            let component_html = component.render(&props);
-                            new_result.push_str(&component_html);
-                            i = tag_end;
-                            continue;
+                        if *self_closing {
+                            result.push_str(" />");
+                        } else {
+                            result.push_str(">");
+                            if let Some(content) = content {
+                                let processed_content = self.render_ast(content, context);
+                                result.push_str(&processed_content);
+                            }
+                            result.push_str(&format!("</{}}", name));
                         }
                     }
                 }
-            }
-
-            // 处理变量插值
-            if result[i..].starts_with("{{{") {
-                let start = i;
-                if let Some(end_idx) = result[start..].find("}}}") {
-                    let end = start + end_idx + 3;
-                    let var_name = result[start + 3..start + end_idx].trim();
-
-                    if let Some(value) = context.get(var_name) {
-                        let value_str = self.value_to_string(value);
-                        new_result.push_str(&value_str);
-                        i = end;
-                        continue;
+                AstNode::Layout { name, attributes, content } => {
+                    // 处理布局组件
+                    let props = self.extract_component_props(attributes, context);
+                    let processed_content = self.render_ast(content, context);
+                    
+                    if let Some(component) = self.component_registry.get(name) {
+                        let mut layout_props = props;
+                        layout_props.insert("children".to_string(), serde_json::Value::String(processed_content));
+                        let layout_html = component.render(&layout_props);
+                        result.push_str(&layout_html);
+                    } else {
+                        // 如果布局组件不存在，直接渲染内容
+                        result.push_str(&processed_content);
                     }
                 }
-            }
-            else if result[i..].starts_with("{{") {
-                let start = i;
-                if let Some(end_idx) = result[start..].find("}}") {
-                    let end = start + end_idx + 2;
-                    let var_name = result[start + 2..start + end_idx].trim();
-
-                    if let Some(value) = context.get(var_name) {
-                        let value_str = self.value_to_string(value);
-                        let escaped = self.escape_html(&value_str);
-                        new_result.push_str(&escaped);
-                        i = end;
-                        continue;
-                    }
+                AstNode::Slot { name, content } => {
+                    // 处理插槽
+                    let processed_content = self.render_ast(content, context);
+                    result.push_str(&processed_content);
                 }
-            }
-
-            // 复制当前字符
-            if i < len {
-                new_result.push(result.chars().nth(i).unwrap());
-                i += 1;
-            }
-            else {
-                break;
             }
         }
+        
+        result
+    }
 
-        // 清理剩余的 %}
-        new_result = new_result.replace(" %}", "");
-        new_result = new_result.replace("%}", "");
+    /// 评估表达式
+    fn evaluate_expression(&self, expression: &str, context: &Context) -> serde_json::Value {
+        // 简单的表达式评估实现
+        // 支持变量访问和基本的属性访问
+        let expression = expression.trim();
+        
+        // 处理属性访问，如 user.name
+        if expression.contains('.') {
+            let parts: Vec<&str> = expression.split('.').collect();
+            if let Some(first_part) = parts.first() {
+                if let Some(value) = context.get(*first_part) {
+                    let mut current_value = value;
+                    for part in parts.iter().skip(1) {
+                        match current_value {
+                            serde_json::Value::Object(obj) => {
+                                if let Some(next_value) = obj.get(*part) {
+                                    current_value = next_value;
+                                } else {
+                                    return serde_json::Value::Null;
+                                }
+                            }
+                            _ => return serde_json::Value::Null,
+                        }
+                    }
+                    return current_value.clone();
+                }
+            }
+        } else if let Some(value) = context.get(expression) {
+            return value.clone();
+        }
+        
+        // 尝试解析为字面量
+        if let Ok(num) = expression.parse::<i64>() {
+            return serde_json::Value::Number(serde_json::Number::from(num));
+        } else if let Ok(num) = expression.parse::<f64>() {
+            return serde_json::Value::Number(serde_json::Number::from_f64(num).unwrap());
+        } else if expression == "true" {
+            return serde_json::Value::Bool(true);
+        } else if expression == "false" {
+            return serde_json::Value::Bool(false);
+        } else if expression == "null" {
+            return serde_json::Value::Null;
+        }
+        
+        serde_json::Value::Null
+    }
 
-        // 执行插件后处理
-        self.execute_plugins(&new_result)
+    /// 评估条件表达式
+    fn evaluate_condition(&self, condition: &str, context: &Context) -> bool {
+        // 简单的条件评估实现
+        let condition = condition.trim();
+        
+        // 处理逻辑运算符
+        if condition.contains(" && ") {
+            let parts: Vec<&str> = condition.split(" && ").collect();
+            for part in parts {
+                if !self.evaluate_condition(part, context) {
+                    return false;
+                }
+            }
+            return true;
+        } else if condition.contains(" || ") {
+            let parts: Vec<&str> = condition.split(" || ").collect();
+            for part in parts {
+                if self.evaluate_condition(part, context) {
+                    return true;
+                }
+            }
+            return false;
+        } else if condition.starts_with("!") {
+            let inner_condition = &condition[1..].trim();
+            return !self.evaluate_condition(inner_condition, context);
+        } else if condition.contains(" == ") {
+            let parts: Vec<&str> = condition.split(" == ").collect();
+            if parts.len() == 2 {
+                let left = self.evaluate_expression(parts[0], context);
+                let right = self.evaluate_expression(parts[1], context);
+                return left == right;
+            }
+        } else if condition.contains(" != ") {
+            let parts: Vec<&str> = condition.split(" != ").collect();
+            if parts.len() == 2 {
+                let left = self.evaluate_expression(parts[0], context);
+                let right = self.evaluate_expression(parts[1], context);
+                return left != right;
+            }
+        } else if condition.contains(" > ") {
+            let parts: Vec<&str> = condition.split(" > ").collect();
+            if parts.len() == 2 {
+                let left = self.evaluate_expression(parts[0], context);
+                let right = self.evaluate_expression(parts[1], context);
+                if let (serde_json::Value::Number(left_num), serde_json::Value::Number(right_num)) = (left, right) {
+                    return left_num.as_f64().unwrap() > right_num.as_f64().unwrap();
+                }
+            }
+        } else if condition.contains(" < ") {
+            let parts: Vec<&str> = condition.split(" < ").collect();
+            if parts.len() == 2 {
+                let left = self.evaluate_expression(parts[0], context);
+                let right = self.evaluate_expression(parts[1], context);
+                if let (serde_json::Value::Number(left_num), serde_json::Value::Number(right_num)) = (left, right) {
+                    return left_num.as_f64().unwrap() < right_num.as_f64().unwrap();
+                }
+            }
+        } else if condition.contains(" >= ") {
+            let parts: Vec<&str> = condition.split(" >= ").collect();
+            if parts.len() == 2 {
+                let left = self.evaluate_expression(parts[0], context);
+                let right = self.evaluate_expression(parts[1], context);
+                if let (serde_json::Value::Number(left_num), serde_json::Value::Number(right_num)) = (left, right) {
+                    return left_num.as_f64().unwrap() >= right_num.as_f64().unwrap();
+                }
+            }
+        } else if condition.contains(" <= ") {
+            let parts: Vec<&str> = condition.split(" <= ").collect();
+            if parts.len() == 2 {
+                let left = self.evaluate_expression(parts[0], context);
+                let right = self.evaluate_expression(parts[1], context);
+                if let (serde_json::Value::Number(left_num), serde_json::Value::Number(right_num)) = (left, right) {
+                    return left_num.as_f64().unwrap() <= right_num.as_f64().unwrap();
+                }
+            }
+        }
+        
+        // 检查变量是否存在
+        self.evaluate_expression(condition, context) != serde_json::Value::Null
     }
 
     /// 解析组件标签，提取组件名称
@@ -313,61 +436,14 @@ impl HtmlRenderer {
     }
 
     /// 提取组件 props
-    fn extract_component_props(&self, tag: &str, context: &Context) -> Context {
+    fn extract_component_props(&self, attributes: &HashMap<String, String>, context: &Context) -> Context {
         let mut props = Context::new();
-
-        // 简单的 props 提取
-        let tag = tag.trim();
-        let tag_content = tag[1..tag.len() - 1].trim();
-
-        // 跳过标签名称
-        if let Some(space_idx) = tag_content.find(|c: char| c.is_whitespace()) {
-            let props_str = &tag_content[space_idx..].trim();
-
-            // 分割 props
-            let mut props_parts = vec![];
-            let mut current_prop = String::new();
-            let mut in_quotes = false;
-            let mut quote_char = '"';
-
-            for c in props_str.chars() {
-                if c == '"' || c == '\'' {
-                    if !in_quotes {
-                        in_quotes = true;
-                        quote_char = c;
-                    }
-                    else if c == quote_char {
-                        in_quotes = false;
-                    }
-                }
-                else if !in_quotes && c == ' ' {
-                    if !current_prop.is_empty() {
-                        props_parts.push(current_prop);
-                        current_prop = String::new();
-                    }
-                    continue;
-                }
-
-                current_prop.push(c);
-            }
-
-            if !current_prop.is_empty() {
-                props_parts.push(current_prop);
-            }
-
-            // 解析每个 prop
-            for prop_part in props_parts {
-                if let Some(equals_idx) = prop_part.find('=') {
-                    let prop_name = prop_part[..equals_idx].trim();
-                    let prop_value = prop_part[equals_idx + 1..].trim();
-
-                    // 处理属性值
-                    let processed_value = self.process_prop_value(prop_value, context);
-                    props.insert(prop_name.to_string(), processed_value);
-                }
-            }
+        
+        for (name, value) in attributes {
+            let processed_value = self.process_prop_value(value, context);
+            props.insert(name.to_string(), processed_value);
         }
-
+        
         props
     }
 
@@ -383,8 +459,7 @@ impl HtmlRenderer {
         // 处理表达式值
         else if value.starts_with('{') && value.ends_with('}') {
             let expr = &value[1..value.len() - 1].trim();
-            // 简单的表达式处理，仅支持变量
-            if let Some(var_value) = context.get(expr as &str) { var_value.clone() } else { serde_json::Value::Null }
+            self.evaluate_expression(expr, context)
         }
         // 处理数字值
         else if let Ok(num) = value.parse::<i64>() {

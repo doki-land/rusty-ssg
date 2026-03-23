@@ -8,6 +8,7 @@ pub mod date;
 pub mod math;
 pub mod condition;
 pub mod content;
+pub mod page;
 
 pub use url::UrlFunctions;
 pub use string::StringFunctions;
@@ -16,6 +17,7 @@ pub use date::DateFunctions;
 pub use math::MathFunctions;
 pub use condition::ConditionFunctions;
 pub use content::ContentFunctions;
+pub use page::PageFunctions;
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -46,6 +48,7 @@ impl TemplateFunctions {
         self.register_math_functions();
         self.register_condition_functions();
         self.register_content_functions();
+        self.register_page_functions();
     }
     
     /// 注册 URL 处理函数
@@ -139,6 +142,17 @@ impl TemplateFunctions {
         self.register("plainify", Box::new(move |args| funcs.plainify(args)));
         self.register("highlight", Box::new(move |args| funcs.highlight(args)));
         self.register("emojify", Box::new(move |args| funcs.emojify(args)));
+    }
+    
+    /// 注册页面处理函数
+    fn register_page_functions(&mut self) {
+        let funcs = PageFunctions::new();
+        
+        self.register("ref", Box::new(move |args| funcs.ref_(args)));
+        self.register("relref", Box::new(move |args| funcs.relref(args)));
+        self.register("getPage", Box::new(move |args| funcs.get_page(args)));
+        self.register("pages", Box::new(move |args| funcs.pages(args)));
+        self.register("site", Box::new(move |args| funcs.site(args)));
     }
     
     /// 注册单个函数

@@ -1,5 +1,8 @@
 use std::fmt;
 
+/// 通用结果类型
+pub type Result<T> = std::result::Result<T, JekyllError>;
+
 /// Jekyll 目录结构相关错误
 #[derive(Debug)]
 pub enum JekyllError {

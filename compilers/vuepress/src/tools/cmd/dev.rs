@@ -1,6 +1,6 @@
 //! Dev 命令实现
 
-use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VutexCompiler, plugin_host::PluginHost, types::Result};
+use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VuePressCompiler, plugin_host::PluginHost, types::Result};
 use console::style;
 use fs_extra::dir::{CopyOptions, copy};
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -97,7 +97,7 @@ impl DevCommand {
 
         match PluginHost::new("node", ipc_server_path.to_str().unwrap()) {
             Ok(mut plugin_host) => {
-                let mut compiler = VutexCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
+                let mut compiler = VuePressCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
                 result = compiler.compile_batch(&documents);
 
                 if let Some(mut host) = compiler.plugin_host_mut().take() {
@@ -105,7 +105,7 @@ impl DevCommand {
                 }
             }
             Err(_) => {
-                let mut compiler = VutexCompiler::with_config(config.clone());
+                let mut compiler = VuePressCompiler::with_config(config.clone());
                 result = compiler.compile_batch(&documents);
             }
         }

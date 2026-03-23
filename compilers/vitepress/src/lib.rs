@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-#![doc = "VuTeX 文档编译器 - 将 Markdown 文档编译为元信息供 JS 运行时使用"]
+#![doc = "VitePress 文档编译器 - 将 Markdown 文档编译为元信息供 JS 运行时使用"]
 
 pub mod compiler;
 pub mod plugin;
@@ -14,16 +14,15 @@ pub use nargo_types::{
     CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span,
 };
 
-pub use types::{
-    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
-    SocialLink, ThemeConfig, VutexConfig,
+pub use types::{BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
+    SocialLink, ThemeConfig, VitePressConfig,
 };
 
-pub use types::{Result, VutexError};
+pub use types::{Result, VitePressError};
 
 pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};
 
-pub use compiler::{HtmlRenderer, HtmlRendererConfig, VutexCompiler};
+pub use compiler::{HtmlRenderer, HtmlRendererConfig, VitePressCompiler};
 pub use nargo_parser::{DocumentMeta, FrontMatter, FrontMatterParser, MarkdownParser, parse_document, parse_frontmatter};
 pub use nargo_types::Document;
 pub use plugin_host::{PluginHost, PluginHostError};

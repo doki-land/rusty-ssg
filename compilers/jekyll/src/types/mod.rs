@@ -5,23 +5,15 @@ pub mod errors;
 pub mod ipc;
 pub mod language;
 
-pub use nargo_types::{
-    CodeWriter, CompileMode, CompileOptions, Cursor, Document, Error as NargoError, ErrorKind, NargoValue, Position, Span,
-};
-
-pub use config::{
-    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
-    SocialLink, ThemeConfig, VutexConfig,
-};
-pub use errors::{Result, VutexError};
-pub use ipc::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};
-
 use std::collections::HashMap;
+
+/// 通用结果类型
+pub use crate::errors::Result;
 
 /// 编译结果
 pub struct CompileResult {
     /// 编译后的文档
-    pub documents: HashMap<String, Document>,
+    pub documents: HashMap<String, String>,
     /// 编译时间（毫秒）
     pub compile_time_ms: u64,
     /// 是否成功
@@ -55,4 +47,56 @@ impl CompileResult {
         let error_strings = errors.iter().map(|e| format!("{}", e)).collect();
         Self { documents: HashMap::new(), compile_time_ms, success: false, errors: error_strings }
     }
+}
+
+/// 构建参数
+#[derive(Debug, Clone)]
+pub struct BuildArgs {
+    /// 源目录
+    pub source: Option<std::path::PathBuf>,
+    /// 输出目录
+    pub output: Option<std::path::PathBuf>,
+    /// 清理选项
+    pub clean: bool,
+    /// 增量构建
+    pub incremental: bool,
+    /// 配置选项
+    pub config_options: Vec<String>,
+    /// 性能分析
+    pub profile: bool,
+}
+
+/// 开发服务器参数
+#[derive(Debug, Clone)]
+pub struct DevArgs {
+    /// 源目录
+    pub source: Option<std::path::PathBuf>,
+    /// 输出目录
+    pub output: Option<std::path::PathBuf>,
+    /// 端口
+    pub port: u16,
+    /// 主机
+    pub host: String,
+    /// 实时重载
+    pub livereload: bool,
+}
+
+/// 初始化参数
+#[derive(Debug, Clone)]
+pub struct InitArgs {
+    /// 目录路径
+    pub path: Option<std::path::PathBuf>,
+    /// 模板名称
+    pub template: Option<String>,
+    /// 强制覆盖
+    pub force: bool,
+}
+
+/// 检查参数
+#[derive(Debug, Clone)]
+pub struct CheckArgs {
+    /// 源目录
+    pub source: Option<std::path::PathBuf>,
+    /// 详细输出
+    pub verbose: bool,
 }

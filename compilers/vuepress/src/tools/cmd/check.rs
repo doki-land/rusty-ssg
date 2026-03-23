@@ -107,7 +107,7 @@ impl CheckCommand {
         println!("    {} Found {} document(s)", style("✓").green(), file_count);
 
         let config = ConfigLoader::load_from_dir(source_dir).unwrap_or_default();
-        let mut compiler = VutexCompiler::with_config(config);
+        let mut compiler = VuePressCompiler::with_config(config);
         let result = compiler.compile_batch(&documents);
 
         if !result.errors.is_empty() {

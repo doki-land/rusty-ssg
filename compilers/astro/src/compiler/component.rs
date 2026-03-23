@@ -121,48 +121,9 @@ impl Component {
 
     /// 渲染 Astro 组件
     fn render_astro(&self, props: &Context) -> String {
-        // 处理组件模板中的变量插值
-        let mut result = self.template.clone();
-
-        // 处理变量插值
-        let mut i = 0;
-        while i < result.len() {
-            // 处理 {{{变量名}}} 格式（不转义）
-            if result[i..].starts_with("{{{") {
-                let start = i;
-                if let Some(end_idx) = result[start..].find("}}}") {
-                    let end = start + end_idx + 3;
-                    let var_name = result[start + 3..start + end_idx].trim();
-
-                    if let Some(value) = props.get(var_name) {
-                        let value_str = Self::value_to_string(value);
-                        result.replace_range(start..end, &value_str);
-                        i = start + value_str.len();
-                        continue;
-                    }
-                }
-            }
-            // 处理 {{变量名}} 格式（转义）
-            else if result[i..].starts_with("{{") && !result[i..].starts_with("{{{") {
-                let start = i;
-                if let Some(end_idx) = result[start..].find("}}") {
-                    let end = start + end_idx + 2;
-                    let var_name = result[start + 2..start + end_idx].trim();
-
-                    if let Some(value) = props.get(var_name) {
-                        let value_str = Self::value_to_string(value);
-                        let escaped = Self::escape_html(&value_str);
-                        result.replace_range(start..end, &escaped);
-                        i = start + escaped.len();
-                        continue;
-                    }
-                }
-            }
-
-            i += 1;
-        }
-
-        result
+        // 使用 HTML 渲染器处理组件模板
+        let renderer = crate::compiler::renderer::html_renderer::HtmlRenderer::new();
+        renderer.render_astro(&self.template, props)
     }
 
     /// 渲染 React 组件
