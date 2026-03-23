@@ -17,6 +17,7 @@ mod parser;
 pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
 pub use parser::*;
 
+use crate::plugin::{katex::KaTeXPlugin, mermaid::MermaidPlugin, prism::PrismPlugin, PluginRegistry};
 use crate::plugin_host::PluginHost;
 
 /// VuePress 文档编译器
@@ -31,13 +32,17 @@ pub struct VuePressCompiler {
     cache: HashMap<String, Document>,
     /// 插件宿主（可选）
     plugin_host: Option<PluginHost>,
+    /// 插件注册表
+    plugin_registry: PluginRegistry,
 }
 
 impl VuePressCompiler {
     /// 创建新的编译器（无插件支持，降级模式）
     pub fn new() -> Self {
         let config = VuePressConfig::new();
-        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None }
+        let mut plugin_registry = PluginRegistry::new();
+        Self::register_default_plugins(&mut plugin_registry);
+        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None, plugin_registry }
     }
 
     /// 创建带配置的编译器（无插件支持，降级模式）
@@ -46,7 +51,9 @@ impl VuePressCompiler {
     ///
     /// * `config` - 编译器配置
     pub fn with_config(config: VuePressConfig) -> Self {
-        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None }
+        let mut plugin_registry = PluginRegistry::new();
+        Self::register_default_plugins(&mut plugin_registry);
+        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None, plugin_registry }
     }
 
     /// 创建带 PluginHost 的编译器（支持 Node.js 混合执行模式）
@@ -56,11 +63,14 @@ impl VuePressCompiler {
     /// * `plugin_host` - 插件宿主实例
     pub fn with_plugin_host(plugin_host: PluginHost) -> Self {
         let config = VuePressConfig::new();
+        let mut plugin_registry = PluginRegistry::new();
+        Self::register_default_plugins(&mut plugin_registry);
         Self {
             config: config.clone(),
             html_renderer: HtmlRenderer::new(config),
             cache: HashMap::new(),
             plugin_host: Some(plugin_host),
+            plugin_registry,
         }
     }
 
@@ -71,12 +81,29 @@ impl VuePressCompiler {
     /// * `config` - 编译器配置
     /// * `plugin_host` - 插件宿主实例
     pub fn with_config_and_plugin_host(config: VuePressConfig, plugin_host: PluginHost) -> Self {
+        let mut plugin_registry = PluginRegistry::new();
+        Self::register_default_plugins(&mut plugin_registry);
         Self {
             config: config.clone(),
             html_renderer: HtmlRenderer::new(config),
             cache: HashMap::new(),
             plugin_host: Some(plugin_host),
+            plugin_registry,
         }
+    }
+
+    /// 注册默认插件
+    ///
+    /// # Arguments
+    ///
+    /// * `plugin_registry` - 插件注册表
+    fn register_default_plugins(plugin_registry: &mut PluginRegistry) {
+        // 注册 Prism 代码高亮插件
+        plugin_registry.register(PrismPlugin::new());
+        // 注册 KaTeX 数学公式插件
+        plugin_registry.register(KaTeXPlugin::new());
+        // 注册 Mermaid 图表插件
+        plugin_registry.register(MermaidPlugin::new());
     }
 
     /// 获取编译器配置
@@ -238,8 +265,8 @@ impl VuePressCompiler {
     <!-- Vue 运行时 -->
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
     <script>
-        const { createApp } = Vue
-        createApp({}).mount('#app')
+        const {{ createApp }} = Vue
+        createApp({{}}).mount('#app')
     </script>
 </body>
 </html>"#,
@@ -272,18 +299,39 @@ impl VuePressCompiler {
 
         let mut content = doc.content.clone();
 
+        // 将 frontmatter_map 转换为 HashMap<String, NargoValue>
+        use nargo_types::NargoValue;
+        let mut plugin_frontmatter = std::collections::HashMap::new();
+        for (key, value) in &frontmatter_map {
+            plugin_frontmatter.insert(key.clone(), NargoValue::String(value.clone()));
+        }
+
+        // 创建插件上下文
+        let mut plugin_context = crate::plugin::PluginContext::new(content.clone(), plugin_frontmatter.clone(), path.to_string());
+
+        // 调用插件的渲染前钩子
+        plugin_context = self.plugin_registry.before_render_all(plugin_context);
+        content = plugin_context.content;
+
+        // 调用 Node.js 插件的渲染前钩子
         if let Some(ref mut plugin_host) = self.plugin_host {
             let context = PluginContext::new(content.clone(), frontmatter_map.clone(), path.to_string());
-
             content = Self::invoke_hook(plugin_host, "before_render", context)?;
         }
 
         let rendered_html = self.html_renderer.render(&content)?;
         let mut final_html = rendered_html;
 
+        // 创建渲染后的插件上下文
+        let mut post_render_context = crate::plugin::PluginContext::new(final_html.clone(), plugin_frontmatter.clone(), path.to_string());
+
+        // 调用插件的渲染后钩子
+        post_render_context = self.plugin_registry.after_render_all(post_render_context);
+        final_html = post_render_context.content;
+
+        // 调用 Node.js 插件的渲染后钩子
         if let Some(ref mut plugin_host) = self.plugin_host {
             let context = PluginContext::new(final_html.clone(), frontmatter_map, path.to_string());
-
             final_html = Self::invoke_hook(plugin_host, "after_render", context)?;
         }
 

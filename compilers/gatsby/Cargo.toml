@@ -33,8 +33,12 @@ async-graphql-value.workspace = true
 uuid.workspace = true
 
 sha2.workspace = true
-toml = "0.8.0"
+toml.workspace = true
 rayon.workspace = true
+notify = "6.1.0"
+wae-https = "0.0.2"
+open = "5.0.0"
+
 
 [dev-dependencies]
 tokio-test = "0.4.4"

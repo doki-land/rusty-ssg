@@ -119,7 +119,7 @@ impl ConfigParser {
         json_str = Regex::new(r#"'([^']*)'"#).unwrap().replace_all(&json_str, r#""$1""#).to_string();
         
         // 处理尾随逗号
-        json_str = Regex::new(r#,\s*([\]}])"#).unwrap().replace_all(&json_str, r#" $1"#).to_string();
+        json_str = Regex::new(r#",\s*([\]}])"#).unwrap().replace_all(&json_str, r#" $1"#).to_string();
         
         // 处理属性名没有引号的情况
         json_str = Regex::new(r#"([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:"#).unwrap().replace_all(&json_str, r#"$1 "$2":"#).to_string();

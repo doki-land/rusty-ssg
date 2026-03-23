@@ -1,8 +1,10 @@
 //! Develop 命令实现 - 开发服务器
 
-use crate::{DevelopArgs, types::Result};
+use crate::{DevelopArgs, GatsbyConfig, types::Result};
 use console::style;
 use std::path::PathBuf;
+
+use super::super::server::DevServer;
 
 /// Develop 命令
 #[cfg(feature = "dev")]
@@ -12,21 +14,23 @@ pub struct DevelopCommand;
 impl DevelopCommand {
     /// 执行 develop 命令
     pub async fn execute(args: DevelopArgs) -> Result<()> {
-        println!("{}", style("Starting Gatsby development server...").cyan());
-
         let source_dir = args.source.unwrap_or_else(|| PathBuf::from("."));
-
-        println!("  Source directory: {}", source_dir.display());
-        println!("  Binding to: {}:{}", args.bind, args.port);
-        println!("  Server URL: http://{}:{}", args.bind, args.port);
-
-        if !args.no_browser {
-            println!("  {} Opening browser...", style("→").blue());
-        }
-
-        println!("  {} Development server started", style("✓").green());
-        println!("\n  {} Press Ctrl+C to stop the server", style("ℹ").blue());
-
-        Ok(())
+        let output_dir = PathBuf::from(args.output.unwrap_or_else(|| "public".to_string()));
+        
+        // 加载配置
+        let config = GatsbyConfig::load_from_dir(&source_dir)?;
+        
+        // 创建开发服务器
+        let server = DevServer::new(
+            config,
+            source_dir,
+            output_dir,
+            args.bind,
+            args.port,
+            !args.no_browser,
+        );
+        
+        // 启动服务器
+        server.start().await
     }
 }

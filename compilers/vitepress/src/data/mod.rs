@@ -4,7 +4,9 @@
 use nargo_types::NargoValue;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 
 /// 数据加载器
 /// 用于从各种格式的文件中加载数据
@@ -32,14 +34,27 @@ impl DataLoader {
     /// 加载 TOML 文件
     pub fn load_toml<P: AsRef<Path>, T: DeserializeOwned>(&self, path: P) -> Result<T, DataError> {
         let content = std::fs::read_to_string(path.as_ref())?;
-        toml::from_str(&content).map_err(|e| DataError::ParseError { message: e.to_string() })
+        oak_toml::from_str(&content).map_err(|e| DataError::ParseError { message: e.to_string() })
     }
 
     /// 加载 YAML 文件
-    #[cfg(feature = "yaml")]
     pub fn load_yaml<P: AsRef<Path>, T: DeserializeOwned>(&self, path: P) -> Result<T, DataError> {
         let content = std::fs::read_to_string(path.as_ref())?;
-        serde_yaml::from_str(&content).map_err(|e| DataError::ParseError { message: e.to_string() })
+        oak_yaml::from_str(&content).map_err(|e| DataError::ParseError { message: e.to_string() })
+    }
+
+    /// 从环境变量加载数据
+    pub fn load_from_env(&self, prefix: &str) -> HashMap<String, NargoValue> {
+        let mut data = HashMap::new();
+
+        for (key, value) in env::vars() {
+            if key.starts_with(prefix) {
+                let normalized_key = key[prefix.len()..].to_lowercase().replace("_", ".");
+                data.insert(normalized_key, NargoValue::String(value));
+            }
+        }
+
+        data
     }
 
     /// 从数据目录加载所有数据文件
@@ -70,7 +85,6 @@ impl DataLoader {
                                 data.insert(key, NargoValue::from_json(value));
                             }
                         }
-                        #[cfg(feature = "yaml")]
                         Some("yaml") | Some("yml") => {
                             if let Ok(value) = self.load_yaml::<_, serde_json::Value>(path) {
                                 data.insert(key, NargoValue::from_json(value));
@@ -83,6 +97,35 @@ impl DataLoader {
         }
 
         Ok(data)
+    }
+
+    /// 加载指定路径的数据文件
+    pub fn load_data_file<P: AsRef<Path>>(&self, path: P) -> Result<NargoValue, DataError> {
+        let path = path.as_ref();
+
+        if !path.exists() {
+            return Err(DataError::NotFound { path: path.to_string_lossy().to_string() });
+        }
+
+        if let Some(ext) = path.extension() {
+            match ext.to_str() {
+                Some("json") => {
+                    let value = self.load_json(path)?;
+                    Ok(NargoValue::from_json(value))
+                }
+                Some("toml") => {
+                    let value = self.load_toml::<_, serde_json::Value>(path)?;
+                    Ok(NargoValue::from_json(value))
+                }
+                Some("yaml") | Some("yml") => {
+                    let value = self.load_yaml::<_, serde_json::Value>(path)?;
+                    Ok(NargoValue::from_json(value))
+                }
+                _ => Err(DataError::ParseError { message: "Unsupported file format".to_string() }),
+            }
+        } else {
+            Err(DataError::ParseError { message: "No file extension".to_string() })
+        }
     }
 }
 

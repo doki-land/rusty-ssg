@@ -52,7 +52,9 @@ impl DevCommand {
 
         println!("  Source directory: {}", source_dir.display());
         println!("  Output directory: {}", output_dir.display());
+        println!("  Host: {}", args.host);
         println!("  Port: {}", args.port);
+        println!("  Open: {}", args.open);
 
         if output_dir.exists() {
             fs::remove_dir_all(&output_dir)?;
@@ -66,26 +68,30 @@ impl DevCommand {
         };
 
         println!("  {} Initial build...", style("→").blue());
-        Self::build_site(&source_dir, &output_dir)?;
+        Self::build_site(&source_dir, &output_dir, args.config.clone())?;
         *state.last_build_successful.lock().unwrap() = true;
         println!("  {} Initial build complete", style("✓").green());
 
         println!("  {} Starting file watcher...", style("→").blue());
-        Self::start_file_watcher(source_dir.clone(), output_dir.clone(), state.clone())?;
+        Self::start_file_watcher(source_dir.clone(), output_dir.clone(), state.clone(), args.config.clone())?;
 
         println!("  {} Starting HTTP server...", style("→").blue());
-        Self::start_http_server(args.port, state).await?;
+        Self::start_http_server(&args.host, args.port, state, args.open).await?;
 
         Ok(())
     }
 
     /// 构建站点
-    pub fn build_site(source_dir: &PathBuf, output_dir: &PathBuf) -> Result<()> {
+    pub fn build_site(source_dir: &PathBuf, output_dir: &PathBuf, config_path: Option<PathBuf>) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
         }
 
-        let config = ConfigLoader::load_from_dir(source_dir)?;
+        let config = if let Some(config_path) = config_path {
+            ConfigLoader::load_from_file(&config_path)?
+        } else {
+            ConfigLoader::load_from_dir(source_dir)?
+        };
 
         let mut documents = HashMap::new();
 
@@ -159,7 +165,7 @@ impl DevCommand {
     }
 
     /// 启动文件监听器
-    pub fn start_file_watcher(source_dir: PathBuf, output_dir: PathBuf, state: DevServerState) -> Result<()> {
+    pub fn start_file_watcher(source_dir: PathBuf, output_dir: PathBuf, state: DevServerState, config_path: Option<PathBuf>) -> Result<()> {
         let (tx, rx) = std::sync::mpsc::channel();
 
         let mut watcher = RecommendedWatcher::new(
@@ -177,7 +183,7 @@ impl DevCommand {
                     Ok(event) => {
                         if Self::should_rebuild(&event) {
                             println!("\n  {} File change detected, rebuilding...", style("→").blue());
-                            match Self::build_site(&source_dir, &output_dir) {
+                            match Self::build_site(&source_dir, &output_dir, config_path.clone()) {
                                 Ok(_) => {
                                     *state.last_build_successful.lock().unwrap() = true;
                                     println!("  {} Rebuild complete", style("✓").green());

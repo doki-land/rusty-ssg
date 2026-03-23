@@ -1,7 +1,7 @@
 //! 模板函数测试
 //! 测试 Hugo 模板函数的功能
 
-use crate::compiler::template_functions::collection::CollectionFunctions;
+use hugo::compiler::template_functions::collection::CollectionFunctions;
 use serde_json::json;
 
 #[test]
@@ -90,7 +90,7 @@ fn test_difference() {
 }
 
 // 条件函数测试
-use crate::compiler::template_functions::condition::ConditionFunctions;
+use hugo::compiler::template_functions::condition::ConditionFunctions;
 
 #[test]
 fn test_cond() {
@@ -130,7 +130,7 @@ fn test_empty() {
 }
 
 // 内容函数测试
-use crate::compiler::template_functions::content::ContentFunctions;
+use hugo::compiler::template_functions::content::ContentFunctions;
 
 #[test]
 fn test_markdownify() {
@@ -165,7 +165,7 @@ fn test_emojify() {
 }
 
 // 日期函数测试
-use crate::compiler::template_functions::date::DateFunctions;
+use hugo::compiler::template_functions::date::DateFunctions;
 
 #[test]
 fn test_now() {
@@ -199,7 +199,7 @@ fn test_add_date() {
 }
 
 // 数学函数测试
-use crate::compiler::template_functions::math::MathFunctions;
+use hugo::compiler::template_functions::math::MathFunctions;
 
 #[test]
 fn test_add() {
@@ -251,7 +251,7 @@ fn test_abs() {
 }
 
 // 模板函数注册表测试
-use crate::compiler::template_functions::TemplateFunctions;
+use hugo::compiler::template_functions::TemplateFunctions;
 
 #[test]
 fn test_string_functions() {
@@ -300,7 +300,7 @@ fn test_collection_functions() {
 }
 
 // 页面函数测试
-use crate::compiler::template_functions::page::PageFunctions;
+use hugo::compiler::template_functions::page::PageFunctions;
 
 #[test]
 fn test_ref() {
@@ -342,7 +342,7 @@ fn test_site() {
 }
 
 // Partial 函数测试
-use crate::compiler::template_functions::partial::PartialFunctions;
+use hugo::compiler::template_functions::partial::PartialFunctions;
 
 #[test]
 fn test_partial() {
@@ -385,7 +385,7 @@ fn test_partial_cached_with_key() {
 }
 
 // 字符串函数测试
-use crate::compiler::template_functions::string::StringFunctions;
+use hugo::compiler::template_functions::string::StringFunctions;
 
 #[test]
 fn test_lower() {
@@ -465,13 +465,13 @@ fn test_replace_re() {
     let funcs = StringFunctions::new();
     
     assert_eq!(
-        funcs.replace_re(&[json!("\d+"), json!("[NUMBER]"), json!("There are 42 apples")]).unwrap(),
+        funcs.replace_re(&[json!(r"\d+"), json!("[NUMBER]"), json!("There are 42 apples")]).unwrap(),
         json!("There are [NUMBER] apples")
     );
 }
 
 // URL 函数测试
-use crate::compiler::template_functions::url::UrlFunctions;
+use hugo::compiler::template_functions::url::UrlFunctions;
 
 #[test]
 fn test_rel_url() {

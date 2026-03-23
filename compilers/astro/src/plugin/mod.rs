@@ -27,7 +27,7 @@ impl std::fmt::Display for PluginError {
 }
 
 /// 插件配置
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct PluginConfig {
     /// 插件名称
     pub name: String,

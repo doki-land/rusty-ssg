@@ -1,7 +1,7 @@
 //! Hugo 内容模块测试
 //! 测试 Hugo 内容处理相关的功能
 
-use crate::types::document::{HugoContentLoader, HugoContentIndex, HugoFrontMatter, HugoPage};
+use hugo::types::document::{HugoContentLoader, HugoContentIndex, HugoFrontMatter, HugoPage};
 use std::path::PathBuf;
 
 #[test]

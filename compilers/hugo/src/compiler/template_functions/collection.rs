@@ -7,6 +7,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 
 /// 集合处理函数集合
+#[derive(Clone)]
 pub struct CollectionFunctions;
 
 impl CollectionFunctions {

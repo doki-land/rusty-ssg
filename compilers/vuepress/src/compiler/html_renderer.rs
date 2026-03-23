@@ -92,6 +92,15 @@ impl HtmlRenderer {
         result
     }
 
+    /// HTML 转义函数
+    fn escape_html(&self, text: &str) -> String {
+        text.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;")
+            .replace('\'', "&#39;")
+    }
+
     /// 高亮代码块
     fn highlight_code(&self, html: &str) -> Result<String> {
         // 简单的代码高亮实现
@@ -109,7 +118,7 @@ impl HtmlRenderer {
             format!(
                 r#"<pre><code class="language-{}">{}</code></pre>"#,
                 language,
-                html_escape::encode_text(code)
+                self.escape_html(code)
             )
         }).to_string();
         
@@ -134,7 +143,10 @@ impl HtmlRenderer {
         
         // 处理块级数学公式
         lazy_static::lazy_static! {
-            static ref BLOCK_MATH_REGEX: regex::Regex = regex::Regex::new(r#"\$\$(.*?)\$\$"#s).unwrap();
+            static ref BLOCK_MATH_REGEX: regex::Regex = regex::RegexBuilder::new(r#"\$\$(.*?)\$\$"#)
+                .dot_matches_new_line(true)
+                .build()
+                .unwrap();
         }
         
         result = BLOCK_MATH_REGEX.replace_all(&result, |caps: &regex::Captures| {

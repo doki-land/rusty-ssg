@@ -158,6 +158,28 @@ impl Default for MarkdownOptions {
     }
 }
 
+/// 导航栏项
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+pub struct NavItem {
+    /// 导航栏项文本
+    pub text: String,
+    /// 导航栏项链接
+    pub link: String,
+    /// 导航栏项子菜单
+    pub items: Option<Vec<NavItem>>,
+}
+
+/// 侧边栏链接
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+pub struct SidebarLink {
+    /// 侧边栏链接文本
+    pub text: String,
+    /// 侧边栏链接地址
+    pub link: String,
+    /// 侧边栏链接子菜单
+    pub items: Option<Vec<SidebarLink>>,
+}
+
 /// 主题配置
 #[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct Theme {
@@ -165,6 +187,10 @@ pub struct Theme {
     pub name: String,
     /// 主题选项
     pub options: Option<serde_json::Value>,
+    /// 导航栏配置
+    pub nav: Option<Vec<NavItem>>,
+    /// 侧边栏配置
+    pub sidebar: Option<std::collections::HashMap<String, Vec<SidebarLink>>>,
 }
 
 /// 打包器配置
@@ -199,6 +225,25 @@ pub enum ShouldPrefetch {
     All(bool),
     /// 自定义函数
     Custom(String),
+}
+
+/// 页面配置
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+pub struct PageConfig {
+    /// 页面标题
+    pub title: Option<String>,
+    /// 页面描述
+    pub description: Option<String>,
+    /// 页面布局
+    pub layout: Option<String>,
+    /// 页面永久链接
+    pub permalink: Option<String>,
+    /// 是否禁用导航栏
+    pub navbar: Option<bool>,
+    /// 是否禁用侧边栏
+    pub sidebar: Option<bool>,
+    /// 页面元数据
+    pub meta: Option<std::collections::HashMap<String, String>>,
 }
 
 /// VuePress配置结构体
@@ -254,6 +299,16 @@ pub struct VuePressConfig {
     pub markdown: Option<MarkdownOptions>,
     /// 插件配置
     pub plugins: Option<Vec<serde_json::Value>>,
+    /// 导航栏配置
+    pub nav: Option<Vec<NavItem>>,
+    /// 侧边栏配置
+    pub sidebar: Option<std::collections::HashMap<String, Vec<SidebarLink>>>,
+    /// 页面配置
+    pub page: Option<PageConfig>,
+    /// 构建配置
+    pub build: Option<serde_json::Value>,
+    /// 开发服务器配置
+    pub devServer: Option<serde_json::Value>,
 }
 
 impl VuePressConfig {
@@ -285,6 +340,11 @@ impl VuePressConfig {
             template_build_renderer: None,
             markdown: Some(MarkdownOptions::default()),
             plugins: Some(vec![]),
+            nav: None,
+            sidebar: None,
+            page: None,
+            build: None,
+            devServer: None,
         }
     }
 

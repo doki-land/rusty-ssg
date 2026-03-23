@@ -22,8 +22,11 @@ impl BuildCommand {
 
         println!("  Source directory: {}", source_dir.display());
         println!("  Output directory: {}", output_dir.display());
+        println!("  Clean: {}", args.clean);
+        println!("  Minify: {}", args.minify);
+        println!("  Debug: {}", args.debug);
 
-        if output_dir.exists() {
+        if args.clean && output_dir.exists() {
             println!("  {} Cleaning output directory...", style("✓").green());
             fs::remove_dir_all(&output_dir)?;
         }
@@ -33,7 +36,11 @@ impl BuildCommand {
         }
 
         println!("  {} Loading configuration...", style("→").blue());
-        let config = ConfigLoader::load_from_dir(&source_dir)?;
+        let config = if let Some(config_path) = args.config {
+            ConfigLoader::load_from_file(&config_path)?
+        } else {
+            ConfigLoader::load_from_dir(&source_dir)?
+        };
         println!("  {} Configuration loaded", style("✓").green());
 
         let mut documents = HashMap::new();

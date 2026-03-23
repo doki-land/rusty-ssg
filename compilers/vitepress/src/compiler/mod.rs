@@ -5,7 +5,7 @@ use crate::types::{
     Result, VitePressConfig,
     ipc::{InvokePluginRequest, PluginContext},
 };
-use nargo_parser::parse_document;
+use crate::compiler::parser::MarkdownParser;
 use nargo_types::Document;
 use std::{
     collections::HashMap,
@@ -157,7 +157,8 @@ impl VitePressCompiler {
             return Ok(cached.clone());
         }
 
-        let mut doc = parse_document(source, path)?;
+        let parser = MarkdownParser::new();
+        let mut doc = parser.parse(source, path)?;
 
         let frontmatter_map = self.convert_frontmatter_to_map(&doc);
 

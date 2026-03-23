@@ -5,6 +5,7 @@ use serde_json::Value;
 use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
 
 /// 日期处理函数集合
+#[derive(Clone)]
 pub struct DateFunctions;
 
 impl DateFunctions {

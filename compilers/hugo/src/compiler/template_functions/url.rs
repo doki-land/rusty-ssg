@@ -5,6 +5,7 @@ use serde_json::Value;
 use regex::Regex;
 
 /// URL 处理函数集合
+#[derive(Clone)]
 pub struct UrlFunctions {
     /// 基础 URL
     base_url: Option<String>,

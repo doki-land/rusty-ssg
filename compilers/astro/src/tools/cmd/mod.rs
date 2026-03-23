@@ -13,6 +13,7 @@ use crate::{
 use rayon::prelude::*;
 use std::{fs, fs::File, io::Write, path::Path};
 use walkdir::WalkDir;
+use hashbrown::HashMap;
 
 /// 构建命令
 ///
@@ -258,153 +259,159 @@ fn process_pages(
     // 处理 src/pages 目录
     let pages_dir = project_path.join("src").join("pages");
     if pages_dir.exists() {
-        for entry in WalkDir::new(&pages_dir).into_iter().filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.is_file() {
-                let ext = path.extension().unwrap_or_default().to_string_lossy().to_lowercase();
+        // 收集所有页面文件
+        let page_files: Vec<_> = WalkDir::new(&pages_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().is_file())
+            .map(|e| e.path().to_path_buf())
+            .collect();
 
-                // 生成相对路径
-                let relative_path = path.strip_prefix(&pages_dir).unwrap();
-                let html_path = out_path.join(relative_path).with_extension("html");
+        // 并行处理页面文件
+        page_files.par_iter().for_each(|path| {
+            let ext = path.extension().unwrap_or_default().to_string_lossy().to_lowercase();
 
-                // 创建输出目录
-                if let Err(err) = fs::create_dir_all(html_path.parent().unwrap()) {
-                    eprintln!("Error creating directory: {}", err);
-                    continue;
+            // 生成相对路径
+            let relative_path = path.strip_prefix(&pages_dir).unwrap();
+            let html_path = out_path.join(relative_path).with_extension("html");
+
+            // 创建输出目录
+            if let Err(err) = fs::create_dir_all(html_path.parent().unwrap()) {
+                eprintln!("Error creating directory: {}", err);
+                return;
+            }
+
+            // 生成缓存键
+            let cache_key = format!("page:{}", path.display());
+
+            match ext.as_str() {
+                "astro" => {
+                    // 检查缓存是否有效
+                    if !cache_manager.render_needs_update(&cache_key) {
+                        // 使用缓存的渲染结果
+                        if let Some(cache_item) = cache_manager.get_render(&cache_key) {
+                            if let Ok(mut file) = File::create(&html_path) {
+                                if let Err(err) = file.write_all(cache_item.result.as_bytes()) {
+                                    eprintln!("Error writing file {}: {}", html_path.display(), err);
+                                }
+                                else {
+                                    println!("Generated from cache: {}", html_path.display());
+                                }
+                            }
+                            return;
+                        }
+                    }
+
+                    // 处理 Astro 页面
+                    if let Ok(content) = fs::read_to_string(path) {
+                        // 执行插件处理内容
+                        let processed_content = match plugin_manager.execute_all(&content) {
+                            Ok(processed) => processed,
+                            Err(err) => {
+                                eprintln!("Warning: Failed to execute plugins on {}: {}", path.display(), err);
+                                content
+                            }
+                        };
+
+                        let rendered = renderer.render_astro(&processed_content, context);
+
+                        // 对渲染结果再次执行插件
+                        let final_content = match plugin_manager.execute_all(&rendered) {
+                            Ok(processed) => processed,
+                            Err(err) => {
+                                eprintln!("Warning: Failed to execute plugins on rendered content: {}", err);
+                                rendered
+                            }
+                        };
+
+                        // 缓存渲染结果
+                        let mut dependencies = HashMap::new();
+                        if let Ok(metadata) = path.metadata() {
+                            if let Ok(modified_time) = metadata.modified() {
+                                dependencies.insert(path.to_path_buf(), modified_time);
+                            }
+                        }
+                        cache_manager.set_render(&cache_key, final_content.clone(), dependencies);
+
+                        if let Ok(mut file) = File::create(&html_path) {
+                            if let Err(err) = file.write_all(final_content.as_bytes()) {
+                                eprintln!("Error writing file {}: {}", html_path.display(), err);
+                            }
+                            else {
+                                println!("Generated: {}", html_path.display());
+                            }
+                        }
+                    }
                 }
-
-                // 生成缓存键
-                let cache_key = format!("page:{}", path.display());
-
-                match ext.as_str() {
-                    "astro" => {
-                        // 检查缓存是否有效
-                        if !cache_manager.render_needs_update(&cache_key) {
-                            // 使用缓存的渲染结果
-                            if let Some(cache_item) = cache_manager.get_render(&cache_key) {
-                                if let Ok(mut file) = File::create(&html_path) {
-                                    if let Err(err) = file.write_all(cache_item.result.as_bytes()) {
-                                        eprintln!("Error writing file {}: {}", html_path.display(), err);
-                                    }
-                                    else {
-                                        println!("Generated from cache: {}", html_path.display());
-                                    }
-                                }
-                                continue;
-                            }
-                        }
-
-                        // 处理 Astro 页面
-                        if let Ok(content) = fs::read_to_string(path) {
-                            // 执行插件处理内容
-                            let processed_content = match plugin_manager.execute_all(&content) {
-                                Ok(processed) => processed,
-                                Err(err) => {
-                                    eprintln!("Warning: Failed to execute plugins on {}: {}", path.display(), err);
-                                    content
-                                }
-                            };
-
-                            let rendered = renderer.render_astro(&processed_content, context);
-
-                            // 对渲染结果再次执行插件
-                            let final_content = match plugin_manager.execute_all(&rendered) {
-                                Ok(processed) => processed,
-                                Err(err) => {
-                                    eprintln!("Warning: Failed to execute plugins on rendered content: {}", err);
-                                    rendered
-                                }
-                            };
-
-                            // 缓存渲染结果
-                            let mut dependencies = std::collections::HashMap::new();
-                            if let Ok(metadata) = path.metadata() {
-                                if let Ok(modified_time) = metadata.modified() {
-                                    dependencies.insert(path.to_path_buf(), modified_time);
-                                }
-                            }
-                            cache_manager.set_render(&cache_key, final_content.clone(), dependencies);
-
+                "md" | "mdx" => {
+                    // 检查缓存是否有效
+                    if !cache_manager.render_needs_update(&cache_key) {
+                        // 使用缓存的渲染结果
+                        if let Some(cache_item) = cache_manager.get_render(&cache_key) {
                             if let Ok(mut file) = File::create(&html_path) {
-                                if let Err(err) = file.write_all(final_content.as_bytes()) {
+                                if let Err(err) = file.write_all(cache_item.result.as_bytes()) {
                                     eprintln!("Error writing file {}: {}", html_path.display(), err);
                                 }
                                 else {
-                                    println!("Generated: {}", html_path.display());
+                                    println!("Generated from cache: {}", html_path.display());
                                 }
+                            }
+                            return;
+                        }
+                    }
+
+                    // 处理 Markdown 页面
+                    if let Ok(content) = fs::read_to_string(path) {
+                        // 执行插件处理内容
+                        let processed_content = match plugin_manager.execute_all(&content) {
+                            Ok(processed) => processed,
+                            Err(err) => {
+                                eprintln!("Warning: Failed to execute plugins on {}: {}", path.display(), err);
+                                content
+                            }
+                        };
+
+                        let rendered = markdown_renderer.render(&processed_content);
+
+                        // 对渲染结果再次执行插件
+                        let final_content = match plugin_manager.execute_all(&rendered) {
+                            Ok(processed) => processed,
+                            Err(err) => {
+                                eprintln!("Warning: Failed to execute plugins on rendered content: {}", err);
+                                rendered
+                            }
+                        };
+
+                        // 缓存渲染结果
+                        let mut dependencies = HashMap::new();
+                        if let Ok(metadata) = path.metadata() {
+                            if let Ok(modified_time) = metadata.modified() {
+                                dependencies.insert(path.to_path_buf(), modified_time);
+                            }
+                        }
+                        cache_manager.set_render(&cache_key, final_content.clone(), dependencies);
+
+                        if let Ok(mut file) = File::create(&html_path) {
+                            if let Err(err) = file.write_all(final_content.as_bytes()) {
+                                eprintln!("Error writing file {}: {}", html_path.display(), err);
+                            }
+                            else {
+                                println!("Generated: {}", html_path.display());
                             }
                         }
                     }
-                    "md" | "mdx" => {
-                        // 检查缓存是否有效
-                        if !cache_manager.render_needs_update(&cache_key) {
-                            // 使用缓存的渲染结果
-                            if let Some(cache_item) = cache_manager.get_render(&cache_key) {
-                                if let Ok(mut file) = File::create(&html_path) {
-                                    if let Err(err) = file.write_all(cache_item.result.as_bytes()) {
-                                        eprintln!("Error writing file {}: {}", html_path.display(), err);
-                                    }
-                                    else {
-                                        println!("Generated from cache: {}", html_path.display());
-                                    }
-                                }
-                                continue;
-                            }
-                        }
-
-                        // 处理 Markdown 页面
-                        if let Ok(content) = fs::read_to_string(path) {
-                            // 执行插件处理内容
-                            let processed_content = match plugin_manager.execute_all(&content) {
-                                Ok(processed) => processed,
-                                Err(err) => {
-                                    eprintln!("Warning: Failed to execute plugins on {}: {}", path.display(), err);
-                                    content
-                                }
-                            };
-
-                            let rendered = markdown_renderer.render(&processed_content);
-
-                            // 对渲染结果再次执行插件
-                            let final_content = match plugin_manager.execute_all(&rendered) {
-                                Ok(processed) => processed,
-                                Err(err) => {
-                                    eprintln!("Warning: Failed to execute plugins on rendered content: {}", err);
-                                    rendered
-                                }
-                            };
-
-                            // 缓存渲染结果
-                            let mut dependencies = std::collections::HashMap::new();
-                            if let Ok(metadata) = path.metadata() {
-                                if let Ok(modified_time) = metadata.modified() {
-                                    dependencies.insert(path.to_path_buf(), modified_time);
-                                }
-                            }
-                            cache_manager.set_render(&cache_key, final_content.clone(), dependencies);
-
-                            if let Ok(mut file) = File::create(&html_path) {
-                                if let Err(err) = file.write_all(final_content.as_bytes()) {
-                                    eprintln!("Error writing file {}: {}", html_path.display(), err);
-                                }
-                                else {
-                                    println!("Generated: {}", html_path.display());
-                                }
-                            }
-                        }
+                }
+                _ => {
+                    // 其他文件类型，直接复制
+                    if let Err(err) = fs::copy(path, &html_path) {
+                        eprintln!("Error copying file {}: {}", html_path.display(), err);
                     }
-                    _ => {
-                        // 其他文件类型，直接复制
-                        if let Err(err) = fs::copy(path, &html_path) {
-                            eprintln!("Error copying file {}: {}", html_path.display(), err);
-                        }
-                        else {
-                            println!("Copied: {}", html_path.display());
-                        }
+                    else {
+                        println!("Copied: {}", html_path.display());
                     }
                 }
             }
-        }
+        });
     }
 }
 

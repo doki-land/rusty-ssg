@@ -69,8 +69,9 @@ impl RelatedContentRecommender {
 
     /// 计算标签相似度
     fn calculate_tag_similarity(&self, page: &HugoPage, other_page: &HugoPage) -> f64 {
-        let page_tags = page.frontmatter.tags.as_ref().unwrap_or(&Vec::new());
-        let other_tags = other_page.frontmatter.tags.as_ref().unwrap_or(&Vec::new());
+        let empty_tags = Vec::new();
+        let page_tags = page.frontmatter.tags.as_ref().unwrap_or(&empty_tags);
+        let other_tags = other_page.frontmatter.tags.as_ref().unwrap_or(&empty_tags);
 
         if page_tags.is_empty() || other_tags.is_empty() {
             return 0.0;
@@ -86,8 +87,9 @@ impl RelatedContentRecommender {
 
     /// 计算分类相似度
     fn calculate_category_similarity(&self, page: &HugoPage, other_page: &HugoPage) -> f64 {
-        let page_categories = page.frontmatter.categories.as_ref().unwrap_or(&Vec::new());
-        let other_categories = other_page.frontmatter.categories.as_ref().unwrap_or(&Vec::new());
+        let empty_categories = Vec::new();
+        let page_categories = page.frontmatter.categories.as_ref().unwrap_or(&empty_categories);
+        let other_categories = other_page.frontmatter.categories.as_ref().unwrap_or(&empty_categories);
 
         if page_categories.is_empty() || other_categories.is_empty() {
             return 0.0;

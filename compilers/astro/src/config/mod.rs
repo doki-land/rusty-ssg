@@ -100,7 +100,7 @@ pub struct AstroConfig {
 }
 
 /// 重定向配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct RedirectConfig {
     /// 重定向状态码
     #[serde(default = "default_redirect_status")]
@@ -111,7 +111,7 @@ pub struct RedirectConfig {
 }
 
 /// 安全配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct SecurityConfig {
     /// 是否检查Origin头
     #[serde(default = "default_check_origin")]
@@ -123,7 +123,7 @@ pub struct SecurityConfig {
 }
 
 /// 远程模式
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct RemotePattern {
     /// 协议
     pub protocol: Option<String>,
@@ -139,7 +139,7 @@ pub struct RemotePattern {
 }
 
 /// 构建配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct BuildConfig {
     /// 构建格式
     #[serde(default = "default_build_format")]
@@ -178,7 +178,7 @@ pub struct BuildConfig {
 }
 
 /// 服务器配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct ServerConfig {
     /// 服务器监听地址
     pub host: Option<serde_json::Value>,
@@ -204,7 +204,7 @@ pub struct ServerConfig {
 }
 
 /// 会话存储配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct SessionConfig {
     /// 会话驱动
     pub driver: Option<String>,
@@ -221,7 +221,7 @@ pub struct SessionConfig {
 }
 
 /// 开发者工具栏配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct DevToolbarConfig {
     /// 是否启用开发者工具栏
     #[serde(default = "default_dev_toolbar_enabled")]
@@ -233,7 +233,7 @@ pub struct DevToolbarConfig {
 }
 
 /// 预获取配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct PrefetchConfig {
     /// 是否为所有链接启用预获取
     pub prefetch_all: Option<bool>,
@@ -244,7 +244,7 @@ pub struct PrefetchConfig {
 }
 
 /// 图像配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct ImageConfig {
     /// 图像优化端点
     #[serde(default)]
@@ -282,7 +282,7 @@ pub struct ImageConfig {
 }
 
 /// 图像端点配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct ImageEndpointConfig {
     /// 路由
     #[serde(default = "default_image_endpoint_route")]
@@ -293,7 +293,7 @@ pub struct ImageEndpointConfig {
 }
 
 /// 图像服务配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct ImageServiceConfig {
     /// 入口点
     #[serde(default = "default_image_service_entrypoint")]
@@ -305,7 +305,7 @@ pub struct ImageServiceConfig {
 }
 
 /// Markdown配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct MarkdownConfig {
     /// Shiki配置
     #[serde(default)]
@@ -335,7 +335,7 @@ pub struct MarkdownConfig {
 }
 
 /// 国际化配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct I18nConfig {
     /// 支持的语言环境列表
     pub locales: serde_json::Value,
@@ -356,7 +356,7 @@ pub struct I18nConfig {
 }
 
 /// 环境变量配置
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct EnvConfig {
     /// 环境变量模式
     #[serde(default)]

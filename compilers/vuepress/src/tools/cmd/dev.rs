@@ -3,6 +3,7 @@
 use crate::{ConfigLoader, DevArgs, StaticSiteGenerator, VuePressCompiler, plugin_host::PluginHost, types::Result};
 use console::style;
 use fs_extra::dir::{CopyOptions, copy};
+use http::{Request, Response, StatusCode};
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
     collections::HashMap,
@@ -209,6 +210,7 @@ impl DevCommand {
     /// 启动 HTTP 服务器
     pub async fn start_http_server(port: u16, _state: DevServerState) -> Result<()> {
         let output_dir = _state.output_dir;
+        // 创建静态文件路由器
         let router = static_files_router(&output_dir, "");
 
         let addr: SocketAddr = ([127, 0, 0, 1], port).into();

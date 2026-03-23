@@ -32,6 +32,7 @@ wae-https = { workspace = true }
 http = { workspace = true }
 nargo-template.workspace = true
 nargo-types.workspace = true
+nargo-document.workspace = true
 pulldown-cmark.workspace = true
 
 [dev-dependencies]

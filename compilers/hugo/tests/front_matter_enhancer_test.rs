@@ -1,7 +1,7 @@
 //! Front Matter 增强器测试
 //! 测试 Front Matter 增强器的功能
 
-use crate::types::document::{FrontMatterEnhancer, HugoFrontMatter};
+use hugo::types::document::{FrontMatterEnhancer, HugoFrontMatter};
 use std::path::PathBuf;
 
 #[test]

@@ -5,6 +5,7 @@ use nargo_types::NargoValue;
 use std::collections::HashMap;
 
 pub mod katex;
+pub mod mermaid;
 pub mod prism;
 
 /// 插件元数据

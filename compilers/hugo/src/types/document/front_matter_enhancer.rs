@@ -48,7 +48,7 @@ impl FrontMatterEnhancer {
     /// 从文件名提取日期
     ///
     /// 支持格式：YYYY-MM-DD-filename.md
-    fn extract_date_from_filename(file_path: &Path) -> Option<String> {
+    pub fn extract_date_from_filename(file_path: &Path) -> Option<String> {
         let file_name = file_path.file_name()?.to_str()?;
 
         // 匹配 YYYY-MM-DD 格式的日期
@@ -104,7 +104,7 @@ impl FrontMatterEnhancer {
     }
 
     /// 检查日期格式是否有效
-    fn is_valid_date(date_str: &str) -> bool {
+    pub fn is_valid_date(date_str: &str) -> bool {
         // 支持多种日期格式
         let formats = ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%SZ"];
 

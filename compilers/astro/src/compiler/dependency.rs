@@ -1,6 +1,7 @@
 //! 依赖分析模块
 
 use hashbrown::{HashMap, HashSet};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     path::{Path, PathBuf},
     sync::RwLock,

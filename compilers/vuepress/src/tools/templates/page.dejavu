@@ -249,5 +249,25 @@
             </div>
         </main>
     </div>
+    <!-- Hot reload script -->
+    <script>
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            const ws = new WebSocket('ws://' + window.location.host + '/__vuepress_hmr');
+            ws.onopen = function() {
+                console.log('VuePress HMR connected');
+            };
+            ws.onmessage = function(event) {
+                if (event.data === 'reload') {
+                    window.location.reload();
+                }
+            };
+            ws.onerror = function(error) {
+                console.error('VuePress HMR error:', error);
+            };
+            ws.onclose = function() {
+                console.log('VuePress HMR disconnected');
+            };
+        }
+    </script>
 </body>
 </html>

@@ -12,6 +12,7 @@ lazy_static! {
 }
 
 /// 字符串处理函数集合
+#[derive(Clone)]
 pub struct StringFunctions;
 
 impl StringFunctions {

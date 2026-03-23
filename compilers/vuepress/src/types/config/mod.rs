@@ -278,7 +278,7 @@ impl VuePressConfig {
     pub fn to_toml(&self) -> Result<String, ConfigError> {
         #[cfg(feature = "serde")]
         {
-            oak_toml::to_string(self).map_err(|e| ConfigError::TomlParseError { cause: e.to_string() })
+            oak_toml::ser::to_string(self).map_err(|e| ConfigError::TomlParseError { cause: e.to_string() })
         }
         #[cfg(not(feature = "serde"))]
         {

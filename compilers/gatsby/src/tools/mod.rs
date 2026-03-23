@@ -2,10 +2,12 @@
 #![doc = "Gatsby 编译器 CLI 工具库"]
 
 pub mod cmd;
+pub mod server;
 pub mod site_generator;
 pub mod template;
 pub mod theme;
 
+pub use server::DevServer;
 pub use site_generator::{ConfigLoader, StaticSiteGenerator};
 pub use template::UnifiedTemplateManager;
 pub use theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, TemplateEngineType};
@@ -91,6 +93,10 @@ pub struct DevelopArgs {
     /// 源目录
     #[arg(short, long)]
     pub source: Option<PathBuf>,
+
+    /// 输出目录
+    #[arg(short, long, default_value = "public")]
+    pub output: Option<String>,
 
     /// 端口
     #[arg(short, long, default_value = "8000")]

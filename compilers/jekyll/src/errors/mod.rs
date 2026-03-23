@@ -459,3 +459,14 @@ impl From<LiquidError> for JekyllError {
         JekyllError::LiquidError(Box::new(error))
     }
 }
+
+impl From<CollectionError> for JekyllError {
+    fn from(error: CollectionError) -> Self {
+        match error {
+            CollectionError::ConfigError(message) => JekyllError::ConfigReadError(message),
+            CollectionError::FileParseError(message) => JekyllError::FrontMatterParseError(message),
+            CollectionError::JekyllError(error) => error,
+            CollectionError::FileSystemError(error) => JekyllError::FileSystemError(error),
+        }
+    }
+}

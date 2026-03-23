@@ -1,6 +1,6 @@
 //! 示例插件
 
-use crate::plugin::{Plugin, PluginConfig, PluginError};
+use crate::plugin::{Plugin, PluginConfig, PluginContext, PluginError, PluginLifecycleEvent};
 
 /// 示例插件
 ///
@@ -24,16 +24,21 @@ impl Plugin for ExamplePlugin {
     }
 
     /// 初始化插件
-    fn init(&self) -> Result<(), PluginError> {
+    fn init(&self, context: &PluginContext) -> Result<(), PluginError> {
         println!("Example plugin initialized with config: {:?}", self.config);
         Ok(())
     }
 
     /// 执行插件
-    fn execute(&self, content: &str) -> Result<String, PluginError> {
+    fn execute(&self, content: &str, context: &PluginContext) -> Result<String, PluginError> {
         // 简单的处理：在内容前后添加标记
         let result = format!("<!-- Example Plugin Start -->\n{}\n<!-- Example Plugin End -->", content);
         Ok(result)
+    }
+
+    /// 处理生命周期事件
+    fn on_event(&self, event: &PluginLifecycleEvent, context: &mut PluginContext) -> Result<(), PluginError> {
+        Ok(())
     }
 
     /// 获取插件配置

@@ -50,6 +50,15 @@ impl StaticSiteGenerator {
             lang_documents.entry(lang).or_default().push((path.clone(), doc.clone()));
         }
 
+        // 生成路由配置
+        self.generate_routes_config(output_dir, &lang_documents, &default_lang)?;
+
+        // 生成搜索索引
+        self.generate_search_index(output_dir, documents)?;
+
+        // 生成站点地图
+        self.generate_sitemap(output_dir, documents, &default_lang)?;
+
         for lang in lang_keys {
             let docs = lang_documents.remove(&lang).unwrap();
             let nav_items = self.generate_nav_items(&lang);
@@ -109,6 +118,111 @@ impl StaticSiteGenerator {
         }
 
         self.generate_root_index(output_dir)?;
+
+        Ok(())
+    }
+
+    /// 生成路由配置文件
+    fn generate_routes_config(&self, output_dir: &PathBuf, lang_documents: &HashMap<String, Vec<(String, Document)>>, default_lang: &str) -> Result<()> {
+        use serde_json::json;
+
+        let mut routes = Vec::new();
+
+        for (lang, docs) in lang_documents {
+            for (path, doc) in docs {
+                let (_, normalized_path) = self.extract_language_from_path(path, default_lang);
+                let html_path = normalized_path.replace(".md", ".html");
+                let route_path = if lang == default_lang {
+                    format!("/{}", html_path.replace(".html", ""))
+                } else {
+                    format!("/{}/{}", lang, html_path.replace(".html", ""))
+                };
+
+                let route = json!({
+                    "path": route_path,
+                    "component": "@theme/layouts/Page.vue",
+                    "meta": {
+                        "title": doc.title().unwrap_or(""),
+                        "lang": lang
+                    }
+                });
+
+                routes.push(route);
+            }
+        }
+
+        let routes_config = json!({
+            "routes": routes
+        });
+
+        let routes_path = output_dir.join(".vuepress").join("routes.json");
+        if let Some(parent) = routes_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        fs::write(routes_path, serde_json::to_string_pretty(&routes_config)?)?;
+
+        Ok(())
+    }
+
+    /// 生成搜索索引
+    fn generate_search_index(&self, output_dir: &PathBuf, documents: &HashMap<String, Document>) -> Result<()> {
+        use serde_json::json;
+
+        let mut search_index = Vec::new();
+
+        for (path, doc) in documents {
+            let item = json!({
+                "path": path,
+                "title": doc.title().unwrap_or(""),
+                "content": doc.content
+            });
+
+            search_index.push(item);
+        }
+
+        let search_config = json!({
+            "index": search_index
+        });
+
+        let search_path = output_dir.join(".vuepress").join("search-index.json");
+        if let Some(parent) = search_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        fs::write(search_path, serde_json::to_string_pretty(&search_config)?)?;
+
+        Ok(())
+    }
+
+    /// 生成站点地图
+    fn generate_sitemap(&self, output_dir: &PathBuf, documents: &HashMap<String, Document>, default_lang: &str) -> Result<()> {
+        let mut sitemap = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
+
+        for (path, doc) in documents {
+            let (lang, normalized_path) = self.extract_language_from_path(path, default_lang);
+            let html_path = normalized_path.replace(".md", ".html");
+            let url = if lang == default_lang {
+                format!("/{}", html_path)
+            } else {
+                format!("/{}/{}", lang, html_path)
+            };
+
+            sitemap.push_str(&format!(
+                "<url><loc>{}</loc><lastmod>{}</lastmod></url>",
+                url,
+                chrono::Utc::now().format("%Y-%m-%d").to_string()
+            ));
+        }
+
+        sitemap.push_str("</urlset>");
+
+        let sitemap_path = output_dir.join("sitemap.xml");
+        fs::write(sitemap_path, sitemap)?;
 
         Ok(())
     }

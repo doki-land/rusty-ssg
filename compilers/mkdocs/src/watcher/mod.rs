@@ -147,48 +147,59 @@ impl DevServer {
     /// 启动 HTTP 服务器
     async fn start_http_server(&self) -> Result<()> {
         use hyper::{
-            body::Body,
+            body::{Bytes, Full, Incoming as IncomingBody},
             header::CONTENT_TYPE,
             Request, Response, StatusCode,
         };
-        use hyper::server::conn::AddrIncoming;
-        use hyper::service::service_fn;
-        use std::{fs::File, io::Read};
+        use hyper_util::rt::tokio::TokioIo;
+        use http_body_util::BodyExt;
+        use std::{fs::File, io::Read, net::SocketAddr};
 
         let output_dir = self.output_dir.clone();
-        let addr = format!("{}:{}", self.addr, self.port).parse()?;
+        let addr: SocketAddr = format!("{}:{}", self.addr, self.port).parse().map_err(|e: std::net::AddrParseError| crate::types::MkDocsError::ConfigParseError { message: e.to_string() })?;
 
-        let incoming = AddrIncoming::bind(&addr)?;
-        let service = service_fn(move |req| {
+        let listener = tokio::net::TcpListener::bind(addr).await?;
+
+        loop {
+            let (socket, _) = listener.accept().await?;
             let output_dir = output_dir.clone();
-            async move {
-                let path = req.uri().path();
-                let file_path = if path == "/" { output_dir.join("index.html") } else { output_dir.join(&path[1..]) };
 
-                if file_path.exists() && file_path.is_file() {
-                    let mut file = File::open(file_path)?;
-                    let mut content = Vec::new();
-                    file.read_to_end(&mut content)?;
+            tokio::spawn(async move {
+                let service = hyper::service::service_fn(move |_req: Request<IncomingBody>| {
+                    let output_dir = output_dir.clone();
+                    async move {
+                        let path = _req.uri().path();
+                        let file_path = if path == "/" { output_dir.join("index.html") } else { output_dir.join(&path[1..]) };
 
-                    let content_type = mime_guess::from_path(&file_path).first_or_octet_stream();
+                        if file_path.exists() && file_path.is_file() {
+                            let mut file = File::open(file_path)?;
+                            let mut content = Vec::new();
+                            file.read_to_end(&mut content)?;
 
-                    Ok(Response::builder()
-                        .status(StatusCode::OK)
-                        .header(CONTENT_TYPE, content_type.to_string())
-                        .body(Body::from(content))?)
+                            let content_type = mime_guess::from_path(&file_path).first_or_octet_stream();
+
+                            Ok(Response::builder()
+                                .status(StatusCode::OK)
+                                .header(CONTENT_TYPE, content_type.to_string())
+                                .body(http_body_util::BodyExt::boxed(Full::from(content))?)
+                        }
+                        else {
+                            Ok(Response::builder()
+                                .status(StatusCode::NOT_FOUND)
+                                .body(http_body_util::BodyExt::boxed(Full::from("404 Not Found"))?)
+                        }
+                    }
+                });
+
+                let io = hyper_util::rt::tokio::TokioIo::new(socket);
+                let conn = hyper::server::conn::http1::Builder::new()
+                    .serve_connection(io, service);
+
+                if let Err(e) = conn.await {
+                    eprintln!("Server error: {}", e);
                 }
-                else {
-                    Ok(Response::builder()
-                        .status(StatusCode::NOT_FOUND)
-                        .body(Body::from("404 Not Found"))?)
-                }
-            }
-        });
-
-        let server = hyper::server::Builder::new(incoming).serve(service);
-        server.await?;
-
-        Ok(())
+            });
+        }
     }
 }
 

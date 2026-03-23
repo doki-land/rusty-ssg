@@ -1,5 +1,5 @@
 //! 插件模块
-//! 提供 VuTeX 文档编译器的插件系统
+//! 提供 Jekyll 文档编译器的插件系统
 
 use nargo_types::NargoValue;
 use std::collections::HashMap;
@@ -60,6 +60,18 @@ pub trait JekyllPlugin: Send + Sync {
         let _ = config;
     }
 
+    /// 帖子读取前钩子
+    /// 在读取帖子文件前调用
+    fn pre_read(&self, path: &str) -> String {
+        path.to_string()
+    }
+
+    /// 帖子读取后钩子
+    /// 在读取帖子文件后调用
+    fn post_read(&self, context: PluginContext) -> PluginContext {
+        context
+    }
+
     /// 渲染前钩子
     /// 在 Markdown 解析后、HTML 渲染前调用，用于修改文档内容
     fn before_render(&self, context: PluginContext) -> PluginContext {
@@ -70,6 +82,16 @@ pub trait JekyllPlugin: Send + Sync {
     /// 在 HTML 渲染后调用，用于修改渲染后的内容
     fn after_render(&self, context: PluginContext) -> PluginContext {
         context
+    }
+
+    /// 站点构建前钩子
+    /// 在站点构建开始前调用
+    fn pre_build(&self) {
+    }
+
+    /// 站点构建后钩子
+    /// 在站点构建完成后调用
+    fn post_build(&self) {
     }
 }
 
@@ -114,6 +136,38 @@ impl PluginRegistry {
             current_context = plugin.after_render(current_context);
         }
         current_context
+    }
+
+    /// 对所有已注册的插件调用帖子读取前钩子
+    pub fn pre_read_all(&self, path: &str) -> String {
+        let mut current_path = path.to_string();
+        for plugin in &self.plugins {
+            current_path = plugin.pre_read(&current_path);
+        }
+        current_path
+    }
+
+    /// 对所有已注册的插件调用帖子读取后钩子
+    pub fn post_read_all(&self, context: PluginContext) -> PluginContext {
+        let mut current_context = context;
+        for plugin in &self.plugins {
+            current_context = plugin.post_read(current_context);
+        }
+        current_context
+    }
+
+    /// 对所有已注册的插件调用站点构建前钩子
+    pub fn pre_build_all(&self) {
+        for plugin in &self.plugins {
+            plugin.pre_build();
+        }
+    }
+
+    /// 对所有已注册的插件调用站点构建后钩子
+    pub fn post_build_all(&self) {
+        for plugin in &self.plugins {
+            plugin.post_build();
+        }
     }
 
     /// 获取已注册插件的数量

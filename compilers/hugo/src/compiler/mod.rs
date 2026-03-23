@@ -20,6 +20,9 @@ pub use hugo_template::{
 /// 短代码系统模块
 pub mod shortcodes;
 
+/// 模板函数模块
+pub mod template_functions;
+
 use crate::compiler::shortcodes::{ShortcodeContext, ShortcodeParser, ShortcodeRegistry, parser::TextFragment};
 
 /// VuTeX 文档编译器

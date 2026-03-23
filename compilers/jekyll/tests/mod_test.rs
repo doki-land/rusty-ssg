@@ -98,13 +98,13 @@ Complex content here.
 
     assert_eq!(front_matter.get("title").unwrap(), "Complex Document");
 
-    let tags = front_matter.get("tags").unwrap().as_array().unwrap();
+    let tags = front_matter.get_array("tags").unwrap();
     assert_eq!(tags.len(), 3);
     assert_eq!(tags[0], "programming");
     assert_eq!(tags[1], "rust");
     assert_eq!(tags[2], "yaml");
 
-    let author = front_matter.get("author").unwrap().as_object().unwrap();
+    let author = front_matter.get_object("author").unwrap();
     assert_eq!(author.get("name").unwrap(), "John Doe");
     assert_eq!(author.get("email").unwrap(), "john@example.com");
 
@@ -112,7 +112,7 @@ Complex content here.
     assert_eq!(social.get("github").unwrap(), "johndoe");
     assert_eq!(social.get("twitter").unwrap(), "johndoe123");
 
-    let metadata = front_matter.get("metadata").unwrap().as_object().unwrap();
+    let metadata = front_matter.get_object("metadata").unwrap();
     assert_eq!(metadata.get("published").unwrap(), true);
     assert_eq!(metadata.get("views").unwrap(), 1234);
     assert_eq!(metadata.get("rating").unwrap(), 4.5);

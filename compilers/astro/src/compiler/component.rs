@@ -26,6 +26,7 @@ pub enum Framework {
 }
 
 /// 组件定义
+#[derive(Clone)]
 pub struct Component {
     /// 组件名称
     name: Cow<'static, str>,

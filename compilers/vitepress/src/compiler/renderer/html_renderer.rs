@@ -181,17 +181,23 @@ impl HtmlRenderer {
     fn render_inline_elements(&self, text: &str) -> String {
         let mut result = text.to_string();
         
-        // 替换粗体 **text** 为 <strong>text</strong>
-        result = result.replace("**", "<strong>")
-                     .replace("**", "</strong>");
+        // 使用正则表达式替换粗体 **text** 为 <strong>text</strong>
+        result = regex::Regex::new(r"\*\*([^\*]+)\*\*")
+            .unwrap()
+            .replace_all(&result, "<strong>$1</strong>")
+            .to_string();
         
-        // 替换斜体 *text* 为 <em>text</em>
-        result = result.replace("*", "<em>")
-                     .replace("*", "</em>");
+        // 使用正则表达式替换斜体 *text* 为 <em>text</em>
+        result = regex::Regex::new(r"\*([^\*]+)\*")
+            .unwrap()
+            .replace_all(&result, "<em>$1</em>")
+            .to_string();
         
-        // 替换行内代码 `text` 为 <code>text</code>
-        result = result.replace("`", "<code>")
-                     .replace("`", "</code>");
+        // 使用正则表达式替换行内代码 `text` 为 <code>text</code>
+        result = regex::Regex::new(r"`([^`]+)`")
+            .unwrap()
+            .replace_all(&result, "<code>$1</code>")
+            .to_string();
         
         result
     }

@@ -4,6 +4,7 @@
 use serde_json::Value;
 
 /// 数学函数集合
+#[derive(Clone)]
 pub struct MathFunctions;
 
 impl MathFunctions {

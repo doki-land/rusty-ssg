@@ -234,12 +234,18 @@ impl JekyllStructure {
     /// * `create_layouts` - 是否创建 _layouts 目录
     /// * `create_includes` - 是否创建 _includes 目录
     /// * `create_data` - 是否创建 _data 目录
+    /// * `create_drafts` - 是否创建 _drafts 目录
+    /// * `create_sass` - 是否创建 _sass 目录
+    /// * `create_assets` - 是否创建 assets 目录
     pub fn create_structure(
         &self,
         create_posts: bool,
         create_layouts: bool,
         create_includes: bool,
         create_data: bool,
+        create_drafts: bool,
+        create_sass: bool,
+        create_assets: bool,
     ) -> Result<()> {
         if create_posts {
             std::fs::create_dir_all(self.root.join("_posts")).map_err(JekyllError::from)?;
@@ -252,6 +258,15 @@ impl JekyllStructure {
         }
         if create_data {
             std::fs::create_dir_all(self.root.join("_data")).map_err(JekyllError::from)?;
+        }
+        if create_drafts {
+            std::fs::create_dir_all(self.root.join("_drafts")).map_err(JekyllError::from)?;
+        }
+        if create_sass {
+            std::fs::create_dir_all(self.root.join("_sass")).map_err(JekyllError::from)?;
+        }
+        if create_assets {
+            std::fs::create_dir_all(self.root.join("assets")).map_err(JekyllError::from)?;
         }
 
         Ok(())

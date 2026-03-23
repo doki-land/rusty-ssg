@@ -16,6 +16,8 @@ pub mod plugin;
 pub mod tools;
 /// 类型定义模块
 pub mod types;
+/// 文件监听器模块
+pub mod watcher;
 
 pub use config::{
     AdapterConfig, ConfigError, ConfigValidation, DevelopConfig, FlagsConfig, GatsbyConfig, GraphQLTypegenConfig, PluginConfig,
@@ -23,9 +25,11 @@ pub use config::{
 };
 
 pub use tools::{
-    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem, NewArgs,
+    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, DevServer, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem, NewArgs,
     PageContext, SidebarGroup, SidebarLink, StaticSiteGenerator, TemplateEngineType, UnifiedTemplateManager,
 };
+
+pub use watcher::{FileChangeEvent, FileWatcher};
 
 #[cfg(feature = "dev")]
 pub use tools::DevelopArgs;
