@@ -5,6 +5,7 @@ pub mod compiler;
 pub mod plugin;
 pub mod tools;
 pub mod types;
+pub mod watcher;
 
 pub use types::{config, errors};
 

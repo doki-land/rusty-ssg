@@ -6,6 +6,7 @@ use crate::{
     GatsbyConfig, types::Result,
 };
 use nargo_types::Document;
+use rayon::prelude::*;
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射
@@ -42,12 +43,13 @@ impl StaticSiteGenerator {
             all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
         }
 
-        for (lang, docs) in all_docs_by_lang {
-            let nav_items = self.generate_nav_items(&lang);
+        // 并行生成页面
+        let results: Vec<Result<()>> = all_docs_by_lang.par_iter().flat_map(|(lang, docs)| {
+            let nav_items = self.generate_nav_items(lang);
 
             let mut all_sidebar_links = Vec::new();
 
-            for (path, doc) in &docs {
+            for (path, doc) in docs {
                 let title = doc
                     .title()
                     .unwrap_or_else(|| {
@@ -61,17 +63,11 @@ impl StaticSiteGenerator {
                 all_sidebar_links.push((title, html_path));
             }
 
-            for (path, doc) in &docs {
+            docs.iter().map(|(path, doc)| {
                 let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
                 let html_path = normalized_path.replace(".md", ".html");
                 let full_html_path = format!("{}/{}", lang, html_path);
                 let output_path = output_dir.join(&full_html_path);
-
-                if let Some(parent) = output_path.parent() {
-                    if !parent.exists() {
-                        fs::create_dir_all(parent)?;
-                    }
-                }
 
                 let depth = normalized_path.matches('/').count();
                 let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
@@ -85,19 +81,36 @@ impl StaticSiteGenerator {
                 let sidebar_group = SidebarGroup { text: "文档".to_string(), items: sidebar_links };
                 let sidebar_groups = vec![sidebar_group];
 
+                // 创建父目录
+                if let Some(parent) = output_path.parent() {
+                    if !parent.exists() {
+                        fs::create_dir_all(parent)?;
+                    }
+                }
+
+                // 渲染页面
                 let html_content = self.render_page_for_file(
                     doc,
-                    &lang,
+                    lang,
                     &nav_items,
                     &sidebar_groups,
                     normalized_path.clone(),
                     html_path.clone(),
                 )?;
 
-                fs::write(&output_path, html_content)?;
-            }
+                // 写入文件
+                fs::write(output_path, html_content)?;
+
+                Ok(())
+            })
+        }).collect();
+
+        // 检查是否有错误
+        for result in results {
+            result?;
         }
 
+        // 生成其他文件
         self.generate_root_index(output_dir)?;
         self.generate_404_page(output_dir)?;
         self.generate_sitemap(output_dir)?;

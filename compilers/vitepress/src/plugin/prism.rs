@@ -103,4 +103,28 @@ impl VitePressPlugin for PrismPlugin {
             let mut js_scripts = "<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js\"></script>".to_string();
 
             // 添加额外的语言支持
-            for
+            for lang in &self.config.additional_languages {
+                js_scripts.push_str(&format!(
+                    "<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-{}.min.js\"></script>",
+                    lang
+                ));
+            }
+
+            // 添加行号插件
+            if self.config.line_numbers {
+                js_scripts.push_str("<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js\"></script>");
+                js_scripts.push_str("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css\">");
+                // 为代码块添加 line-numbers 类
+                content = content.replace("<pre><code", "<pre class=\"line-numbers\"><code");
+            }
+
+            content = content.replace("</body>", &format!("{}</body>", js_scripts));
+        }
+
+        PluginContext {
+            content,
+            frontmatter: context.frontmatter,
+            path: context.path,
+        }
+    }
+}

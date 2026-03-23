@@ -250,7 +250,7 @@ impl VitePressCompiler {
     }
 }
 
-impl Default for VutexCompiler {
+impl Default for VitePressCompiler {
     fn default() -> Self {
         Self::new()
     }

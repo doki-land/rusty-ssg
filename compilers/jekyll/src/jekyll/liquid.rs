@@ -230,7 +230,7 @@ impl LiquidEngine {
     /// # Returns
     ///
     /// 返回上下文对象
-    pub fn create_jekyll_context(&self, front_matter: &super::FrontMatter, page_path: &str) -> Value {
+    pub fn create_jekyll_context(&self, front_matter: &FrontMatter, page_path: &str) -> Value {
         let mut context = serde_json::Map::new();
 
         let mut site = serde_json::Map::new();

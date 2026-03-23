@@ -1,4 +1,4 @@
-use crate::compiler::hugo_template::context::*;
+use hugo::compiler::hugo_template::context::*;
 
 #[test]
 fn test_site_creation() {

@@ -1,7 +1,7 @@
 //! Build 命令实现
 
 use crate::{
-    compiler::{PluginHost, VutexCompiler},
+    compiler::{PluginHost, VitePressCompiler},
     tools::{BuildArgs, ConfigLoader, StaticSiteGenerator},
     types::Result,
 };
@@ -15,7 +15,7 @@ pub struct BuildCommand;
 impl BuildCommand {
     /// 执行 build 命令
     pub async fn execute(args: BuildArgs) -> Result<()> {
-        println!("{}", style("Starting VuTeX build...").cyan());
+        println!("{}", style("Starting VitePress build...").cyan());
 
         let source_dir = args.source.unwrap_or_else(|| PathBuf::from("."));
         let output_dir = args.output.unwrap_or_else(|| PathBuf::from("dist"));
@@ -51,7 +51,7 @@ impl BuildCommand {
                         let rel_path = path.strip_prefix(&source_dir).unwrap_or(path).to_string_lossy().to_string();
 
                         let path_components: Vec<&str> = rel_path.split(std::path::MAIN_SEPARATOR).collect();
-                        if path_components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vutex") {
+                        if path_components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress") {
                             continue;
                         }
 
@@ -76,7 +76,7 @@ impl BuildCommand {
 
         let mut plugin_host_option: Option<PluginHost> = None;
         let project_root = std::env::current_dir()?;
-        let ipc_server_path = project_root.join("runtimes").join("vutex-ipc-server").join("dist").join("index.js");
+        let ipc_server_path = project_root.join("runtimes").join("vitepress-ipc-server").join("dist").join("index.js");
 
         match PluginHost::new("node", ipc_server_path.to_str().unwrap()) {
             Ok(host) => {
@@ -94,7 +94,7 @@ impl BuildCommand {
         let mut plugin_host_guard = plugin_host_option;
 
         if let Some(mut plugin_host) = plugin_host_guard.take() {
-            let mut compiler = VutexCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
+            let mut compiler = VitePressCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
             result = compiler.compile_batch(&documents);
 
             if let Some(mut host) = compiler.plugin_host_mut().take() {
@@ -103,7 +103,7 @@ impl BuildCommand {
             }
         }
         else {
-            let mut compiler = VutexCompiler::with_config(config.clone());
+            let mut compiler = VitePressCompiler::with_config(config.clone());
             result = compiler.compile_batch(&documents);
         }
 

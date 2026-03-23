@@ -1,7 +1,7 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::{Result, types::VutexConfig};
+use crate::{Result, types::VitePressConfig};
 
 /// 语言信息，包含语言代码、标签和是否为当前语言的状态
 #[derive(Debug, Clone)]
@@ -88,7 +88,7 @@ pub struct PageContext {
 /// 默认主题，用于渲染文档站点的页面
 pub struct DefaultTheme {
     /// 主题配置，包含站点的配置信息
-    config: VutexConfig,
+    config: VitePressConfig,
 }
 
 impl DefaultTheme {
@@ -101,7 +101,7 @@ impl DefaultTheme {
     /// # Returns
     ///
     /// 新的默认主题实例，如果创建成功则返回 `Ok(DefaultTheme)`，否则返回错误
-    pub fn new(config: VutexConfig) -> Result<Self> {
+    pub fn new(config: VitePressConfig) -> Result<Self> {
         Ok(Self { config })
     }
 

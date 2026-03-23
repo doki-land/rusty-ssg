@@ -1,7 +1,7 @@
 //! Check 命令实现
 
 use crate::{
-    compiler::VutexCompiler,
+    compiler::VitePressCompiler,
     tools::{CheckArgs, ConfigLoader},
     types::Result,
 };
@@ -15,7 +15,7 @@ pub struct CheckCommand;
 impl CheckCommand {
     /// 执行 check 命令
     pub async fn execute(args: CheckArgs) -> Result<()> {
-        println!("{}", style("Checking VuTeX documents...").cyan());
+        println!("{}", style("Checking VitePress documents...").cyan());
 
         let source_dir = args.source.unwrap_or_else(|| PathBuf::from("."));
         println!("  Source directory: {}", source_dir.display());
@@ -53,12 +53,16 @@ impl CheckCommand {
 
         let config_paths = [
             source_dir.join(".vitepress").join("vitepress.config.toml"),
+            source_dir.join(".vitepress").join("vitepress.config.yaml"),
+            source_dir.join(".vitepress").join("vitepress.config.yml"),
             source_dir.join(".vitepress").join("vitepress.config.json"),
             source_dir.join("vitepress.config.toml"),
+            source_dir.join("vitepress.config.yaml"),
+            source_dir.join("vitepress.config.yml"),
             source_dir.join("vitepress.config.json"),
-            source_dir.join("vutex.toml"),
-            source_dir.join("vutex.json"),
             source_dir.join("config.toml"),
+            source_dir.join("config.yaml"),
+            source_dir.join("config.yml"),
             source_dir.join("config.json"),
         ];
 
@@ -99,7 +103,7 @@ impl CheckCommand {
                         let rel_path = path.strip_prefix(source_dir).unwrap_or(path).to_string_lossy().to_string();
 
                         let path_components: Vec<&str> = rel_path.split(std::path::MAIN_SEPARATOR).collect();
-                        if path_components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vutex") {
+                        if path_components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress") {
                             continue;
                         }
 
@@ -121,7 +125,7 @@ impl CheckCommand {
         println!("    {} Found {} document(s)", style("✓").green(), file_count);
 
         let config = ConfigLoader::load_from_dir(source_dir).unwrap_or_default();
-        let mut compiler = VutexCompiler::with_config(config);
+        let mut compiler = VitePressCompiler::with_config(config);
         let result = compiler.compile_batch(&documents);
 
         if !result.errors.is_empty() {

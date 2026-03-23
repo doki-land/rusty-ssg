@@ -2,7 +2,7 @@
 
 #[cfg(feature = "dev")]
 use crate::{
-    compiler::{PluginHost, VutexCompiler},
+    compiler::{PluginHost, VitePressCompiler},
     tools::{ConfigLoader, DevArgs, StaticSiteGenerator},
     types::Result,
 };
@@ -45,10 +45,10 @@ pub struct DevServerState {
 impl DevCommand {
     /// 执行 dev 命令
     pub async fn execute(args: DevArgs) -> Result<()> {
-        println!("{}", style("Starting VuTeX dev server...").cyan());
+        println!("{}", style("Starting VitePress dev server...").cyan());
 
         let source_dir = args.source.unwrap_or_else(|| PathBuf::from("."));
-        let output_dir = PathBuf::from(".vutex").join("temp");
+        let output_dir = PathBuf::from(".vitepress").join("temp");
 
         println!("  Source directory: {}", source_dir.display());
         println!("  Output directory: {}", output_dir.display());
@@ -105,13 +105,13 @@ impl DevCommand {
         }
 
         let project_root = std::env::current_dir()?;
-        let ipc_server_path = project_root.join("runtimes").join("vutex-ipc-server").join("dist").join("index.js");
+        let ipc_server_path = project_root.join("runtimes").join("vitepress-ipc-server").join("dist").join("index.js");
 
         let result;
 
         match PluginHost::new("node", ipc_server_path.to_str().unwrap()) {
             Ok(mut plugin_host) => {
-                let mut compiler = VutexCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
+                let mut compiler = VitePressCompiler::with_config_and_plugin_host(config.clone(), plugin_host);
                 result = compiler.compile_batch(&documents);
 
                 if let Some(mut host) = compiler.plugin_host_mut().take() {
@@ -119,7 +119,7 @@ impl DevCommand {
                 }
             }
             Err(_) => {
-                let mut compiler = VutexCompiler::with_config(config.clone());
+                let mut compiler = VitePressCompiler::with_config(config.clone());
                 result = compiler.compile_batch(&documents);
             }
         }
@@ -151,7 +151,7 @@ impl DevCommand {
             options.copy_inside = true;
 
             copy(&public_dir, &output_public_dir, &options)
-                .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+                .map_err(|e| crate::types::VitePressError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
         }
 
         Ok(())
@@ -211,16 +211,17 @@ impl DevCommand {
                             || ext == "ts"
                             || ext == "toml"
                             || ext == "json"
+                            || ext == "yaml"
+                            || ext == "yml"
                         {
                             return true;
                         }
                     }
                     if let Some(file_name) = path.file_name() {
-                        if file_name == "vutex.config.toml"
-                            || file_name == "vutex.config.json"
-                            || file_name == "vitepress.config.toml"
+                        if file_name == "vitepress.config.toml"
                             || file_name == "vitepress.config.json"
-                            || file_name == "vutex.config.ts"
+                            || file_name == "vitepress.config.yaml"
+                            || file_name == "vitepress.config.yml"
                             || file_name == "vitepress.config.ts"
                         {
                             return true;
@@ -246,7 +247,7 @@ impl DevCommand {
 
         let server = HttpsServerBuilder::new().addr(addr).router(router).build();
 
-        server.serve().await.map_err(|e| crate::types::VutexError::ConfigError { message: e.to_string() })?;
+        server.serve().await.map_err(|e| crate::types::VitePressError::ConfigError { message: e.to_string() })?;
 
         Ok(())
     }

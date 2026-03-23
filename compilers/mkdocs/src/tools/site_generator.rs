@@ -37,12 +37,12 @@ impl StaticSiteGenerator {
 
         for (path, content) in documents {
             let title = Self::extract_title(content, path);
-            let html_path = path.replace(".md", ".html");
+            let html_path = self.generate_html_path(path);
             all_sidebar_links.push((title, html_path.clone()));
         }
 
         for (path, content) in documents {
-            let html_path = path.replace(".md", ".html");
+            let html_path = self.generate_html_path(path);
             let output_path = output_dir.join(&html_path);
 
             if let Some(parent) = output_path.parent() {
@@ -51,7 +51,7 @@ impl StaticSiteGenerator {
                 }
             }
 
-            let depth = path.matches('/').count();
+            let depth = html_path.matches('/').count();
             let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
 
             let mut sidebar_links = Vec::new();
@@ -71,6 +71,23 @@ impl StaticSiteGenerator {
         }
 
         Ok(())
+    }
+
+    /// 生成 HTML 文件路径
+    /// 根据 use_directory_urls 配置决定是否使用目录 URL
+    fn generate_html_path(&self, path: &str) -> String {
+        if self.config.use_directory_urls() {
+            // 使用目录 URL: page.md -> page/index.html
+            if path.ends_with(".md") {
+                let base_path = path.strip_suffix(".md").unwrap_or(path);
+                format!("{}/index.html", base_path)
+            } else {
+                path.to_string()
+            }
+        } else {
+            // 不使用目录 URL: page.md -> page.html
+            path.replace(".md", ".html")
+        }
     }
 
     /// 从内容中提取标题
@@ -103,21 +120,84 @@ impl StaticSiteGenerator {
         for item in &config.nav {
             match item {
                 crate::types::NavItem::String(text) => {
-                    nav_items.push(ThemeNavItem { text: text.clone(), link: "#".to_string() });
+                    nav_items.push(ThemeNavItem { text: text.clone(), link: "#".to_string(), children: Vec::new() });
                 }
                 crate::types::NavItem::Map(map) => {
                     for (key, value) in map {
-                        let link = match value {
-                            crate::types::NavValue::String(s) => s.clone(),
-                            crate::types::NavValue::List(_) => "#".to_string(),
-                        };
-                        nav_items.push(ThemeNavItem { text: key.clone(), link: link.replace(".md", ".html") });
+                        match value {
+                            crate::types::NavValue::String(s) => {
+                                let link = Self::generate_nav_link(s, config.use_directory_urls());
+                                nav_items.push(ThemeNavItem {
+                                    text: key.clone(),
+                                    link,
+                                    children: Vec::new(),
+                                });
+                            }
+                            crate::types::NavValue::List(items) => {
+                                let children = Self::generate_sub_nav_items(items, config.use_directory_urls());
+                                nav_items.push(ThemeNavItem {
+                                    text: key.clone(),
+                                    link: "#".to_string(),
+                                    children,
+                                });
+                            }
+                        }
                     }
                 }
             }
         }
 
         nav_items
+    }
+
+    /// 生成子导航栏项目
+    fn generate_sub_nav_items(items: &[crate::types::NavItem], use_directory_urls: bool) -> Vec<ThemeNavItem> {
+        let mut sub_items = Vec::new();
+
+        for item in items {
+            match item {
+                crate::types::NavItem::String(text) => {
+                    sub_items.push(ThemeNavItem { text: text.clone(), link: "#".to_string(), children: Vec::new() });
+                }
+                crate::types::NavItem::Map(map) => {
+                    for (key, value) in map {
+                        match value {
+                            crate::types::NavValue::String(s) => {
+                                let link = Self::generate_nav_link(s, use_directory_urls);
+                                sub_items.push(ThemeNavItem {
+                                    text: key.clone(),
+                                    link,
+                                    children: Vec::new(),
+                                });
+                            }
+                            crate::types::NavValue::List(grandchildren) => {
+                                let children = Self::generate_sub_nav_items(grandchildren, use_directory_urls);
+                                sub_items.push(ThemeNavItem {
+                                    text: key.clone(),
+                                    link: "#".to_string(),
+                                    children,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        sub_items
+    }
+
+    /// 生成导航链接
+    fn generate_nav_link(path: &str, use_directory_urls: bool) -> String {
+        if use_directory_urls && path.ends_with(".md") {
+            // 使用目录 URL: page.md -> page/
+            path.strip_suffix(".md").unwrap_or(path).to_string() + "/"
+        } else if path.ends_with(".md") {
+            // 不使用目录 URL: page.md -> page.html
+            path.replace(".md", ".html")
+        } else {
+            path.to_string()
+        }
     }
 
     /// 为单个文件渲染页面

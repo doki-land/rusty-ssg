@@ -8,6 +8,7 @@ members = [
     "compilers/vuepress",
     "compilers/gatsby",
     "compilers/hugo",
+    "compilers/mkdocs",
 ]
 default-members = [
     "compilers/astro",

@@ -7,12 +7,10 @@ pub use super::{
     theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink},
 };
 pub use crate::{
-    CompileResult, Document, VutexCompiler,
-    types::{
-        config::VutexConfig,
-        errors::{Result, VutexError},
-    },
-};
+    CompileResult, JekyllCompiler,
+    errors::{Result, JekyllError},
+    jekyll::JekyllConfig,
+};\n
 
 use clap::Parser;
 use std::path::PathBuf;

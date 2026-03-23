@@ -1,0 +1,17 @@
+{
+  "base_url": "https://example.com",
+  "out_dir": "dist",
+  "build": {
+    "format": "static",
+    "sourcemap": false,
+    "compress": true
+  },
+  "dev": {
+    "port": 3000,
+    "host": "localhost"
+  },
+  "integrations": [],
+  "pages": {
+    "dir": "src/pages"
+  }
+}

@@ -19,6 +19,7 @@ nargo-template.workspace = true
 oak-core.workspace = true
 oak-markdown.workspace = true
 walkdir.workspace = true
+chrono.workspace = true
 
 [dev-dependencies]
 tokio-test = "0.4.4"

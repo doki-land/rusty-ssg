@@ -32,6 +32,8 @@ oak-markdown = { workspace = true }
 regex = { workspace = true }
 lazy_static = { workspace = true }
 http = { workspace = true }
+notify = "5.0.0"
+hyper = { version = "1.0.0", features = ["full"] }
 
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }

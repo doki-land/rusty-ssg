@@ -1,4 +1,4 @@
-use crate::compiler::hugo_template::resolver::*;
+use hugo::compiler::hugo_template::resolver::*;
 use tempfile::tempdir;
 
 #[test]
@@ -22,7 +22,7 @@ fn test_template_not_found() {
     let dir = tempdir().unwrap();
     let resolver = TemplateResolver::new(dir.path());
     let result = resolver.resolve_template("nonexistent.html");
-    assert!(matches!(result, Err(TemplateResolverError::TemplateNotFound(_))));
+    assert!(matches!(result, Err(TemplateResolverError::TemplateNotFound { name: _ })));
 }
 
 #[test]

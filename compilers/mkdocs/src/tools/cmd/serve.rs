@@ -1,6 +1,6 @@
 //! Serve 命令实现 - 开发服务器
 
-use crate::{ServeArgs, types::Result};
+use crate::{ServeArgs, tools::ConfigLoader, types::Result, watcher::DevServer};
 use console::style;
 use std::path::PathBuf;
 
@@ -18,9 +18,15 @@ impl ServeCommand {
 
         println!("  Source directory: {}", source_dir.display());
         println!("  Server address: {}:{}", dev_addr, port);
-        println!("\n{}", style("Note: Development server feature is under development").yellow());
-        println!("  {}", style("For now, use 'mkdocs build' to generate static files").blue());
 
-        Ok(())
+        // 加载配置
+        let config = ConfigLoader::load_from_dir(&source_dir)?;
+        let output_dir = source_dir.join(config.site_dir());
+
+        println!("  Output directory: {}", output_dir.display());
+
+        // 启动开发服务器
+        let mut server = DevServer::new(&dev_addr, port, &source_dir, &output_dir)?;
+        server.start().await
     }
 }

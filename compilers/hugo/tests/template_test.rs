@@ -1,4 +1,4 @@
-use crate::compiler::hugo_template::*;
+use hugo::compiler::hugo_template::*;
 use tempfile::tempdir;
 
 #[test]

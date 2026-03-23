@@ -63,8 +63,8 @@ impl CompileResult {
         Self { documents: HashMap::new(), compile_time_ms, success: false, errors }
     }
 
-    /// 从 VutexError 创建失败的编译结果
-    pub fn from_errors(errors: Vec<VutexError>, compile_time_ms: u64) -> Self {
+    /// 从 VitePressError 创建失败的编译结果
+    pub fn from_errors(errors: Vec<VitePressError>, compile_time_ms: u64) -> Self {
         let error_strings = errors.iter().map(|e| format!("{}", e)).collect();
         Self::failure(error_strings, compile_time_ms)
     }

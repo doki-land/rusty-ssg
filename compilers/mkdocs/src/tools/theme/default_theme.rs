@@ -6,6 +6,20 @@ use nargo_template::{TemplateEngine, ToJsonValue};
 use serde_json::json;
 use std::collections::HashMap;
 
+/// 主题类型
+/// 支持多种内置主题
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ThemeType {
+    /// 默认主题
+    Default,
+    /// 暗黑主题
+    Dark,
+    /// 技术文档主题
+    Tech,
+    /// 自定义主题
+    Custom(String),
+}
+
 /// 模板引擎类型
 /// 支持多种模板引擎
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -61,6 +75,8 @@ pub struct ThemeNavItem {
     pub text: String,
     /// 链接
     pub link: String,
+    /// 子导航项
+    pub children: Vec<ThemeNavItem>,
 }
 
 impl ToJsonValue for ThemeNavItem {
@@ -68,6 +84,7 @@ impl ToJsonValue for ThemeNavItem {
         let mut map = HashMap::new();
         map.insert("text", self.text.clone());
         map.insert("link", self.link.clone());
+        map.insert("children", self.children.to_json_value().to_string());
         json!(map)
     }
 }
@@ -151,47 +168,83 @@ impl ToJsonValue for LocaleInfo {
 pub struct DefaultTheme {
     /// 主题配置
     config: MkDocsConfig,
+    /// 主题类型
+    theme_type: ThemeType,
     /// 模板引擎类型
     engine_type: TemplateEngineType,
     /// 模板管理器
     template_manager: UnifiedTemplateManager,
+    /// 自定义主题目录
+    custom_dir: Option<String>,
 }
 
 impl DefaultTheme {
     /// 创建新的默认主题实例（使用 DejaVu 引擎）
     pub fn new(config: MkDocsConfig) -> Result<Self> {
-        Self::with_engine(config, TemplateEngineType::DejaVu)
+        let theme_type = Self::get_theme_type(&config);
+        let custom_dir = config.theme.custom_dir.clone();
+        Self::with_theme(config, theme_type, TemplateEngineType::DejaVu, custom_dir)
     }
 
-    /// 创建指定模板引擎的默认主题实例
+    /// 创建指定主题类型和模板引擎的默认主题实例
     ///
     /// # Arguments
     ///
     /// * `config` - 主题配置
+    /// * `theme_type` - 主题类型
     /// * `engine_type` - 模板引擎类型
+    /// * `custom_dir` - 自定义主题目录
     ///
     /// # Returns
     ///
     /// 新的默认主题实例
-    pub fn with_engine(config: MkDocsConfig, engine_type: TemplateEngineType) -> Result<Self> {
+    pub fn with_theme(config: MkDocsConfig, theme_type: ThemeType, engine_type: TemplateEngineType, custom_dir: Option<String>) -> Result<Self> {
         let mut template_manager = UnifiedTemplateManager::new();
 
-        match engine_type {
-            TemplateEngineType::DejaVu => {
-                let template_content = include_str!("../templates/page.dejavu");
-                template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
-            }
-            TemplateEngineType::Handlebars => {
-                let template_content = include_str!("../templates/page.dejavu");
-                template_manager.register_template(TemplateEngine::Handlebars, "page", template_content)?;
-            }
-            TemplateEngineType::Jinja2 => {
-                let template_content = include_str!("../templates/page.dejavu");
-                template_manager.register_template(TemplateEngine::Jinja2, "page", template_content)?;
+        // 首先尝试从自定义目录加载模板
+        if let Some(ref dir) = custom_dir {
+            if let Err(e) = Self::load_templates_from_custom_dir(&mut template_manager, engine_type, dir) {
+                eprintln!("Warning: Failed to load templates from custom directory: {}", e);
             }
         }
 
-        Ok(Self { config, engine_type, template_manager })
+        // 如果自定义目录加载失败，使用内置模板
+        Self::load_builtin_templates(&mut template_manager, engine_type, &theme_type)?;
+
+        Ok(Self { config, theme_type, engine_type, template_manager, custom_dir })
+    }
+
+    /// 从配置中获取主题类型
+    fn get_theme_type(config: &MkDocsConfig) -> ThemeType {
+        match config.theme.name.as_str() {
+            "default" => ThemeType::Default,
+            "dark" => ThemeType::Dark,
+            "tech" => ThemeType::Tech,
+            custom => ThemeType::Custom(custom.to_string()),
+        }
+    }
+
+    /// 从自定义目录加载模板
+    fn load_templates_from_custom_dir(template_manager: &mut UnifiedTemplateManager, engine_type: TemplateEngineType, dir: &str) -> std::io::Result<()> {
+        use std::path::Path;
+        let template_dir = Path::new(dir).join("templates");
+        if template_dir.exists() {
+            template_manager.register_templates_from_dir(engine_type, &template_dir)?;
+        }
+        Ok(())
+    }
+
+    /// 加载内置模板
+    fn load_builtin_templates(template_manager: &mut UnifiedTemplateManager, engine_type: TemplateEngineType, theme_type: &ThemeType) -> std::io::Result<()> {
+        let template_content = match theme_type {
+            ThemeType::Default => include_str!("../templates/page.dejavu"),
+            ThemeType::Dark => include_str!("../templates/page.dejavu"), // 后续添加暗黑主题模板
+            ThemeType::Tech => include_str!("../templates/page.dejavu"), // 后续添加技术主题模板
+            ThemeType::Custom(_) => include_str!("../templates/page.dejavu"), // 自定义主题回退到默认模板
+        };
+
+        template_manager.register_template(engine_type, "page", template_content)?;
+        Ok(())
     }
 
     /// 渲染页面
@@ -326,9 +379,25 @@ impl DefaultTheme {
     /// 渲染导航栏项目
     fn render_nav_items(&self, nav_items: &[ThemeNavItem]) -> String {
         nav_items.iter()
-            .map(|item| format!("<li><a href='{}'>{}</a></li>", item.link, item.text))
+            .map(|item| self.render_nav_item(item))
             .collect::<Vec<_>>()
             .join("")
+    }
+
+    /// 渲染单个导航栏项目
+    fn render_nav_item(&self, item: &ThemeNavItem) -> String {
+        if item.children.is_empty() {
+            format!("<li><a href='{}'>{}</a></li>", item.link, item.text)
+        } else {
+            let children = self.render_nav_items(&item.children);
+            format!(
+                r#"<li>
+                    <a href='{}'>{}</a>
+                    <ul class='sub-nav'>{}</ul>
+                </li>"#,
+                item.link, item.text, children
+            )
+        }
     }
 
     /// 渲染侧边栏

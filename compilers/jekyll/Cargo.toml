@@ -30,6 +30,8 @@ fs_extra = { workspace = true }
 notify = { workspace = true, optional = true }
 wae-https = { workspace = true }
 http = { workspace = true }
+nargo-template = { path = "../../../nargo/compilers/nargo-template" }
+nargo-types = { path = "../../../nargo/compilers/nargo-types" }
 
 [dev-dependencies]
 ntest = "0.9.5"

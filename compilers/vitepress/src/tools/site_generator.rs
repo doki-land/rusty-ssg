@@ -4,7 +4,7 @@
 use crate::{
     Document, Result,
     tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    types::{LocaleConfig, Sidebar, SidebarItem, VutexConfig},
+    types::{LocaleConfig, VitePressConfig},
 };
 use std::{
     collections::HashMap,
@@ -20,7 +20,7 @@ pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
 /// 静态站点生成器，负责将文档转换为完整的静态站点
 pub struct StaticSiteGenerator {
     /// 站点配置
-    config: VutexConfig,
+    config: VitePressConfig,
     /// 默认主题实例，用于渲染页面
     theme: DefaultTheme,
     /// 源目录路径，用于查找资源文件
@@ -37,7 +37,7 @@ impl StaticSiteGenerator {
     /// # Returns
     ///
     /// 新的静态站点生成器实例，如果创建成功则返回 `Ok(Self)`，否则返回错误
-    pub fn new(config: VutexConfig) -> Result<Self> {
+    pub fn new(config: VitePressConfig) -> Result<Self> {
         let theme = DefaultTheme::new(config.clone())?;
 
         Ok(Self { config, theme, source_dir: None })
@@ -53,7 +53,7 @@ impl StaticSiteGenerator {
     /// # Returns
     ///
     /// 新的静态站点生成器实例，如果创建成功则返回 `Ok(Self)`，否则返回错误
-    pub fn with_source_dir(config: VutexConfig, source_dir: PathBuf) -> Result<Self> {
+    pub fn with_source_dir(config: VitePressConfig, source_dir: PathBuf) -> Result<Self> {
         let theme = DefaultTheme::new(config.clone())?;
 
         Ok(Self { config, theme, source_dir: Some(source_dir) })

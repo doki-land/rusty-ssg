@@ -3,9 +3,13 @@
 //! Astro static site generator compiler
 
 pub mod compiler;
+pub mod config;
+pub mod data;
+pub mod errors;
 pub mod plugin;
 pub mod tools;
 pub mod types;
+pub mod watcher;
 
 /// Oaks 解析器集成
 pub mod parser {

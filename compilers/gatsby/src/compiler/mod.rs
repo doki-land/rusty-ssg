@@ -5,7 +5,8 @@ use crate::{GatsbyConfig, types::{Result, CompileResult}};
 use nargo_document::generator::markdown::MarkdownRenderer;
 use nargo_parser::parse_document;
 use nargo_types::Document;
-use std::{collections::HashMap, time::Instant};
+use rayon::prelude::*;
+use std::{collections::HashMap, sync::Arc, time::Instant};
 
 mod renderer;
 pub use renderer::{HtmlRenderer, HtmlRendererConfig};
@@ -117,20 +118,52 @@ impl GatsbyCompiler {
     /// 编译结果
     pub fn compile_batch(&mut self, documents: &HashMap<String, String>) -> CompileResult {
         let start_time = Instant::now();
+        
+        // 首先检查缓存，收集需要编译的文档
+        let mut to_compile = Vec::new();
         let mut compiled_docs = HashMap::new();
-        let mut errors = Vec::new();
-
+        
         for (path, source) in documents {
-            match self.compile_document(source, path) {
-                Ok(doc) => {
-                    compiled_docs.insert(path.to_string(), doc);
+            if let Some(cached) = self.cache.get(path) {
+                compiled_docs.insert(path.to_string(), cached.clone());
+            } else {
+                to_compile.push((path.to_string(), source.to_string()));
+            }
+        }
+        
+        // 并行编译需要编译的文档
+        let markdown_renderer = Arc::new(self.markdown_renderer.clone());
+        let compile_results: Vec<_> = to_compile.par_iter().map(|(path, source)| {
+            let mut doc = match parse_document(source, path) {
+                Ok(doc) => doc,
+                Err(e) => return Err((path.clone(), crate::types::GatsbyError::from(e))),
+            };
+            
+            let content = doc.content.clone();
+            
+            let rendered_html = match markdown_renderer.render(&content) {
+                Ok(html) => html,
+                Err(e) => return Err((path.clone(), crate::types::GatsbyError::ConfigError { message: format!("Markdown render error: {:?}", e) })),
+            };
+            
+            doc.rendered_content = Some(rendered_html);
+            Ok((path.clone(), doc))
+        }).collect();
+        
+        // 处理编译结果
+        let mut errors = Vec::new();
+        for result in compile_results {
+            match result {
+                Ok((path, doc)) => {
+                    compiled_docs.insert(path.clone(), doc.clone());
+                    self.cache.insert(path, doc);
                 }
-                Err(e) => {
-                    errors.push(e);
+                Err((path, error)) => {
+                    errors.push(error);
                 }
             }
         }
-
+        
         let compile_time_ms = start_time.elapsed().as_millis() as u64;
 
         if errors.is_empty() {

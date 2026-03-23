@@ -39,8 +39,11 @@ pub use plugin::{Page, Plugin, PluginContext, PluginError, PluginMeta, PluginReg
 pub use types::graphql::{
     Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType,
     GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType,
-    Selection, SelectionSet, CompileResult,
+    Selection, SelectionSet,
 };
+pub use types::CompileResult;
+pub use types::graphql_service::GraphQLService;
+pub use data::{ContentDigest, DataLayerManager, FileDataSource, MarkdownDataSource, SiteMetadataDataSource};
 
 use std::collections::HashMap;
 

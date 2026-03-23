@@ -1,6 +1,6 @@
 //! IPC 通信协议模块
-//!
-//! 定义 VuTeX Rust 端和 Node.js 端之间的 IPC 通信协议类型，
+//! 
+//! 定义 VitePress Rust 端和 Node.js 端之间的 IPC 通信协议类型，
 //! 用于插件调用和数据交换。
 
 use serde::{Deserialize, Serialize};

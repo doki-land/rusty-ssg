@@ -48,13 +48,13 @@ impl StaticSiteGenerator {
 
             let mut all_sidebar_links = Vec::new();
 
-            for (path, doc) in &docs {
-                let title = doc
-                    .title()
-                    .unwrap_or_else(|| {
-                        let file_name = path.split('/').last().unwrap_or(path);
-                        file_name.strip_suffix(".md").unwrap_or(file_name)
-                    })
+            for (path, _doc) in &docs {
+                let title = path
+                    .split('/')
+                    .last()
+                    .unwrap_or(path)
+                    .strip_suffix(".md")
+                    .unwrap_or_else(|| path.split('/').last().unwrap_or(path))
                     .to_string();
 
                 let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
@@ -62,7 +62,7 @@ impl StaticSiteGenerator {
                 all_sidebar_links.push((title, html_path));
             }
 
-            for (path, doc) in &docs {
+            for (path, content) in &docs {
                 let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
                 let html_path = normalized_path.replace(".md", ".html");
                 let full_html_path = format!("{}/{}", lang, html_path);
@@ -87,7 +87,7 @@ impl StaticSiteGenerator {
                 let sidebar_groups = vec![sidebar_group];
 
                 let html_content = self.render_page_for_file(
-                    doc,
+                    content,
                     &lang,
                     &nav_items,
                     &sidebar_groups,
@@ -167,54 +167,43 @@ impl StaticSiteGenerator {
 
     /// 获取默认语言
     fn get_default_language(&self) -> String {
-        if let Some((lang, _)) = self.config.locales.iter().find(|(_, cfg)| cfg.default.unwrap_or(false)) {
-            return lang.to_string();
-        }
-
-        self.config.locales.keys().next().cloned().unwrap_or_else(|| "zh-hans".to_string())
+        "en".to_string()
     }
 
     /// 获取可用的语言列表
-    fn get_available_locales(&self) -> Vec<(String, LocaleConfig)> {
-        self.config.locales.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
+    fn get_available_locales(&self) -> Vec<(String, String)> {
+        vec![("en".to_string(), "English".to_string())]
     }
 
     /// 渲染单个页面
     fn render_page(
         &self,
-        document: &Document,
+        content: &str,
         current_lang: &str,
         nav_items: &[NavItem],
         sidebar_groups: &[SidebarGroup],
-        locales: &[(String, LocaleConfig)],
+        locales: &[(String, String)],
         current_path: String,
     ) -> Result<String> {
-        let doc_title = document.title().unwrap_or("");
+        let doc_title = current_path
+            .split('/')
+            .last()
+            .unwrap_or(&current_path)
+            .strip_suffix(".md")
+            .unwrap_or_else(|| current_path.split('/').last().unwrap_or(&current_path));
         let site_title = self.theme.site_title();
 
         let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
-        let content = document.rendered_content.as_deref().unwrap_or("");
-
-        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
-            if let Some(footer) = &self.config.theme.footer {
-                (
-                    true,
-                    footer.message.is_some(),
-                    footer.message.as_deref().unwrap_or("").to_string(),
-                    footer.copyright.is_some(),
-                    footer.copyright.as_deref().unwrap_or("").to_string(),
-                )
-            }
-            else {
-                (false, false, String::new(), false, String::new())
-            };
+        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) = (
+            false, false, String::new(), false, String::new()
+        );
 
         let locale_infos: Vec<LocaleInfo> = locales
             .iter()
-            .map(|(code, config)| LocaleInfo {
+            .map(|(code, label)| LocaleInfo {
                 code: code.to_string(),
-                label: config.label.clone(),
+                label: label.clone(),
                 is_current: code == current_lang,
             })
             .collect();
@@ -332,40 +321,33 @@ impl StaticSiteGenerator {
     /// 为单个文件渲染页面
     fn render_page_for_file(
         &self,
-        document: &Document,
+        content: &str,
         current_lang: &str,
         nav_items: &[NavItem],
         sidebar_groups: &[SidebarGroup],
-        locales: &[(String, LocaleConfig)],
+        locales: &[(String, String)],
         current_full_path: String,
         current_html_path: String,
     ) -> Result<String> {
-        let doc_title = document.title().unwrap_or("");
+        let doc_title = current_full_path
+            .split('/')
+            .last()
+            .unwrap_or(&current_full_path)
+            .strip_suffix(".md")
+            .unwrap_or_else(|| current_full_path.split('/').last().unwrap_or(&current_full_path));
         let site_title = self.theme.site_title();
 
         let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
-        let content = document.rendered_content.as_deref().unwrap_or("");
-
-        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
-            if let Some(footer) = &self.config.theme.footer {
-                (
-                    true,
-                    footer.message.is_some(),
-                    footer.message.as_deref().unwrap_or("").to_string(),
-                    footer.copyright.is_some(),
-                    footer.copyright.as_deref().unwrap_or("").to_string(),
-                )
-            }
-            else {
-                (false, false, String::new(), false, String::new())
-            };
+        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) = (
+            false, false, String::new(), false, String::new()
+        );
 
         let locale_infos: Vec<LocaleInfo> = locales
             .iter()
-            .map(|(code, config)| LocaleInfo {
+            .map(|(code, label)| LocaleInfo {
                 code: code.to_string(),
-                label: config.label.clone(),
+                label: label.clone(),
                 is_current: code == current_lang,
             })
             .collect();

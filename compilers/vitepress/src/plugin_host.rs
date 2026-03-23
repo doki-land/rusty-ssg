@@ -1,7 +1,7 @@
 //! 插件宿主模块
 //! 用于管理和调用插件
 
-use crate::types::{Result, VutexError};
+use crate::types::{Result, VitePressError};
 use std::sync::Arc;
 
 /// 插件宿主错误
@@ -36,7 +36,7 @@ impl PluginHost {
         _request: crate::types::ipc::InvokePluginRequest,
         _timeout: std::time::Duration,
     ) -> Result<crate::types::ipc::InvokePluginResponse> {
-        Err(VutexError::ConfigError { message: "Plugin host not implemented".to_string() })
+        Err(VitePressError::ConfigError { message: "Plugin host not implemented".to_string() })
     }
 
     /// 关闭插件宿主

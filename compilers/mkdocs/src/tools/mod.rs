@@ -5,6 +5,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 pub mod cmd;
+pub mod link_validator;
 pub mod site_generator;
 pub mod template;
 pub mod theme;

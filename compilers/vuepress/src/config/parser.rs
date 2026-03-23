@@ -1,11 +1,13 @@
 //! VuePress 配置文件解析器
-//!
+//! 
 //! 支持解析 CommonJS 和 ES 模块格式的配置文件，处理配置文件中的导入和依赖
 
 use std::{fs::File, io::Read, path::Path};
 
 use crate::config::types::VuePressConfig;
 use oak_toml;
+use regex::Regex;
+use lazy_static::lazy_static;
 
 /// 配置文件解析器
 pub struct ConfigParser {
@@ -47,8 +49,31 @@ impl ConfigParser {
 
     /// 解析 JavaScript 内容
     fn parse_js_content(&self, content: &str) -> Result<VuePressConfig, Box<dyn std::error::Error>> {
-        // 简单的解析逻辑，实际项目中可能需要使用更复杂的方法
-        // 这里我们只处理常见的导出格式
+        // 尝试提取配置对象
+        // 处理 CommonJS 导出: module.exports = { ... }
+        // 处理 ES 模块导出: export default { ... }
+        lazy_static! {
+            static ref CJS_EXPORT: Regex = Regex::new(r#"module\.exports\s*=\s*({[^}]*})"#).unwrap();
+            static ref ES_EXPORT: Regex = Regex::new(r#"export\s+default\s*({[^}]*})"#).unwrap();
+        }
+
+        // 尝试匹配 CommonJS 导出
+        if let Some(captures) = CJS_EXPORT.captures(content) {
+            if let Some(config_str) = captures.get(1) {
+                let config: VuePressConfig = serde_json::from_str(config_str.as_str())?;
+                return Ok(config);
+            }
+        }
+
+        // 尝试匹配 ES 模块导出
+        if let Some(captures) = ES_EXPORT.captures(content) {
+            if let Some(config_str) = captures.get(1) {
+                let config: VuePressConfig = serde_json::from_str(config_str.as_str())?;
+                return Ok(config);
+            }
+        }
+
+        // 如果没有找到导出，返回默认配置
         let config = VuePressConfig::new();
         Ok(config)
     }

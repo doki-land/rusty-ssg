@@ -266,10 +266,6 @@ fn default_validation_level_warn() -> ValidationLevel {
     ValidationLevel::Warn
 }
 
-fn default_true() -> bool {
-    true
-}
-
 /// 主题配置
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ThemeConfig {
@@ -410,9 +406,6 @@ pub struct PluginOptions {
     pub options: HashMap<String, serde_json::Value>,
 }
 
-fn default_true() -> bool {
-    true
-}
 
 impl MkDocsConfig {
     /// 创建默认配置
