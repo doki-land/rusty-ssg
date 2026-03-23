@@ -17,7 +17,7 @@ pub struct TaxonomyTerm {
     /// 分类下的页面数量
     pub count: usize,
     /// 分类下的页面
-    pub pages: Vec<&'a HugoPage>,
+    pub pages: Vec<HugoPage>,
 }
 
 /// 分类类型
@@ -34,12 +34,12 @@ pub enum TaxonomyType {
 /// 分类系统
 pub struct TaxonomySystem {
     /// 内容索引
-    content_index: &'a HugoContentIndex,
+    content_index: &'static HugoContentIndex,
 }
 
 impl TaxonomySystem {
     /// 创建新的分类系统
-    pub fn new(content_index: &'a HugoContentIndex) -> Self {
+    pub fn new(content_index: &'static HugoContentIndex) -> Self {
         Self {
             content_index,
         }
@@ -58,7 +58,7 @@ impl TaxonomySystem {
     }
 
     /// 转换分组为分类项
-    fn convert_to_terms(&self, groups: HashMap<String, Vec<&'a HugoPage>>) -> Vec<TaxonomyTerm> {
+    fn convert_to_terms(&self, groups: HashMap<String, Vec<&HugoPage>>) -> Vec<TaxonomyTerm> {
         groups
             .into_iter()
             .map(|(name, pages)| TaxonomyTerm {
@@ -66,7 +66,7 @@ impl TaxonomySystem {
                 slug: name.to_lowercase().replace(' ', "-"),
                 description: None,
                 count: pages.len(),
-                pages,
+                pages: pages.into_iter().cloned().collect(),
             })
             .collect()
     }

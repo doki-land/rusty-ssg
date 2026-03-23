@@ -1,4 +1,5 @@
 use std::fmt;
+use notify::Error as NotifyError;
 
 /// 通用结果类型
 pub type Result<T> = std::result::Result<T, JekyllError>;
@@ -252,7 +253,7 @@ impl std::error::Error for MarkdownError {}
 #[derive(Debug)]
 pub enum PostError {
     /// 无效的帖子文件名
-    InvalidFilename(String),
+    InvalidPostFilename(String),
 
     /// 日期解析错误
     DateParseError(String),
@@ -442,8 +443,8 @@ impl From<PostError> for JekyllError {
     }
 }
 
-impl From<notify::Error> for JekyllError {
-    fn from(error: notify::Error) -> Self {
+impl From<NotifyError> for JekyllError {
+    fn from(error: NotifyError) -> Self {
         JekyllError::FileSystemError(std::io::Error::new(std::io::ErrorKind::Other, error.to_string()))
     }
 }

@@ -10,9 +10,18 @@ use std::collections::HashMap;
 pub mod hugo_content;
 /// Front Matter 增强模块
 pub mod front_matter_enhancer;
+/// 分类系统模块
+pub mod taxonomy;
+/// 相关内容推荐模块
+pub mod related_content;
+/// 国际化翻译模块
+pub mod i18n;
 
 pub use self::hugo_content::*;
 pub use self::front_matter_enhancer::*;
+pub use self::taxonomy::*;
+pub use self::related_content::*;
+pub use self::i18n::*;
 /// VuTeX 文档
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct VutexDocument {

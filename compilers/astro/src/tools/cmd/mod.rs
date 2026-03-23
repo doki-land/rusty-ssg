@@ -37,20 +37,59 @@ pub fn build(path: &str, outdir: &str) {
         }
     };
 
-    // 2. 处理文件
+    // 2. 初始化插件系统
+    println!("🔌 Initializing plugin system...");
+    let mut plugin_manager = PluginManager::new();
+    
+    // 创建插件上下文
+    let plugin_context = PluginContext {
+        config: serde_json::to_value(&config).unwrap_or_default(),
+        build_info: serde_json::json!({
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "mode": "production",
+            "outdir": outdir
+        }),
+        shared_data: serde_json::Value::Object(serde_json::Map::new())
+    };
+    plugin_manager.set_context(plugin_context);
+
+    // 从配置加载插件
+    if let Err(err) = plugin_manager.load_from_config(&config, project_path) {
+        eprintln!("Warning: Failed to load plugins: {}", err);
+    }
+
+    // 初始化插件
+    if let Err(err) = plugin_manager.init_all() {
+        eprintln!("Warning: Failed to initialize plugins: {}", err);
+    }
+
+    // 触发构建开始事件
+    if let Err(err) = plugin_manager.trigger_event(&PluginLifecycleEvent::BuildStart) {
+        eprintln!("Warning: Failed to trigger BuildStart event: {}", err);
+    }
+
+    // 3. 处理文件
     println!("🔍 Finding and processing files...");
     let (component_parser, dependency_analyzer) = process_files(project_path);
 
-    // 3. 生成静态文件
+    // 4. 生成静态文件
     println!("✨ Generating static files...");
     let actual_outdir = if !outdir.is_empty() {
         outdir
     } else {
         &config.out_dir
     };
-    generate_static_files(&component_parser, &dependency_analyzer, project_path, actual_outdir, &config);
+    generate_static_files(&component_parser, &dependency_analyzer, project_path, actual_outdir, &config, &plugin_manager);
 
-    // 4. 输出到指定目录
+    // 触发构建结束事件
+    if let Err(err) = plugin_manager.trigger_event(&PluginLifecycleEvent::BuildEnd) {
+        eprintln!("Warning: Failed to trigger BuildEnd event: {}", err);
+    }
+
+    // 清理插件
+    plugin_manager.cleanup();
+
+    // 5. 输出到指定目录
     println!("✅ Build completed successfully!");
 }
 
@@ -90,7 +129,7 @@ fn process_files(project_path: &Path) -> (ComponentParser, DependencyAnalyzer) {
 }
 
 /// 生成静态文件
-fn generate_static_files(parser: &ComponentParser, analyzer: &DependencyAnalyzer, project_path: &Path, outdir: &str, config: &AstroConfig) {
+fn generate_static_files(parser: &ComponentParser, analyzer: &DependencyAnalyzer, project_path: &Path, outdir: &str, config: &AstroConfig, plugin_manager: &PluginManager) {
     // 创建输出目录
     let out_path = Path::new(outdir);
     if !out_path.exists() {
@@ -106,7 +145,7 @@ fn generate_static_files(parser: &ComponentParser, analyzer: &DependencyAnalyzer
     let context = Context::new();
 
     // 处理页面文件
-    process_pages(project_path, out_path, &renderer, &markdown_renderer, &context);
+    process_pages(project_path, out_path, &renderer, &markdown_renderer, &context, plugin_manager);
 
     // 复制静态资源
     let public_dir = project_path.join("public");
@@ -156,7 +195,7 @@ fn optimize_build(output_dir: &Path, config: &AstroConfig) {
 }
 
 /// 处理页面文件
-fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, markdown_renderer: &MarkdownRenderer, context: &Context) {
+fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, markdown_renderer: &MarkdownRenderer, context: &Context, plugin_manager: &PluginManager) {
     // 处理 src/pages 目录
     let pages_dir = project_path.join("src").join("pages");
     if pages_dir.exists() {
@@ -179,9 +218,28 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                     "astro" => {
                         // 处理 Astro 页面
                         if let Ok(content) = fs::read_to_string(path) {
-                            let rendered = renderer.render_astro(&content, context);
+                            // 执行插件处理内容
+                            let processed_content = match plugin_manager.execute_all(&content) {
+                                Ok(processed) => processed,
+                                Err(err) => {
+                                    eprintln!("Warning: Failed to execute plugins on {}: {}", path.display(), err);
+                                    content
+                                }
+                            };
+                            
+                            let rendered = renderer.render_astro(&processed_content, context);
+                            
+                            // 对渲染结果再次执行插件
+                            let final_content = match plugin_manager.execute_all(&rendered) {
+                                Ok(processed) => processed,
+                                Err(err) => {
+                                    eprintln!("Warning: Failed to execute plugins on rendered content: {}", err);
+                                    rendered
+                                }
+                            };
+                            
                             if let Ok(mut file) = File::create(&html_path) {
-                                if let Err(err) = file.write_all(rendered.as_bytes()) {
+                                if let Err(err) = file.write_all(final_content.as_bytes()) {
                                     eprintln!("Error writing file {}: {}", html_path.display(), err);
                                 } else {
                                     println!("Generated: {}", html_path.display());
@@ -192,9 +250,28 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                     "md" | "mdx" => {
                         // 处理 Markdown 页面
                         if let Ok(content) = fs::read_to_string(path) {
-                            let rendered = markdown_renderer.render(&content);
+                            // 执行插件处理内容
+                            let processed_content = match plugin_manager.execute_all(&content) {
+                                Ok(processed) => processed,
+                                Err(err) => {
+                                    eprintln!("Warning: Failed to execute plugins on {}: {}", path.display(), err);
+                                    content
+                                }
+                            };
+                            
+                            let rendered = markdown_renderer.render(&processed_content);
+                            
+                            // 对渲染结果再次执行插件
+                            let final_content = match plugin_manager.execute_all(&rendered) {
+                                Ok(processed) => processed,
+                                Err(err) => {
+                                    eprintln!("Warning: Failed to execute plugins on rendered content: {}", err);
+                                    rendered
+                                }
+                            };
+                            
                             if let Ok(mut file) = File::create(&html_path) {
-                                if let Err(err) = file.write_all(rendered.as_bytes()) {
+                                if let Err(err) = file.write_all(final_content.as_bytes()) {
                                     eprintln!("Error writing file {}: {}", html_path.display(), err);
                                 } else {
                                     println!("Generated: {}", html_path.display());
@@ -353,11 +430,60 @@ pub fn dev(path: &str, port: u16) {
         return;
     }
 
+    // 1. 读取项目配置
+    let mut config_manager = ConfigManager::new();
+    let config = match config_manager.load_from_project(project_path) {
+        Ok(config) => config,
+        Err(err) => {
+            eprintln!("Error loading configuration: {}", err);
+            return;
+        }
+    };
+
+    // 2. 初始化插件系统
+    println!("🔌 Initializing plugin system...");
+    let mut plugin_manager = PluginManager::new();
+    
+    // 创建插件上下文
+    let plugin_context = PluginContext {
+        config: serde_json::to_value(&config).unwrap_or_default(),
+        build_info: serde_json::json!({
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "mode": "development",
+            "port": port
+        }),
+        shared_data: serde_json::Value::Object(serde_json::Map::new())
+    };
+    plugin_manager.set_context(plugin_context);
+
+    // 从配置加载插件
+    if let Err(err) = plugin_manager.load_from_config(&config, project_path) {
+        eprintln!("Warning: Failed to load plugins: {}", err);
+    }
+
+    // 初始化插件
+    if let Err(err) = plugin_manager.init_all() {
+        eprintln!("Warning: Failed to initialize plugins: {}", err);
+    }
+
+    // 触发服务器启动事件
+    if let Err(err) = plugin_manager.trigger_event(&PluginLifecycleEvent::ServerStart) {
+        eprintln!("Warning: Failed to trigger ServerStart event: {}", err);
+    }
+
     // TODO: 实现实际的开发服务器逻辑
     // 1. 启动本地服务器
     // 2. 监听文件变化
     // 3. 自动重新构建
     // 4. 实时刷新浏览器
+
+    // 触发服务器停止事件
+    if let Err(err) = plugin_manager.trigger_event(&PluginLifecycleEvent::ServerStop) {
+        eprintln!("Warning: Failed to trigger ServerStop event: {}", err);
+    }
+
+    // 清理插件
+    plugin_manager.cleanup();
 }
 
 /// 预览命令

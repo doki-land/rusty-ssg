@@ -134,8 +134,18 @@ impl StaticSiteGenerator {
         let default_lang = self.get_default_language();
         let not_found_path = output_dir.join("404.html");
 
-        let html = format!(
-            r#"<!DOCTYPE html>
+        // 尝试读取模板文件
+        let template_path = PathBuf::from("templates").join("404.html");
+        let html = if template_path.exists() {
+            let template = fs::read_to_string(template_path)?;
+            template
+                .replace("{{ lang }}", &default_lang)
+                .replace("{{ year }}", &chrono::Utc::now().format("%Y").to_string())
+                .replace("{{ site_title }}", self.theme.site_title())
+        } else {
+            // 如果模板不存在，使用默认HTML
+            format!(
+                r#"<!DOCTYPE html>
 <html lang="{default_lang}">
 <head>
     <meta charset="UTF-8" />
@@ -152,7 +162,8 @@ impl StaticSiteGenerator {
 </body>
 </html>
 "#
-        );
+            )
+        };
 
         fs::write(not_found_path, html)?;
         Ok(())
@@ -161,19 +172,38 @@ impl StaticSiteGenerator {
     /// 生成 sitemap.xml
     fn generate_sitemap(&self, output_dir: &PathBuf) -> Result<()> {
         let sitemap_path = output_dir.join("sitemap.xml");
+        let site_url = self.config.site_url().unwrap_or("https://example.com");
+        let current_date = chrono::Utc::now().format("%Y-%m-%d").to_string();
 
-        let sitemap = format!(
+        // 基础URL（移除末尾的斜杠）
+        let base_url = site_url.trim_end_matches('/');
+
+        // 生成sitemap内容
+        let mut sitemap = format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://example.com/</loc>
-        <lastmod>{}</lastmod>
+        <loc>{base_url}/</loc>
+        <lastmod>{current_date}</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
-</urlset>
-"#, chrono::Utc::now().format("%Y-%m-%d").to_string()
+"#
         );
+
+        // 这里应该添加所有生成的页面
+        // 目前只是添加一个示例页面
+        sitemap.push_str(&format!(
+            r#"    <url>
+        <loc>{base_url}/about/</loc>
+        <lastmod>{current_date}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+"#
+        ));
+
+        sitemap.push_str("</urlset>\n");
 
         fs::write(sitemap_path, sitemap)?;
         Ok(())
@@ -182,12 +212,14 @@ impl StaticSiteGenerator {
     /// 生成 robots.txt
     fn generate_robots_txt(&self, output_dir: &PathBuf) -> Result<()> {
         let robots_path = output_dir.join("robots.txt");
+        let site_url = self.config.site_url().unwrap_or("https://example.com");
+        let sitemap_url = format!("{}/sitemap.xml", site_url.trim_end_matches('/'));
 
-        let robots = r#"User-agent: *
+        let robots = format!(r#"User-agent: *
 Allow: /
 
-Sitemap: https://example.com/sitemap.xml
-"#;
+Sitemap: {}
+"#, sitemap_url);
 
         fs::write(robots_path, robots)?;
         Ok(())
