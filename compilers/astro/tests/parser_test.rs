@@ -1,6 +1,6 @@
 //! Astro 语法解析器测试
 
-use astro::parser::Parser;
+use astro::compiler::parser::Parser;
 
 #[test]
 fn test_parse_text() {

@@ -4,7 +4,9 @@ use crate::compiler::{
     ComponentRegistry,
     parser::ast::{AstNode, DirectiveType, InterpolationType},
 };
+use crate::plugin_host::PluginHost;
 use std::collections::HashMap;
+use std::option::Option;
 
 /// 模板上下文，用于存储变量和数据
 pub type Context = HashMap<String, serde_json::Value>;
@@ -15,12 +17,14 @@ pub struct HtmlRenderer {
     config: HashMap<String, String>,
     /// 组件注册表
     component_registry: ComponentRegistry,
+    /// 插件宿主
+    plugin_host: Option<PluginHost>,
 }
 
 impl HtmlRenderer {
     /// 创建新的 HTML 渲染器
     pub fn new() -> Self {
-        Self { config: HashMap::new(), component_registry: ComponentRegistry::new() }
+        Self { config: HashMap::new(), component_registry: ComponentRegistry::new(), plugin_host: None }
     }
 
     /// 设置组件注册表
@@ -31,6 +35,11 @@ impl HtmlRenderer {
     /// 获取组件注册表
     pub fn component_registry(&self) -> &ComponentRegistry {
         &self.component_registry
+    }
+
+    /// 设置插件宿主
+    pub fn set_plugin_host(&mut self, host: PluginHost) {
+        self.plugin_host = Some(host);
     }
 
     /// 渲染 Markdown 内容为 HTML

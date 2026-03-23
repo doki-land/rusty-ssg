@@ -8,6 +8,7 @@ pub mod config;
 pub mod data;
 pub mod errors;
 pub mod plugin;
+pub mod plugin_host;
 pub mod tools;
 pub mod types;
 pub mod watcher;
