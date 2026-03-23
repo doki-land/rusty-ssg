@@ -11,7 +11,7 @@ pub use nargo_types::{
 
 pub use config::{
     BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
-    SocialLink, ThemeConfig, VutexConfig,
+    SocialLink, ThemeConfig, VuePressConfig,
 };
 pub use errors::{Result, VutexError};
 pub use ipc::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};

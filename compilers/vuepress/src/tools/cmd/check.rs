@@ -1,6 +1,6 @@
 //! Check 命令实现
 
-use crate::{CheckArgs, ConfigLoader, VutexCompiler, types::Result};
+use crate::{CheckArgs, ConfigLoader, VuePressCompiler, types::Result};
 use console::style;
 use std::{collections::HashMap, fs, path::PathBuf};
 use walkdir::WalkDir;

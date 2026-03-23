@@ -1,6 +1,6 @@
 //! HTML 渲染器
 
-use crate::compiler::ComponentRegistry;
+use crate::compiler::{ComponentRegistry, parser::ast::{AstNode, InterpolationType, DirectiveType}};
 use std::collections::HashMap;
 
 /// 模板上下文，用于存储变量和数据

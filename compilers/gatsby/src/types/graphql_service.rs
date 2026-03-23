@@ -119,7 +119,8 @@ impl GraphQLService {
             .with_field(GraphQLField::new("file", GraphQLFieldType::Custom("File".to_string()))
                 .with_description("A single File node")
                 .with_argument(super::GraphQLArgument::new("id", GraphQLFieldType::ID)
-                    .with_description("The ID of the File node")));
+                    .with_description("The ID of the File node")))
+        );
 
         // 创建 Schema
         GraphQLSchema::new("Query")
@@ -210,7 +211,7 @@ impl GraphQLService {
 
         scalar Date
         scalar DateTime
-        ""
+        """
         .to_string()
     }
 

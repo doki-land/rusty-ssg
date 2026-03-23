@@ -33,6 +33,7 @@ indicatif = { workspace = true }
 slug = { workspace = true }
 fs_extra = { workspace = true }
 notify = { workspace = true, optional = true }
+rand = { workspace = true }
 
 wae-https = { workspace = true }
 nargo-types = { workspace = true }

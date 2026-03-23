@@ -89,6 +89,12 @@ impl TemplateFunctions {
         self.register("before", Box::new(move |args| funcs.before(args)));
         self.register("append", Box::new(move |args| funcs.append(args)));
         self.register("prepend", Box::new(move |args| funcs.prepend(args)));
+        self.register("shuffle", Box::new(move |args| funcs.shuffle(args)));
+        self.register("seq", Box::new(move |args| funcs.seq(args)));
+        self.register("union", Box::new(move |args| funcs.union(args)));
+        self.register("intersection", Box::new(move |args| funcs.intersection(args)));
+        self.register("difference", Box::new(move |args| funcs.difference(args)));
+        self.register("apply", Box::new(move |args| funcs.apply(args)));
     }
     
     /// 注册日期处理函数
@@ -97,6 +103,8 @@ impl TemplateFunctions {
         
         self.register("now", Box::new(move |args| funcs.now(args)));
         self.register("dateFormat", Box::new(move |args| funcs.date_format(args)));
+        self.register("time", Box::new(move |args| funcs.time(args)));
+        self.register("addDate", Box::new(move |args| funcs.add_date(args)));
     }
     
     /// 注册数学函数
@@ -108,6 +116,9 @@ impl TemplateFunctions {
         self.register("mul", Box::new(move |args| funcs.mul(args)));
         self.register("div", Box::new(move |args| funcs.div(args)));
         self.register("mod", Box::new(move |args| funcs.mod_(args)));
+        self.register("math.Max", Box::new(move |args| funcs.max(args)));
+        self.register("math.Min", Box::new(move |args| funcs.min(args)));
+        self.register("math.Abs", Box::new(move |args| funcs.abs(args)));
     }
     
     /// 注册条件函数
@@ -126,6 +137,8 @@ impl TemplateFunctions {
         
         self.register("markdownify", Box::new(move |args| funcs.markdownify(args)));
         self.register("plainify", Box::new(move |args| funcs.plainify(args)));
+        self.register("highlight", Box::new(move |args| funcs.highlight(args)));
+        self.register("emojify", Box::new(move |args| funcs.emojify(args)));
     }
     
     /// 注册单个函数

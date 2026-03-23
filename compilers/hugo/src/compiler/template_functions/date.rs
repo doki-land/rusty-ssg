@@ -47,6 +47,57 @@ impl DateFunctions {
         Ok(Value::String(formatted))
     }
 
+    /// time - 解析时间字符串
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - 时间字符串
+    pub fn time(&self, args: &[Value]) -> Result<Value, String> {
+        if args.is_empty() {
+            return Err("time requires at least 1 argument".to_string());
+        }
+
+        let date_str = args[0].as_str().ok_or("Argument must be a string")?;
+        let dt = Self::parse_date(date_str)?;
+
+        Ok(Value::String(dt.to_rfc3339()))
+    }
+
+    /// addDate - 日期加减
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - 日期字符串
+    /// * `args[1]` - 年数
+    /// * `args[2]` - 月数
+    /// * `args[3]` - 天数
+    pub fn add_date(&self, args: &[Value]) -> Result<Value, String> {
+        if args.len() < 4 {
+            return Err("addDate requires 4 arguments".to_string());
+        }
+
+        let date_str = args[0].as_str().ok_or("First argument must be a string")?;
+        let years = args[1].as_i64().ok_or("Second argument must be an integer")?;
+        let months = args[2].as_i64().ok_or("Third argument must be an integer")?;
+        let days = args[3].as_i64().ok_or("Fourth argument must be an integer")?;
+
+        let mut dt = Self::parse_date(date_str)?;
+
+        // 先加减年和月
+        if years != 0 || months != 0 {
+            dt = dt.checked_add_months(chrono::Months::new((years * 12 + months) as u32))
+                .ok_or("Date calculation overflow")?;
+        }
+
+        // 再加减天
+        if days != 0 {
+            dt = dt.checked_add_days(chrono::Days::new(days.abs() as u64))
+                .ok_or("Date calculation overflow")?;
+        }
+
+        Ok(Value::String(dt.to_rfc3339()))
+    }
+
     /// 解析日期字符串
     fn parse_date(date_str: &str) -> Result<DateTime<Utc>, String> {
         if let Ok(dt) = DateTime::parse_from_rfc3339(date_str) {
@@ -105,5 +156,19 @@ mod tests {
             funcs.date_format(&[json!("%Y-%m-%d"), json!("2024-01-15")]).unwrap(),
             json!("2024-01-15")
         );
+    }
+
+    #[test]
+    fn test_time() {
+        let funcs = DateFunctions::new();
+        let result = funcs.time(&[json!("2024-01-15")]).unwrap();
+        assert!(result.is_string());
+    }
+
+    #[test]
+    fn test_add_date() {
+        let funcs = DateFunctions::new();
+        let result = funcs.add_date(&[json!("2024-01-15"), json!(1), json!(2), json!(3)]).unwrap();
+        assert!(result.is_string());
     }
 }

@@ -14,7 +14,9 @@ use std::{
 };
 
 mod html_renderer;
+mod parser;
 pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
+pub use parser::*;
 
 use crate::plugin_host::PluginHost;
 

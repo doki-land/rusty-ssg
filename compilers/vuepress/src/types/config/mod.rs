@@ -135,9 +135,9 @@ pub trait ConfigValidation {
     fn validate(&self) -> Result<(), ConfigError>;
 }
 
-/// VuTeX 主配置
+/// VuePress 主配置
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
-pub struct VutexConfig {
+pub struct VuePressConfig {
     /// 基础路径
     pub base: Option<String>,
     /// 站点标题
@@ -156,7 +156,7 @@ pub struct VutexConfig {
     pub build: BuildConfig,
 }
 
-impl VutexConfig {
+impl VuePressConfig {
     /// 从文件加载配置，根据文件扩展名自动选择解析器
     ///
     /// # Arguments
@@ -287,7 +287,7 @@ impl VutexConfig {
     }
 }
 
-impl VutexConfig {
+impl VuePressConfig {
     /// 创建新的 VuTeX 配置
     pub fn new() -> Self {
         Self::default()
@@ -306,7 +306,7 @@ impl VutexConfig {
     }
 }
 
-impl ConfigValidation for VutexConfig {
+impl ConfigValidation for VuePressConfig {
     fn validate(&self) -> Result<(), ConfigError> {
         if let Some(base) = &self.base {
             if base.is_empty() {
