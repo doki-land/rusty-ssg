@@ -39,7 +39,7 @@ pub use plugin::{Page, Plugin, PluginContext, PluginError, PluginMeta, PluginReg
 pub use types::graphql::{
     Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType,
     GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType,
-    Selection, SelectionSet,
+    Selection, SelectionSet, CompileResult,
 };
 
 use std::collections::HashMap;
@@ -54,7 +54,7 @@ use std::collections::HashMap;
 /// # Returns
 ///
 /// 编译后的文档
-pub fn compile_single(source: &str, path: &str) -> Result<Document> {
+pub fn compile_single(source: &str, path: &str) -> types::Result<Document> {
     let mut compiler = GatsbyCompiler::new();
     compiler.compile_document(source, path)
 }

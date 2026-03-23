@@ -6,12 +6,12 @@ use crate::{Result, types::VuePressConfig};
 /// 编译会话
 pub struct CompileSession {
     /// 会话配置
-    config: VutexConfig,
+    config: VuePressConfig,
 }
 
 impl CompileSession {
     /// 创建新的会话实例
-    pub fn new(config: VutexConfig) -> Self {
+    pub fn new(config: VuePressConfig) -> Self {
         Self { config }
     }
 
@@ -29,12 +29,12 @@ impl CompileSession {
 /// 会话
 pub struct Session {
     /// 会话配置
-    config: VutexConfig,
+    config: VuePressConfig,
 }
 
 impl Session {
     /// 创建新的会话实例
-    pub fn new(config: VutexConfig) -> Self {
+    pub fn new(config: VuePressConfig) -> Self {
         Self { config }
     }
 

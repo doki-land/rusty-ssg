@@ -13,7 +13,7 @@ impl InitCommand {
         println!("{}", style("Initializing Gatsby project...").cyan());
 
         let project_name = args.name.unwrap_or_else(|| "gatsby-site".to_string());
-        let project_dir = PathBuf::from(project_name);
+        let project_dir = PathBuf::from(project_name.clone());
 
         if project_dir.exists() {
             return Err(crate::types::GatsbyError::config(format!("Directory '{}' already exists", project_name)));

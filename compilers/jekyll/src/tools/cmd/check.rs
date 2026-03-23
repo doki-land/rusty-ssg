@@ -5,7 +5,7 @@
 use crate::{
     CheckArgs,
     tools::site_generator::ConfigLoader,
-    types::{Result, VutexConfig},
+    types::Result,
 };
 use console::style;
 use std::{fs, path::PathBuf};

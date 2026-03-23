@@ -5,7 +5,7 @@
 //! 提供 Markdown 文档的转换功能
 
 use crate::errors::{MarkdownError, Result};
-use oak_markdown::Markdown;
+use oak_markdown;
 
 /// Markdown 转换器
 /// 
@@ -70,8 +70,7 @@ impl MarkdownProcessor {
     /// 处理后的 HTML
     pub fn process(&self, markdown: &str) -> Result<String> {
         // 使用 oak_markdown 处理 Markdown
-        let markdown = Markdown::parse(markdown);
-        let html = markdown.to_html();
+        let html = oak_markdown::to_html(markdown);
         
         Ok(html)
     }

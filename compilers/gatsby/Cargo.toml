@@ -31,7 +31,7 @@ nargo-template.workspace = true
 indexmap.workspace = true
 async-graphql-value.workspace = true
 uuid.workspace = true
-thiserror.workspace = true
+thiserror = "1.0.61"
 
 [dev-dependencies]
 tokio-test = "0.4.4"

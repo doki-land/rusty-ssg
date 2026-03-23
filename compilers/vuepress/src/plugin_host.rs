@@ -30,7 +30,7 @@ impl std::error::Error for PluginHostError {}
 /// 插件主机
 pub struct PluginHost {
     /// 插件主机配置
-    config: VutexConfig,
+    config: VuePressConfig,
 }
 
 impl PluginHost {

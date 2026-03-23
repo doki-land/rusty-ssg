@@ -1,0 +1,7 @@
+{% extends "baseof.html" %}
+
+{% block main %}
+    <h2>{{ .Page.title }}</h2>
+    <p>{{ .Page.description }}</p>
+    {{ .Page.content }}
+{% endblock %}

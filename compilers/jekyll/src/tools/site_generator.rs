@@ -2,33 +2,32 @@
 //! 提供静态站点生成的核心功能，支持多语言文档
 
 use crate::{
-    Document,
     tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    types::{LocaleConfig, Result, VutexConfig},
+    types::Result,
 };
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射
-pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
+pub type LanguageDocuments = HashMap<String, HashMap<String, String>>;
 
 /// 静态站点生成器
 pub struct StaticSiteGenerator {
     /// 配置
-    config: VutexConfig,
+    config: crate::jekyll::JekyllConfig,
     /// 默认主题
     theme: DefaultTheme,
 }
 
 impl StaticSiteGenerator {
     /// 创建新的静态站点生成器
-    pub fn new(config: VutexConfig) -> Result<Self> {
+    pub fn new(config: crate::jekyll::JekyllConfig) -> Result<Self> {
         let theme = DefaultTheme::new(config.clone())?;
 
         Ok(Self { config, theme })
     }
 
     /// 生成静态站点
-    pub fn generate(&mut self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
+    pub fn generate(&mut self, documents: &HashMap<String, String>, output_dir: &PathBuf) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
         }
@@ -36,7 +35,7 @@ impl StaticSiteGenerator {
         let locales = self.get_available_locales();
         let default_lang = self.get_default_language();
 
-        let mut all_docs_by_lang: HashMap<String, Vec<(String, Document)>> = HashMap::new();
+        let mut all_docs_by_lang: HashMap<String, Vec<(String, String)>> = HashMap::new();
 
         for (path, doc) in documents {
             let (lang, _): (String, String) = self.extract_language_from_path(path, &default_lang);

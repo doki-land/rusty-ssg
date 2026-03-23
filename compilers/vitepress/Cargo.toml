@@ -13,6 +13,7 @@ categories = ["command-line-utilities", "compilers"]
 [dependencies]
 oak-core = { workspace = true }
 oak-toml = { workspace = true, features = ["serde"] }
+oak-yaml = { workspace = true, features = ["serde"] }
 oak-markdown = { workspace = true }
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }

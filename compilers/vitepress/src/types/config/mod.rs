@@ -9,6 +9,8 @@ use std::{
     path::Path,
 };
 
+use oak_yaml;
+
 /// 配置加载和验证相关的错误类型
 #[derive(Debug, Clone)]
 pub enum ConfigError {
@@ -681,7 +683,7 @@ pub struct PluginConfig {
     /// 插件名称
     pub name: String,
     /// 插件配置
-    pub options: Option<HashMap<String, String>>,
+    pub options: Option<serde_json::Value>,
 }
 
 /// VitePress 主配置，完全兼容原版 VitePress
@@ -884,9 +886,25 @@ impl VitePressConfig {
         match path.extension().and_then(|ext| ext.to_str()) {
             Some("json") => Self::load_from_json_str(&content),
             Some("toml") => Self::load_from_toml_str(&content),
+            Some("yaml") | Some("yml") => Self::load_from_yaml_str(&content),
             Some(ext) => Err(ConfigError::unsupported_format(ext.to_string())),
             None => Err(ConfigError::unsupported_format("no extension".to_string())),
         }
+    }
+
+    /// 从 YAML 字符串加载配置
+    ///
+    /// # Arguments
+    ///
+    /// * `yaml_str` - YAML 格式的配置字符串
+    ///
+    /// # Errors
+    ///
+    /// 返回 `ConfigError::TomlParseError` 如果 YAML 解析失败
+    pub fn load_from_yaml_str(yaml_str: &str) -> Result<Self, ConfigError> {
+        let config: Self = oak_yaml::from_str(yaml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        config.validate()?;
+        Ok(config)
     }
 
     /// 从 JSON 字符串加载配置
@@ -923,11 +941,17 @@ impl VitePressConfig {
     ///
     /// 按以下顺序查找配置文件：
     /// 1. .vitepress/vitepress.config.toml
-    /// 2. .vitepress/vitepress.config.json
-    /// 3. vitepress.config.toml
-    /// 4. vitepress.config.json
-    /// 5. config.toml
-    /// 6. config.json
+    /// 2. .vitepress/vitepress.config.yaml
+    /// 3. .vitepress/vitepress.config.yml
+    /// 4. .vitepress/vitepress.config.json
+    /// 5. vitepress.config.toml
+    /// 6. vitepress.config.yaml
+    /// 7. vitepress.config.yml
+    /// 8. vitepress.config.json
+    /// 9. config.toml
+    /// 10. config.yaml
+    /// 11. config.yml
+    /// 12. config.json
     ///
     /// # Arguments
     ///
@@ -941,10 +965,16 @@ impl VitePressConfig {
 
         let paths = [
             dir.join(".vitepress").join("vitepress.config.toml"),
+            dir.join(".vitepress").join("vitepress.config.yaml"),
+            dir.join(".vitepress").join("vitepress.config.yml"),
             dir.join(".vitepress").join("vitepress.config.json"),
             dir.join("vitepress.config.toml"),
+            dir.join("vitepress.config.yaml"),
+            dir.join("vitepress.config.yml"),
             dir.join("vitepress.config.json"),
             dir.join("config.toml"),
+            dir.join("config.yaml"),
+            dir.join("config.yml"),
             dir.join("config.json"),
         ];
 

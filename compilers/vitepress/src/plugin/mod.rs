@@ -1,10 +1,11 @@
 //! 插件模块
-//! 提供 VuTeX 文档编译器的插件系统
+//! 提供 VitePress 文档编译器的插件系统
 
 use nargo_types::NargoValue;
 use std::collections::HashMap;
 
 pub mod katex;
+pub mod prism;
 
 /// 插件元数据
 #[derive(Debug, Clone)]
@@ -48,9 +49,9 @@ impl PluginContext {
     }
 }
 
-/// VuTeX 插件 Trait
+/// VitePress 插件 Trait
 /// 定义插件需要实现的钩子方法
-pub trait VutexPlugin: Send + Sync {
+pub trait VitePressPlugin: Send + Sync {
     /// 获取插件元数据
     fn meta(&self) -> &PluginMeta;
 
@@ -74,10 +75,10 @@ pub trait VutexPlugin: Send + Sync {
 }
 
 /// 插件注册表
-/// 用于管理和注册 VuTeX 插件
+/// 用于管理和注册 VitePress 插件
 pub struct PluginRegistry {
     /// 已注册的插件列表
-    plugins: Vec<Box<dyn VutexPlugin>>,
+    plugins: Vec<Box<dyn VitePressPlugin>>,
 }
 
 impl PluginRegistry {
@@ -87,7 +88,7 @@ impl PluginRegistry {
     }
 
     /// 注册一个插件
-    pub fn register<P: VutexPlugin + 'static>(&mut self, plugin: P) {
+    pub fn register<P: VitePressPlugin + 'static>(&mut self, plugin: P) {
         self.plugins.push(Box::new(plugin));
     }
 

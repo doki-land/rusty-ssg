@@ -366,7 +366,7 @@ impl GatsbyConfig {
     ///
     /// 返回 `ConfigError::JsonParseError` 如果序列化失败
     pub fn to_json(&self) -> Result<String, ConfigError> {
-        oak_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
+        serde_json::to_string(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
     }
 
     /// 将配置序列化为美化的 JSON 字符串
@@ -375,7 +375,7 @@ impl GatsbyConfig {
     ///
     /// 返回 `ConfigError::JsonParseError` 如果序列化失败
     pub fn to_json_pretty(&self) -> Result<String, ConfigError> {
-        oak_json::to_string_pretty(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
+        serde_json::to_string_pretty(self).map_err(|e| ConfigError::json_parse_error(e.to_string()))
     }
 
     /// 将配置序列化为 YAML 字符串
@@ -393,7 +393,7 @@ impl GatsbyConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果序列化失败
     pub fn to_toml(&self) -> Result<String, ConfigError> {
-        oak_toml::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
+        oak_toml::language::to_string(self).map_err(|e| ConfigError::toml_parse_error(e.to_string()))
     }
 
     /// 创建新的 Gatsby 配置

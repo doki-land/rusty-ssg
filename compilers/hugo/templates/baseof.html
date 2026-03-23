@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.language_code }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ if .Page.title }}{{ .Page.title }} - {{ end }}{{ .Site.title }}</title>
+    <meta name="description" content="{{ .Page.description }}">
+</head>
+<body>
+    <header>
+        <h1>{{ .Site.title }}</h1>
+    </header>
+    <main>
+        {% block main %}
+        {{ .Page.content }}
+        {% endblock %}
+    </main>
+    <footer>
+        <p>{{ .Site.copyright }}</p>
+    </footer>
+</body>
+</html>

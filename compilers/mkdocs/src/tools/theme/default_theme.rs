@@ -205,10 +205,16 @@ impl DefaultTheme {
     /// 渲染后的 HTML 字符串
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
         match self.engine_type {
-            TemplateEngineType::DejaVu => self
-                .template_manager
-                .render(TemplateEngine::DejaVu, "page", context)
-                .map_err(|e| crate::types::MkDocsError::from(e)),
+            TemplateEngineType::DejaVu => {
+                let result = self.template_manager.render(TemplateEngine::DejaVu, "page", context);
+                match result {
+                    Ok(html) => Ok(html),
+                    Err(e) => {
+                        // 回退到简单的 HTML 渲染
+                        Ok(self.render_fallback_page(context))
+                    }
+                }
+            },
             TemplateEngineType::Handlebars => self
                 .template_manager
                 .render(TemplateEngine::Handlebars, "page", context)
@@ -217,6 +223,141 @@ impl DefaultTheme {
                 .template_manager
                 .render(TemplateEngine::Jinja2, "page", context)
                 .map_err(|e| crate::types::MkDocsError::from(e)),
+        }
+    }
+
+    /// 回退页面渲染方法
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - 页面上下文
+    ///
+    /// # Returns
+    ///
+    /// 简单的 HTML 页面字符串
+    fn render_fallback_page(&self, context: &PageContext) -> String {
+        format!(r#"
+<!DOCTYPE html>
+<html lang="{}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{}</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        header {{
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }}
+        h1, h2, h3 {{
+            color: #2c3e50;
+        }}
+        nav ul {{
+            list-style: none;
+            padding: 0;
+            display: flex;
+            gap: 20px;
+        }}
+        nav a {{
+            text-decoration: none;
+            color: #3498db;
+        }}
+        nav a:hover {{
+            text-decoration: underline;
+        }}
+        .sidebar {{
+            float: left;
+            width: 200px;
+            margin-right: 20px;
+        }}
+        .content {{
+            overflow: hidden;
+        }}
+        footer {{
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #777;
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{}</h1>
+        <nav>
+            <ul>
+                {}
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="sidebar">
+            {}
+        </div>
+        <div class="content">
+            {}
+        </div>
+    </div>
+    <footer>
+        {}
+    </footer>
+</body>
+</html>
+"#, 
+            context.current_lang,
+            context.page_title,
+            context.site_title,
+            self.render_nav_items(&context.nav_items),
+            self.render_sidebar(&context.sidebar_groups),
+            context.content,
+            self.render_footer(context)
+        )
+    }
+
+    /// 渲染导航栏项目
+    fn render_nav_items(&self, nav_items: &[ThemeNavItem]) -> String {
+        nav_items.iter()
+            .map(|item| format!("<li><a href='{}'>{}</a></li>", item.link, item.text))
+            .collect::<Vec<_>>()
+            .join("")
+    }
+
+    /// 渲染侧边栏
+    fn render_sidebar(&self, sidebar_groups: &[ThemeSidebarGroup]) -> String {
+        sidebar_groups.iter()
+            .map(|group| {
+                let items = group.items.iter()
+                    .map(|item| format!("<li><a href='{}'>{}</a></li>", item.link, item.text))
+                    .collect::<Vec<_>>()
+                    .join("");
+                format!("<div class='sidebar-group'><h3>{}</h3><ul>{}</ul></div>", group.text, items)
+            })
+            .collect::<Vec<_>>()
+            .join("")
+    }
+
+    /// 渲染页脚
+    fn render_footer(&self, context: &PageContext) -> String {
+        if context.has_footer {
+            let mut footer = String::new();
+            if context.has_footer_message {
+                footer.push_str(&format!("<p>{}</p>", context.footer_message));
+            }
+            if context.has_footer_copyright {
+                footer.push_str(&format!("<p>{}</p>", context.footer_copyright));
+            }
+            footer
+        } else {
+            "<p>&copy; 2026 MkDocs</p>".to_string()
         }
     }
 

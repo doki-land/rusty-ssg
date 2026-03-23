@@ -115,7 +115,7 @@ impl GatsbyCompiler {
     /// # Returns
     ///
     /// 编译结果
-    pub fn compile_batch(&mut self, documents: &HashMap<String, String>) -> super::CompileResult {
+    pub fn compile_batch(&mut self, documents: &HashMap<String, String>) -> CompileResult {
         let start_time = Instant::now();
         let mut compiled_docs = HashMap::new();
         let mut errors = Vec::new();
@@ -134,10 +134,10 @@ impl GatsbyCompiler {
         let compile_time_ms = start_time.elapsed().as_millis() as u64;
 
         if errors.is_empty() {
-            super::CompileResult::success(compiled_docs, compile_time_ms)
+            CompileResult::success(compiled_docs, compile_time_ms)
         }
         else {
-            super::CompileResult::from_errors(errors, compile_time_ms)
+            CompileResult::from_errors(errors, compile_time_ms)
         }
     }
 

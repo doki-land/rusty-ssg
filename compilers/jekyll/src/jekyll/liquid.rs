@@ -11,7 +11,7 @@ use serde_json::Value;
 
 use crate::errors::{LiquidError, Result};
 
-use super::{FrontMatter, FrontMatterParser, JekyllConfig, JekyllStructure};
+use super::{front_matter::FrontMatter, FrontMatterParser, JekyllConfig, JekyllStructure};
 
 /// Liquid 过滤器
 #[derive(Debug, Clone)]

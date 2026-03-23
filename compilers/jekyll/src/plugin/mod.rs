@@ -1,7 +1,7 @@
 //! 插件模块
 //! 提供 VuTeX 文档编译器的插件系统
 
-use nargo_types::NargoValue;
+
 use std::collections::HashMap;
 
 pub mod katex;
