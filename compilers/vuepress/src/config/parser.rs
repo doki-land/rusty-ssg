@@ -6,7 +6,6 @@ use std::{fs::File, io::Read, path::Path};
 
 use crate::config::types::VuePressConfig;
 use lazy_static::lazy_static;
-use oak_toml;
 use regex::Regex;
 
 /// 配置文件解析器
@@ -141,7 +140,7 @@ impl ConfigParser {
         file.read_to_string(&mut content)?;
 
         let mut config = VuePressConfig::new();
-        let toml_config: VuePressConfig = oak_toml::from_str(&content)?;
+        let toml_config: VuePressConfig = toml::from_str(&content)?;
         
         // 合并配置，保留 TOML 中的值，未指定的使用默认值
         if let Some(base) = &toml_config.base {

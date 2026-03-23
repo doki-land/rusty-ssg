@@ -12,8 +12,8 @@ categories = ["command-line-utilities", "compilers"]
 
 [dependencies]
 oak-core = { workspace = true }
-oak-yaml = { workspace = true, features = ["serde"] }
 oak-markdown = { workspace = true }
+serde_yaml = "0.9.34"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 walkdir = { workspace = true }

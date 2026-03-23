@@ -2,10 +2,7 @@
 //! 提供将 Markdown 文本渲染为 HTML 的功能
 
 use oak_core::{Builder, parser::session::ParseSession, source::SourceText};
-use oak_markdown::{
-    MarkdownBuilder, MarkdownLanguage,
-    ast::{Block, Blockquote, CodeBlock, Heading, Html, Inline, List, ListItem, MarkdownRoot, Paragraph, Table, TableCell},
-};
+use oak_markdown::{MarkdownBuilder, MarkdownLanguage, ast::{Block, Heading, Paragraph, List, ListItem, CodeBlock, Blockquote, Table, TableCell}};
 
 /// HTML 渲染器配置
 #[derive(Debug, Clone)]
@@ -105,7 +102,7 @@ impl HtmlRenderer {
     /// # Returns
     ///
     /// 渲染后的 HTML 字符串
-    fn render_ast(&self, root: &MarkdownRoot) -> String {
+    fn render_ast(&self, root: &oak_markdown::ast::MarkdownRoot) -> String {
         let mut html = String::with_capacity(4096);
 
         for block in &root.blocks {
@@ -128,13 +125,11 @@ impl HtmlRenderer {
         match block {
             Block::Heading(heading) => self.render_heading(heading),
             Block::Paragraph(paragraph) => self.render_paragraph(paragraph),
-            Block::CodeBlock(code_block) => self.render_code_block(code_block),
             Block::List(list) => self.render_list(list),
+            Block::CodeBlock(code_block) => self.render_code_block(code_block),
             Block::Blockquote(blockquote) => self.render_blockquote(blockquote),
-            Block::HorizontalRule(_) => "<hr />\n".to_string(),
             Block::Table(table) => self.render_table(table),
-            Block::Html(html) => self.render_html(html),
-            Block::AbbreviationDefinition(_) => String::new(),
+            _ => String::new(),
         }
     }
 
@@ -149,10 +144,8 @@ impl HtmlRenderer {
     /// 渲染后的 HTML 字符串
     fn render_heading(&self, heading: &Heading) -> String {
         let tag = format!("h{}", heading.level);
-        // 从内容中提取标题文本，移除开头的 # 标记和空格
-        let title_text = heading.content.trim_start_matches('#').trim();
-        let escaped_content = self.escape_html(title_text);
-        format!("<{}>{}</{}>\n", tag, escaped_content, tag)
+        let content = self.escape_html(&heading.content);
+        format!("<{}>{}</{}>\n", tag, content, tag)
     }
 
     /// 渲染段落
@@ -165,61 +158,8 @@ impl HtmlRenderer {
     ///
     /// 渲染后的 HTML 字符串
     fn render_paragraph(&self, paragraph: &Paragraph) -> String {
-        let content = self.render_inline_elements(&paragraph.content);
+        let content = self.escape_html(&paragraph.content);
         format!("<p>{}</p>\n", content)
-    }
-
-    /// 渲染内联元素
-    ///
-    /// # Arguments
-    ///
-    /// * `text` - 包含内联元素的文本
-    ///
-    /// # Returns
-    ///
-    /// 渲染后的 HTML 字符串
-    fn render_inline_elements(&self, text: &str) -> String {
-        let mut result = text.to_string();
-        
-        // 使用正则表达式替换粗体 **text** 为 <strong>text</strong>
-        result = regex::Regex::new(r"\*\*([^\*]+)\*\*")
-            .unwrap()
-            .replace_all(&result, "<strong>$1</strong>")
-            .to_string();
-        
-        // 使用正则表达式替换斜体 *text* 为 <em>text</em>
-        result = regex::Regex::new(r"\*([^\*]+)\*")
-            .unwrap()
-            .replace_all(&result, "<em>$1</em>")
-            .to_string();
-        
-        // 使用正则表达式替换行内代码 `text` 为 <code>text</code>
-        result = regex::Regex::new(r"`([^`]+)`")
-            .unwrap()
-            .replace_all(&result, "<code>$1</code>")
-            .to_string();
-        
-        result
-    }
-
-    /// 渲染代码块
-    ///
-    /// # Arguments
-    ///
-    /// * `code_block` - 代码块元素
-    ///
-    /// # Returns
-    ///
-    /// 渲染后的 HTML 字符串
-    fn render_code_block(&self, code_block: &CodeBlock) -> String {
-        let class = if let Some(lang) = &code_block.language {
-            format!(" class=\"language-{}\"", self.escape_html(lang))
-        }
-        else {
-            String::new()
-        };
-        let escaped_content = self.escape_html(&code_block.content);
-        format!("<pre><code{}>{}</code></pre>\n", class, escaped_content)
     }
 
     /// 渲染列表
@@ -260,22 +200,30 @@ impl HtmlRenderer {
             html.push_str(&format!("<input type=\"checkbox\" disabled {} /> ", checked));
         }
 
-        for block in &list_item.content {
-            match block {
-                Block::Paragraph(paragraph) => {
-                    // 对于列表项中的段落，直接渲染其内容，不添加 <p> 标签
-                    let content = self.render_inline_elements(&paragraph.content);
-                    html.push_str(&content);
-                }
-                _ => {
-                    // 对于其他类型的块，正常渲染
-                    html.push_str(&self.render_block(block));
-                }
-            }
-        }
+        // 直接使用列表项的内容
+        html.push_str(&self.escape_html(&list_item.content));
 
         html.push_str("</li>\n");
         html
+    }
+
+    /// 渲染代码块
+    ///
+    /// # Arguments
+    ///
+    /// * `code_block` - 代码块元素
+    ///
+    /// # Returns
+    ///
+    /// 渲染后的 HTML 字符串
+    fn render_code_block(&self, code_block: &CodeBlock) -> String {
+        let class = if let Some(lang) = &code_block.language {
+            format!(" class=\"language-{}\"", self.escape_html(lang))
+        } else {
+            String::new()
+        };
+        let content = self.escape_html(&code_block.content);
+        format!("<pre><code{}>{}</code></pre>\n", class, content)
     }
 
     /// 渲染引用块
@@ -288,14 +236,8 @@ impl HtmlRenderer {
     ///
     /// 渲染后的 HTML 字符串
     fn render_blockquote(&self, blockquote: &Blockquote) -> String {
-        let mut html = String::from("<blockquote>\n");
-
-        for block in &blockquote.content {
-            html.push_str(&self.render_block(block));
-        }
-
-        html.push_str("</blockquote>\n");
-        html
+        let content = self.escape_html(&blockquote.content);
+        format!("<blockquote>\n{}</blockquote>\n", content)
     }
 
     /// 渲染表格
@@ -310,17 +252,21 @@ impl HtmlRenderer {
     fn render_table(&self, table: &Table) -> String {
         let mut html = String::from("<table>\n");
 
+        // 渲染表头
         html.push_str("<thead>\n<tr>\n");
         for cell in &table.header.cells {
-            html.push_str(&self.render_table_cell(cell, "th"));
+            let content = self.escape_html(&cell.content);
+            html.push_str(&format!("<th>{}</th>\n", content));
         }
         html.push_str("</tr>\n</thead>\n");
 
+        // 渲染表体
         html.push_str("<tbody>\n");
         for row in &table.rows {
             html.push_str("<tr>\n");
-            for cell in &row.cells {
-                html.push_str(&self.render_table_cell(cell, "td"));
+            for cell in row {
+                let content = self.escape_html(&cell.content);
+                html.push_str(&format!("<td>{}</td>\n", content));
             }
             html.push_str("</tr>\n");
         }
@@ -328,63 +274,6 @@ impl HtmlRenderer {
 
         html.push_str("</table>\n");
         html
-    }
-
-    /// 渲染表格单元格
-    ///
-    /// # Arguments
-    ///
-    /// * `cell` - 表格单元格元素
-    /// * `tag` - 单元格标签 (th 或 td)
-    ///
-    /// # Returns
-    ///
-    /// 渲染后的 HTML 字符串
-    fn render_table_cell(&self, cell: &TableCell, tag: &str) -> String {
-        let escaped_content = self.escape_html(&cell.content);
-        format!("<{}>{}</{}>\n", tag, escaped_content, tag)
-    }
-
-    /// 渲染 HTML 块
-    ///
-    /// # Arguments
-    ///
-    /// * `html` - HTML 块元素
-    ///
-    /// # Returns
-    ///
-    /// 渲染后的 HTML 字符串
-    fn render_html(&self, html: &Html) -> String {
-        format!("{}\n", html.content)
-    }
-
-    /// 渲染内联元素
-    ///
-    /// # Arguments
-    ///
-    /// * `inline` - 内联元素
-    ///
-    /// # Returns
-    ///
-    /// 渲染后的 HTML 字符串
-    fn render_inline(&self, inline: &Inline) -> String {
-        match inline {
-            Inline::Text(text) => self.escape_html(text),
-            Inline::Bold(text) => format!("<strong>{}</strong>", self.escape_html(text)),
-            Inline::Italic(text) => format!("<em>{}</em>", self.escape_html(text)),
-            Inline::Code(text) => format!("<code>{}</code>", self.escape_html(text)),
-            Inline::Link { text, url, title } => {
-                let title_attr =
-                    if let Some(t) = title { format!(" title=\"{}\"", self.escape_html(t)) } else { String::new() };
-                format!("<a href=\"{}\"{}>{}</a>", self.escape_html(url), title_attr, self.escape_html(text))
-            }
-            Inline::Image { alt, url, title } => {
-                let title_attr =
-                    if let Some(t) = title { format!(" title=\"{}\"", self.escape_html(t)) } else { String::new() };
-                format!("<img src=\"{}\" alt=\"{}\"{} />", self.escape_html(url), self.escape_html(alt), title_attr)
-            }
-            Inline::Abbreviation { key, .. } => key.clone(),
-        }
     }
 
     /// 转义 HTML 特殊字符
@@ -411,7 +300,7 @@ impl HtmlRenderer {
         result
     }
 
-    /// 简单的后备渲染方法，在 oak-markdown 解析失败时使用
+    /// 简单的后备渲染方法，在解析失败时使用
     ///
     /// # Arguments
     ///

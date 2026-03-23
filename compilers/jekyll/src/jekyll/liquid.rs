@@ -260,9 +260,13 @@ impl LiquidEngine {
 
             if let Some(ext) = path.extension() {
                 if ext == "html" || ext == "liquid" {
-                    let name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+                    // 同时使用带扩展名和不带扩展名的键，以支持两种调用方式
+                    let full_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("").to_string();
+                    let stem_name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
                     let content = std::fs::read_to_string(path).map_err(LiquidError::from)?;
-                    cache.insert(name, content);
+                    
+                    cache.insert(full_name, content.clone());
+                    cache.insert(stem_name, content);
                 }
             }
         }

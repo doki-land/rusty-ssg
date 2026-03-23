@@ -151,27 +151,55 @@ impl Post {
         if let Some(fm_categories) = front_matter.get("categories") {
             match fm_categories {
                 Value::String(s) => {
+                    // 处理字符串类型的分类
                     categories.push(s.clone());
                 }
                 Value::Array(arr) => {
+                    // 处理数组类型的分类
                     for item in arr {
                         if let Value::String(s) = item {
                             categories.push(s.clone());
                         }
                     }
                 }
-                _ => {}
+                Value::Object(obj) => {
+                    // 处理对象类型的分类（可能是解析错误）
+                    for (key, value) in obj {
+                        if let Value::String(s) = value {
+                            categories.push(s.clone());
+                        }
+                    }
+                }
+                _ => {
+                    // 其他类型，尝试转换为字符串
+                    categories.push(fm_categories.to_string());
+                }
             }
         }
 
+        // 过滤掉空字符串
+        categories = categories.into_iter().filter(|s| !s.is_empty()).collect();
+
         if categories.is_empty() {
-            if let Some(parent) = path.parent() {
+            // 从路径中提取所有父目录作为分类
+            let mut current = path.parent();
+            let mut path_categories = Vec::new();
+            
+            while let Some(parent) = current {
                 if let Some(dir_name) = parent.file_name().and_then(|n| n.to_str()) {
-                    if dir_name != "_posts" && !dir_name.starts_with('_') {
-                        categories.push(dir_name.to_string());
+                    if dir_name == "_posts" {
+                        break;
+                    }
+                    if !dir_name.starts_with('_') {
+                        path_categories.push(dir_name.to_string());
                     }
                 }
+                current = parent.parent();
             }
+            
+            // 反转顺序，因为我们是从子目录向上遍历的
+            path_categories.reverse();
+            categories.extend(path_categories);
         }
 
         categories

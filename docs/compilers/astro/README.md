@@ -49,7 +49,7 @@ cd my-site
 astro dev
 ```
 
-这将启动一个带有热重载的本地开发服务器，因此您可以实时查看更改。
+这将启动一个带有热重载的本地开发服务器，默认端口为 4321，因此您可以实时查看更改。
 
 ### 生产构建
 
@@ -119,18 +119,27 @@ export default defineConfig({
 
 | 选项 | 描述 | 默认值 |
 |------|------|--------|
-| `site` | 站点的基础 URL | `undefined` |
-| `base` | 站点的基础路径 | `/` |
+| `site` | 站点最终部署的链接 | `undefined` |
+| `base` | 部署到的基本路径 | `/` |
+| `trailing_slash` | 末尾斜杠设置 | `ignore` |
 | `output` | 构建输出类型 (`static` 或 `server`) | `static` |
-| `outDir` | 输出目录 | `./dist` |
-| `publicDir` | 静态资源目录 | `./public` |
-| `srcDir` | 源代码目录 | `./src` |
-| `pagesDir` | 页面目录 | `./src/pages` |
-| `componentsDir` | 组件目录 | `./src/components` |
-| `layoutsDir` | 布局目录 | `./src/layouts` |
-| `server.port` | 开发服务器端口 | `3000` |
-| `server.host` | 开发服务器主机 | `false` |
-| `markdown.shikiConfig.theme` | 代码高亮主题 | `github-dark` |
+| `root` | 项目根目录 | `undefined` |
+| `src_dir` | 源代码目录 | `./src` |
+| `public_dir` | 静态资源目录 | `./public` |
+| `out_dir` | 输出目录 | `dist` |
+| `cache_dir` | 缓存目录 | `./node_modules/.astro` |
+| `compress_html` | 是否压缩HTML | `true` |
+| `scoped_style_strategy` | 样式作用范围策略 | `attribute` |
+| `build.format` | 构建格式 | `directory` |
+| `build.client` | 客户端输出目录 | `./client` |
+| `build.server` | 服务器输出目录 | `./server` |
+| `build.assets` | 资源目录 | `_astro` |
+| `build.concurrency` | 并行构建页面数 | `1` |
+| `server.port` | 开发服务器端口 | `4321` |
+| `server.host` | 开发服务器主机 | `undefined` |
+| `markdown.shiki_config` | Shiki配置 | `{}` |
+| `markdown.gfm` | 是否使用GitHub-flavored Markdown | `true` |
+| `markdown.smartypants` | 是否使用SmartyPants formatter | `true` |
 
 ## Astro 组件
 

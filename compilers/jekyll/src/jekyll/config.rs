@@ -93,7 +93,7 @@ impl JekyllConfig {
     ///
     /// 返回配置或错误
     pub fn from_yaml_str(yaml: &str) -> Result<Self> {
-        let value: Value = oak_yaml::from_str(yaml).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
+        let value: Value = serde_yaml::from_str(yaml).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
 
         Self::from_json_value(value)
     }

@@ -5,7 +5,7 @@
 //! 解析 Jekyll 文件中的 YAML Front Matter
 
 use crate::errors::{JekyllError, Result};
-use oak_yaml;
+use serde_yaml;
 use serde_json::Value;
 
 /// Front Matter 解析结果
@@ -154,7 +154,7 @@ impl FrontMatterParser {
             Value::Object(serde_json::Map::new())
         }
         else {
-            oak_yaml::from_str::<serde_json::Value>(&yaml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?
+            serde_yaml::from_str::<serde_json::Value>(&yaml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?
         };
 
         Ok(FrontMatter::new(yaml_content, variables, document_content))
@@ -197,6 +197,6 @@ impl FrontMatterParser {
     ///
     /// 返回 YAML 字符串或错误
     pub fn to_yaml(front_matter: &FrontMatter) -> Result<String> {
-        oak_yaml::to_string(&front_matter.variables).map_err(|e| JekyllError::YamlParseError(e.to_string()).into())
+        serde_yaml::to_string(&front_matter.variables).map_err(|e| JekyllError::YamlParseError(e.to_string()).into())
     }
 }

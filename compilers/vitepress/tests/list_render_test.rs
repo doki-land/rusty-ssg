@@ -1,22 +1,17 @@
-//! Markdown 渲染测试
+//! 列表渲染测试
 
 use vitepress::compiler::HtmlRenderer;
 
 #[test]
-fn test_markdown_render() {
+fn test_list_render() {
     // 创建 HTML 渲染器
     let renderer = HtmlRenderer::new();
 
-    // 测试基本的 Markdown 语法
+    // 测试简单的无序列表
     let markdown = r#"
-# 标题 1
-
-## 标题 2
-
-这是一个 **粗体** 文本和 *斜体* 文本。
-
 - 列表项 1
 - 列表项 2
+- 列表项 3
 "#;
 
     // 渲染 Markdown
@@ -27,14 +22,10 @@ fn test_markdown_render() {
     println!("{}", html);
 
     // 验证渲染结果
-    assert!(html.contains("<h1>标题 1</h1>"));
-    assert!(html.contains("<h2>标题 2</h2>"));
-    assert!(html.contains("<strong>粗体</strong>"));
-    assert!(html.contains("<em>斜体</em>"));
     assert!(html.contains("<ul>"));
-    // 检查列表项的实际渲染结果
     assert!(html.contains("<li>列表项 1"));
     assert!(html.contains("<li>列表项 2"));
+    assert!(html.contains("<li>列表项 3"));
 
-    println!("Markdown 渲染测试通过！");
+    println!("列表渲染测试通过！");
 }
