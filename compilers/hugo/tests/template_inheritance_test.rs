@@ -15,7 +15,7 @@ fn test_template_inheritance() {
         .with_content("<p>This is the home page content</p>".to_string());
 
     // 创建模板引擎
-    let mut engine = HugoTemplateEngine::new("e:\\灵之镜有限公司\\rusty-ssg\\compilers\\hugo", site).unwrap();
+    let mut engine = HugoTemplateEngine::new("e:\\\\rusty-ssg\\compilers\\hugo", site).unwrap();
 
     // 加载模板
     engine.load_template("templates/baseof.html").unwrap();
