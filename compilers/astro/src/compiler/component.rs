@@ -2,7 +2,7 @@
 
 use crate::compiler::renderer::html_renderer::Context;
 use hashbrown::HashMap;
-use std::{borrow::Cow, fs::File, io::Read, path::Path, sync::RwLock};
+use std::{borrow::Cow, path::Path, sync::RwLock};
 
 /// 前端框架类型
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -183,13 +183,7 @@ impl Component {
         format!(r#"<div data-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
-    /// 将 serde_json::Value 转换为字符串
-    fn value_to_string(value: &serde_json::Value) -> String {
-        match value {
-            serde_json::Value::String(s) => s.clone(),
-            _ => value.to_string(),
-        }
-    }
+
 
     /// HTML 转义
     fn escape_html(content: &str) -> String {

@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub mod katex;
 pub mod mermaid;
 pub mod prism;
+pub mod search;
 
 /// 插件元数据
 #[derive(Debug, Clone)]

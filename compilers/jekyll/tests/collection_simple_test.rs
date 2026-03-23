@@ -6,7 +6,7 @@ use jekyll::{Collection, CollectionConfig, CollectionItem, CollectionManager, Je
 
 #[test]
 fn test_collection_config() {
-    let config = CollectionConfig::new("products".to_string()).with_output(true).with_permalink("/products/:name/".to_string());
+    let config = CollectionConfig::new("products".to_string()).with_output(true).with_permalink("/products/:name/");
 
     assert_eq!(config.name, "products");
     assert!(config.output);

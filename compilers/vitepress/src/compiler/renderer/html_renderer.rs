@@ -261,7 +261,17 @@ impl HtmlRenderer {
         }
 
         for block in &list_item.content {
-            html.push_str(&self.render_block(block));
+            match block {
+                Block::Paragraph(paragraph) => {
+                    // 对于列表项中的段落，直接渲染其内容，不添加 <p> 标签
+                    let content = self.render_inline_elements(&paragraph.content);
+                    html.push_str(&content);
+                }
+                _ => {
+                    // 对于其他类型的块，正常渲染
+                    html.push_str(&self.render_block(block));
+                }
+            }
         }
 
         html.push_str("</li>\n");

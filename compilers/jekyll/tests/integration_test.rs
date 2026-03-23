@@ -2,7 +2,8 @@
 //!
 //! 测试 Jekyll 核心功能的集成测试
 
-use jekyll::jekyll::{FrontMatterParser, JekyllConfigLoader, JekyllStructure, LiquidEngine, MarkdownConverter, PostManager};
+use jekyll::{FrontMatterParser, JekyllConfigLoader, JekyllStructure, LiquidEngine, MarkdownConverter, PostManager, JekyllDirectory};
+use chrono::Datelike;
 use std::{fs, path::Path};
 use tempfile::tempdir;
 
@@ -19,11 +20,11 @@ fn test_jekyll_structure_discovery() {
 
     let structure = JekyllStructure::new(root).unwrap();
 
-    assert!(structure.has_directory(jekyll::jekyll::JekyllDirectory::Posts));
-    assert!(structure.has_directory(jekyll::jekyll::JekyllDirectory::Layouts));
-    assert!(structure.has_directory(jekyll::jekyll::JekyllDirectory::Includes));
-    assert!(structure.has_directory(jekyll::jekyll::JekyllDirectory::Data));
-    assert!(!structure.has_directory(jekyll::jekyll::JekyllDirectory::Drafts));
+    assert!(structure.has_directory(JekyllDirectory::Posts));
+    assert!(structure.has_directory(JekyllDirectory::Layouts));
+    assert!(structure.has_directory(JekyllDirectory::Includes));
+    assert!(structure.has_directory(JekyllDirectory::Data));
+    assert!(!structure.has_directory(JekyllDirectory::Drafts));
 }
 
 #[test]
@@ -47,12 +48,14 @@ This is the content.
     assert_eq!(front_matter.get("layout").unwrap().as_str().unwrap(), "post");
     assert_eq!(front_matter.get("date").unwrap().as_str().unwrap(), "2024-01-01");
 
-    let categories = front_matter.get("categories").unwrap().as_array().unwrap();
+    let categories_value = front_matter.get("categories").unwrap();
+    let categories = categories_value.as_array().unwrap();
     assert_eq!(categories.len(), 2);
     assert_eq!(categories[0].as_str().unwrap(), "programming");
     assert_eq!(categories[1].as_str().unwrap(), "rust");
 
-    let tags = front_matter.get("tags").unwrap().as_array().unwrap();
+    let tags_value = front_matter.get("tags").unwrap();
+    let tags = tags_value.as_array().unwrap();
     assert_eq!(tags.len(), 2);
     assert_eq!(tags[0].as_str().unwrap(), "jekyll");
     assert_eq!(tags[1].as_str().unwrap(), "test");
@@ -116,7 +119,7 @@ fn main() {
 ```
 "#;
 
-    let converter = MarkdownConverter::with_defaults(jekyll::jekyll::MarkdownProcessor::CommonMark);
+    let converter = MarkdownConverter::new();
     let html = converter.convert(markdown).unwrap();
 
     assert!(html.contains("<h1>Hello World</h1>"));
@@ -245,10 +248,10 @@ Third post content.
     assert!(posts[1].date >= posts[2].date);
 
     // 检查分类分组
-    let programming_posts = post_manager.get_posts_by_category("programming").unwrap();
+    let programming_posts = post_manager.get_posts_by_category("programming");
     assert_eq!(programming_posts.len(), 2);
 
-    let design_posts = post_manager.get_posts_by_category("design").unwrap();
+    let design_posts = post_manager.get_posts_by_category("design");
     assert_eq!(design_posts.len(), 1);
 
     // 检查最新帖子

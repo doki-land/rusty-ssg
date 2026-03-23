@@ -145,6 +145,15 @@ impl ToJsonValue for PageContext {
     }
 }
 
+/// 主题接口
+pub trait Theme {
+    /// 渲染页面
+    fn render_page(&self, context: &PageContext) -> Result<String>;
+    
+    /// 获取站点标题
+    fn site_title(&self) -> &str;
+}
+
 /// 默认主题
 pub struct DefaultTheme {
     /// 主题配置
@@ -153,6 +162,22 @@ pub struct DefaultTheme {
     engine_type: TemplateEngineType,
     /// 模板管理器
     template_manager: TemplateManager,
+}
+
+impl Theme for DefaultTheme {
+    /// 渲染页面
+    fn render_page(&self, context: &PageContext) -> Result<String> {
+        // 使用 Dejavu 渲染
+        let json_context = context.to_json_value();
+        self.template_manager
+            .render(TemplateEngine::DejaVu, "page", &json_context)
+            .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
+    }
+    
+    /// 获取站点标题
+    fn site_title(&self) -> &str {
+        self.config.title.as_deref().unwrap_or("VuePress Documentation")
+    }
 }
 
 impl DefaultTheme {
@@ -181,32 +206,6 @@ impl DefaultTheme {
         Ok(Self { config, engine_type, template_manager })
     }
 
-    /// 渲染页面
-    ///
-    /// # Arguments
-    ///
-    /// * `context` - 页面上下文
-    ///
-    /// # Returns
-    ///
-    /// 渲染后的 HTML 字符串
-    pub fn render_page(&self, context: &PageContext) -> Result<String> {
-        // 使用 Dejavu 渲染
-        let json_context = context.to_json_value();
-        self.template_manager
-            .render(TemplateEngine::DejaVu, "page", &json_context)
-            .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
-    }
-
-    /// 获取站点标题
-    ///
-    /// # Returns
-    ///
-    /// 站点标题字符串
-    pub fn site_title(&self) -> &str {
-        self.config.title.as_deref().unwrap_or("VuePress Documentation")
-    }
-
     /// 获取当前使用的模板引擎类型
     ///
     /// # Returns
@@ -214,5 +213,32 @@ impl DefaultTheme {
     /// 模板引擎类型
     pub fn engine_type(&self) -> &TemplateEngineType {
         &self.engine_type
+    }
+    
+    /// 从文件加载自定义主题
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - 主题配置
+    /// * `theme_path` - 主题目录路径
+    ///
+    /// # Returns
+    ///
+    /// 新的主题实例
+    pub fn from_path(config: VuePressConfig, theme_path: &std::path::Path) -> Result<Self> {
+        let mut template_manager = TemplateManager::new();
+        
+        // 加载主题模板文件
+        let page_template_path = theme_path.join("templates").join("page.dejavu");
+        if page_template_path.exists() {
+            let template_content = std::fs::read_to_string(page_template_path)?;
+            template_manager.register_template(TemplateEngine::DejaVu, "page", &template_content)?;
+        } else {
+            // 使用默认模板
+            let template_content = include_str!("../templates/page.dejavu");
+            template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
+        }
+        
+        Ok(Self { config, engine_type: TemplateEngineType::Dejavu, template_manager })
     }
 }

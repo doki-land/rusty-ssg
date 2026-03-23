@@ -1,4 +1,4 @@
-use vuepress::plugin::{PluginContext, PluginRegistry, VutexPlugin, katex::KaTeXPlugin};
+use vuepress::{plugin::{PluginContext, PluginRegistry, katex::KaTeXPlugin}, VuePressPlugin};
 
 #[test]
 fn test_katex_plugin_creation() {

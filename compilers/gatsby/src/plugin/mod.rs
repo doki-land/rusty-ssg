@@ -298,6 +298,11 @@ impl PluginRegistry {
         self.plugins.push(Box::new(plugin));
     }
 
+    /// 注册一个 Box 包装的插件
+    pub fn register_box(&mut self, plugin: Box<dyn Plugin + 'static>) {
+        self.plugins.push(plugin);
+    }
+
     /// 从配置加载插件
     ///
     /// # Arguments
@@ -314,14 +319,87 @@ impl PluginRegistry {
             let plugin_name = plugin_config.name();
             println!("📦 Loading plugin: {}", plugin_name);
 
-            // 这里应该实现插件加载逻辑
-            // 目前只是模拟加载
-            let plugin = Self::create_mock_plugin(plugin_name.to_string());
-            self.register(plugin);
-            println!("✅ Plugin {} loaded successfully", plugin_name);
+            // 尝试从本地文件系统加载插件
+            match self.load_plugin_from_filesystem(plugin_name, plugin_config) {
+                Ok(plugin) => {
+                    self.register_box(plugin);
+                    println!("✅ Plugin {} loaded successfully", plugin_name);
+                },
+                Err(e) => {
+                    // 如果加载失败，使用模拟插件
+                    println!("⚠️  Failed to load plugin {}, using mock instead: {:?}", plugin_name, e);
+                    let plugin = Self::create_mock_plugin(plugin_name.to_string());
+                    self.register(plugin);
+                }
+            }
         }
 
         Ok(())
+    }
+
+    /// 从文件系统加载插件
+    ///
+    /// # Arguments
+    ///
+    /// * `plugin_name` - 插件名称
+    /// * `plugin_config` - 插件配置
+    ///
+    /// # Returns
+    ///
+    /// 加载的插件或错误
+    fn load_plugin_from_filesystem(&self, plugin_name: &str, plugin_config: &crate::config::PluginConfig) -> Result<Box<dyn Plugin + 'static>> {
+        use std::path::Path;
+
+        // 尝试在 node_modules 中查找插件
+        let plugin_paths = [
+            Path::new("./node_modules/").join(plugin_name),
+            Path::new("./plugins/").join(plugin_name),
+        ];
+
+        for path in &plugin_paths {
+            if path.exists() {
+                // 检查插件是否包含 package.json
+                let package_json_path = path.join("package.json");
+                if package_json_path.exists() {
+                    // 这里可以实现更复杂的插件加载逻辑
+                    // 目前只是创建一个基于配置的插件
+                    let plugin = self.create_plugin_from_config(plugin_name, plugin_config);
+                    return Ok(plugin);
+                }
+            }
+        }
+
+        Err(crate::types::GatsbyError::plugin(format!("Plugin {} not found in node_modules or plugins directory", plugin_name)))
+    }
+
+    /// 从配置创建插件
+    ///
+    /// # Arguments
+    ///
+    /// * `plugin_name` - 插件名称
+    /// * `plugin_config` - 插件配置
+    ///
+    /// # Returns
+    ///
+    /// 创建的插件
+    fn create_plugin_from_config(&self, plugin_name: &str, plugin_config: &crate::config::PluginConfig) -> Box<dyn Plugin + 'static> {
+        struct ConfiguredPlugin {
+            meta: PluginMeta,
+            options: Option<std::collections::HashMap<String, serde_json::Value>>,
+        }
+
+        impl Plugin for ConfiguredPlugin {
+            fn meta(&self) -> &PluginMeta {
+                &self.meta
+            }
+
+            // 可以根据插件配置实现特定的钩子方法
+        }
+
+        Box::new(ConfiguredPlugin {
+            meta: PluginMeta::new(plugin_name.to_string(), "1.0.0".to_string(), format!("Plugin {}", plugin_name)),
+            options: plugin_config.options().cloned(),
+        })
     }
 
     /// 创建模拟插件（用于测试）

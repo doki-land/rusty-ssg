@@ -1,12 +1,12 @@
-//! 简单测试程序验证 VutexCompiler 功能
+//! 简单测试程序验证 VuePressCompiler 功能
 
 use std::collections::HashMap;
-use vuepress::VutexCompiler;
+use vuepress::VuePressCompiler;
 
 fn main() {
-    println!("=== 测试 VutexCompiler ===\n");
+    println!("=== 测试 VuePressCompiler ===\n");
 
-    let mut compiler = VutexCompiler::new();
+    let mut compiler = VuePressCompiler::new();
 
     let test_source = r#"---
 title: 测试文档

@@ -1,9 +1,9 @@
 //! 框架集成测试
 
-use crate::compiler::{
+use astro::compiler::{
     component::{Component, ComponentRegistry, Framework},
     framework_parser::{FrameworkParser, FrameworkParserManager, ReactParser, SvelteParser, VueParser},
-    html_renderer::{Context, HtmlRenderer},
+    renderer::html_renderer::{Context, HtmlRenderer},
 };
 use std::path::Path;
 

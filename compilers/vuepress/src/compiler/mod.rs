@@ -5,6 +5,7 @@ use crate::types::{
     Result, VuePressConfig,
     ipc::{InvokePluginRequest, PluginContext},
 };
+use crate::tools::theme::Theme;
 use nargo_parser::parse_document;
 use nargo_types::Document;
 use std::{
@@ -17,7 +18,7 @@ mod parser;
 pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
 pub use parser::*;
 
-use crate::plugin::{katex::KaTeXPlugin, mermaid::MermaidPlugin, prism::PrismPlugin, PluginRegistry};
+use crate::plugin::{katex::KaTeXPlugin, mermaid::MermaidPlugin, prism::PrismPlugin, search::SearchPlugin, PluginRegistry};
 use crate::plugin_host::PluginHost;
 
 /// VuePress 文档编译器
@@ -104,6 +105,8 @@ impl VuePressCompiler {
         plugin_registry.register(KaTeXPlugin::new());
         // 注册 Mermaid 图表插件
         plugin_registry.register(MermaidPlugin::new());
+        // 注册搜索插件
+        plugin_registry.register(SearchPlugin::new());
     }
 
     /// 获取编译器配置

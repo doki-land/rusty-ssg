@@ -90,7 +90,7 @@ pub trait Plugin: Send + Sync {
     }
 
     /// 检查插件是否支持特定功能
-    fn supports(&self, feature: &str) -> bool {
+    fn supports(&self, _feature: &str) -> bool {
         false
     }
 }

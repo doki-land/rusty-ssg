@@ -27,7 +27,7 @@ use std::collections::HashMap;
 /// 模板函数注册表
 pub struct TemplateFunctions {
     /// 函数映射表
-    functions: HashMap<String, Box<dyn Fn(&[Value]) -> Result<Value, String> + Send + Sync>>,
+    functions: HashMap<String, Box<dyn for<'a> Fn(&'a [Value]) -> Result<Value, String> + Send + Sync>>,
 }
 
 impl TemplateFunctions {
@@ -56,130 +56,113 @@ impl TemplateFunctions {
     
     /// 注册 URL 处理函数
     fn register_url_functions(&mut self) {
-        let funcs = UrlFunctions::new();
-        
-        self.register("relURL", Box::new(move |args| funcs.rel_url(args)));
-        self.register("absURL", Box::new(move |args| funcs.abs_url(args)));
-        self.register("urlize", Box::new(move |args| funcs.urlize(args)));
-        self.register("absLangURL", Box::new(move |args| funcs.abs_lang_url(args)));
-        self.register("relLangURL", Box::new(move |args| funcs.rel_lang_url(args)));
+        self.register("relURL", |args| UrlFunctions::new().rel_url(args));
+        self.register("absURL", |args| UrlFunctions::new().abs_url(args));
+        self.register("urlize", |args| UrlFunctions::new().urlize(args));
+        self.register("absLangURL", |args| UrlFunctions::new().abs_lang_url(args));
+        self.register("relLangURL", |args| UrlFunctions::new().rel_lang_url(args));
     }
     
     /// 注册字符串处理函数
     fn register_string_functions(&mut self) {
-        let funcs = StringFunctions::new();
-        
-        self.register("lower", Box::new(move |args| funcs.lower(args)));
-        self.register("upper", Box::new(move |args| funcs.upper(args)));
-        self.register("title", Box::new(move |args| funcs.title(args)));
-        self.register("slug", Box::new(move |args| funcs.slug(args)));
-        self.register("truncate", Box::new(move |args| funcs.truncate(args)));
-        self.register("replace", Box::new(move |args| funcs.replace(args)));
-        self.register("replaceRE", Box::new(move |args| funcs.replace_re(args)));
-        self.register("substr", Box::new(move |args| funcs.substr(args)));
-        self.register("split", Box::new(move |args| funcs.split(args)));
-        self.register("trim", Box::new(move |args| funcs.trim(args)));
-        self.register("trimSuffix", Box::new(move |args| funcs.trim_suffix(args)));
-        self.register("trimPrefix", Box::new(move |args| funcs.trim_prefix(args)));
+        self.register("lower", |args| StringFunctions::new().lower(args));
+        self.register("upper", |args| StringFunctions::new().upper(args));
+        self.register("title", |args| StringFunctions::new().title(args));
+        self.register("slug", |args| StringFunctions::new().slug(args));
+        self.register("truncate", |args| StringFunctions::new().truncate(args));
+        self.register("replace", |args| StringFunctions::new().replace(args));
+        self.register("replaceRE", |args| StringFunctions::new().replace_re(args));
+        self.register("substr", |args| StringFunctions::new().substr(args));
+        self.register("split", |args| StringFunctions::new().split(args));
+        self.register("trim", |args| StringFunctions::new().trim(args));
+        self.register("trimSuffix", |args| StringFunctions::new().trim_suffix(args));
+        self.register("trimPrefix", |args| StringFunctions::new().trim_prefix(args));
     }
     
     /// 注册集合处理函数
     fn register_collection_functions(&mut self) {
-        let funcs = CollectionFunctions::new();
-        
-        self.register("slice", Box::new(move |args| funcs.slice(args)));
-        self.register("dict", Box::new(move |args| funcs.dict(args)));
-        self.register("first", Box::new(move |args| funcs.first(args)));
-        self.register("last", Box::new(move |args| funcs.last(args)));
-        self.register("after", Box::new(move |args| funcs.after(args)));
-        self.register("before", Box::new(move |args| funcs.before(args)));
-        self.register("append", Box::new(move |args| funcs.append(args)));
-        self.register("prepend", Box::new(move |args| funcs.prepend(args)));
-        self.register("shuffle", Box::new(move |args| funcs.shuffle(args)));
-        self.register("seq", Box::new(move |args| funcs.seq(args)));
-        self.register("union", Box::new(move |args| funcs.union(args)));
-        self.register("intersection", Box::new(move |args| funcs.intersection(args)));
-        self.register("difference", Box::new(move |args| funcs.difference(args)));
-        self.register("apply", Box::new(move |args| funcs.apply(args)));
+        self.register("slice", |args| CollectionFunctions::new().slice(args));
+        self.register("dict", |args| CollectionFunctions::new().dict(args));
+        self.register("first", |args| CollectionFunctions::new().first(args));
+        self.register("last", |args| CollectionFunctions::new().last(args));
+        self.register("after", |args| CollectionFunctions::new().after(args));
+        self.register("before", |args| CollectionFunctions::new().before(args));
+        self.register("append", |args| CollectionFunctions::new().append(args));
+        self.register("prepend", |args| CollectionFunctions::new().prepend(args));
+        self.register("shuffle", |args| CollectionFunctions::new().shuffle(args));
+        self.register("seq", |args| CollectionFunctions::new().seq(args));
+        self.register("union", |args| CollectionFunctions::new().union(args));
+        self.register("intersection", |args| CollectionFunctions::new().intersection(args));
+        self.register("difference", |args| CollectionFunctions::new().difference(args));
+        self.register("apply", |args| CollectionFunctions::new().apply(args));
     }
     
     /// 注册日期处理函数
     fn register_date_functions(&mut self) {
-        let funcs = DateFunctions::new();
-        
-        self.register("now", Box::new(move |args| funcs.now(args)));
-        self.register("dateFormat", Box::new(move |args| funcs.date_format(args)));
-        self.register("time", Box::new(move |args| funcs.time(args)));
-        self.register("addDate", Box::new(move |args| funcs.add_date(args)));
+        self.register("now", |args| DateFunctions::new().now(args));
+        self.register("dateFormat", |args| DateFunctions::new().date_format(args));
+        self.register("time", |args| DateFunctions::new().time(args));
+        self.register("addDate", |args| DateFunctions::new().add_date(args));
     }
     
     /// 注册数学函数
     fn register_math_functions(&mut self) {
-        let funcs = MathFunctions::new();
-        
-        self.register("add", Box::new(move |args| funcs.add(args)));
-        self.register("sub", Box::new(move |args| funcs.sub(args)));
-        self.register("mul", Box::new(move |args| funcs.mul(args)));
-        self.register("div", Box::new(move |args| funcs.div(args)));
-        self.register("mod", Box::new(move |args| funcs.mod_(args)));
-        self.register("math.Max", Box::new(move |args| funcs.max(args)));
-        self.register("math.Min", Box::new(move |args| funcs.min(args)));
-        self.register("math.Abs", Box::new(move |args| funcs.abs(args)));
+        self.register("add", |args| MathFunctions::new().add(args));
+        self.register("sub", |args| MathFunctions::new().sub(args));
+        self.register("mul", |args| MathFunctions::new().mul(args));
+        self.register("div", |args| MathFunctions::new().div(args));
+        self.register("mod", |args| MathFunctions::new().mod_(args));
+        self.register("math.Max", |args| MathFunctions::new().max(args));
+        self.register("math.Min", |args| MathFunctions::new().min(args));
+        self.register("math.Abs", |args| MathFunctions::new().abs(args));
     }
     
     /// 注册条件函数
     fn register_condition_functions(&mut self) {
-        let funcs = ConditionFunctions::new();
-        
-        self.register("cond", Box::new(move |args| funcs.cond(args)));
-        self.register("default", Box::new(move |args| funcs.default(args)));
-        self.register("isset", Box::new(move |args| funcs.isset(args)));
-        self.register("empty", Box::new(move |args| funcs.empty(args)));
+        self.register("cond", |args| ConditionFunctions::new().cond(args));
+        self.register("default", |args| ConditionFunctions::new().default(args));
+        self.register("isset", |args| ConditionFunctions::new().isset(args));
+        self.register("empty", |args| ConditionFunctions::new().empty(args));
     }
     
     /// 注册内容处理函数
     fn register_content_functions(&mut self) {
-        let funcs = ContentFunctions::new();
-        
-        self.register("markdownify", Box::new(move |args| funcs.markdownify(args)));
-        self.register("plainify", Box::new(move |args| funcs.plainify(args)));
-        self.register("highlight", Box::new(move |args| funcs.highlight(args)));
-        self.register("emojify", Box::new(move |args| funcs.emojify(args)));
+        self.register("markdownify", |args| ContentFunctions::new().markdownify(args));
+        self.register("plainify", |args| ContentFunctions::new().plainify(args));
+        self.register("highlight", |args| ContentFunctions::new().highlight(args));
+        self.register("emojify", |args| ContentFunctions::new().emojify(args));
     }
     
     /// 注册页面处理函数
     fn register_page_functions(&mut self) {
-        let funcs = PageFunctions::new();
-        
-        self.register("ref", Box::new(move |args| funcs.ref_(args)));
-        self.register("relref", Box::new(move |args| funcs.relref(args)));
-        self.register("getPage", Box::new(move |args| funcs.get_page(args)));
-        self.register("pages", Box::new(move |args| funcs.pages(args)));
-        self.register("site", Box::new(move |args| funcs.site(args)));
+        self.register("ref", |args| PageFunctions::new().ref_(args));
+        self.register("relref", |args| PageFunctions::new().relref(args));
+        self.register("getPage", |args| PageFunctions::new().get_page(args));
+        self.register("pages", |args| PageFunctions::new().pages(args));
+        self.register("site", |args| PageFunctions::new().site(args));
     }
     
     /// 注册 Partial 模板函数
     fn register_partial_functions(&mut self) {
-        let funcs = PartialFunctions::new();
-        
-        self.register("partial", Box::new(move |args| funcs.partial(args)));
-        self.register("partialCached", Box::new(move |args| funcs.partial_cached(args)));
+        self.register("partial", |args| PartialFunctions::new().partial(args));
+        self.register("partialCached", |args| PartialFunctions::new().partial_cached(args));
     }
     
     /// 注册单个函数
     pub fn register<F>(&mut self, name: &str, func: F)
     where
-        F: Fn(&[Value]) -> Result<Value, String> + Send + Sync + 'static,
+        F: for<'a> Fn(&'a [Value]) -> Result<Value, String> + Send + Sync + 'static,
     {
         self.functions.insert(name.to_string(), Box::new(func));
     }
     
     /// 调用函数
     pub fn call(&self, name: &str, args: &[Value]) -> Result<Value, String> {
-        self.functions
+        let func = self.functions
             .get(name)
-            .ok_or_else(|| format!("Function not found: {}", name))?
-            .call(args)
+            .ok_or_else(|| format!("Function not found: {}", name))?;
+        
+        func(args)
     }
     
     /// 获取所有已注册的函数名

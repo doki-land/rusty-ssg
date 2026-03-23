@@ -1,6 +1,7 @@
 //! 组件系统测试
 
-use crate::compiler::{Component, ComponentRegistry, HtmlRenderer, html_renderer::Context};
+use astro::compiler::{Component, ComponentRegistry};
+use astro::compiler::renderer::html_renderer::{Context, HtmlRenderer};
 
 #[test]
 fn test_component_creation() {

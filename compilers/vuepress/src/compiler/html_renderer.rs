@@ -74,8 +74,18 @@ impl HtmlRenderer {
         let mut result = content.to_string();
         
         // 识别并处理 Vue 组件标签
-        // 这里使用简单的正则表达式来识别 Vue 组件
-        // 实际项目中可能需要更复杂的解析逻辑
+        // 1. 处理单文件组件 (SFC) 格式
+        lazy_static::lazy_static! {
+            static ref VUE_SFC_REGEX: regex::Regex = regex::Regex::new(r#"```vue\n([\s\S]*?)```"#).unwrap();
+        }
+        
+        result = VUE_SFC_REGEX.replace_all(&result, |caps: &regex::Captures| {
+            let component_content = caps.get(1).unwrap().as_str();
+            // 保留完整的 Vue SFC 内容
+            format!(r#"<template>{}</template>"#, component_content)
+        }).to_string();
+        
+        // 2. 处理内联 Vue 组件标签
         lazy_static::lazy_static! {
             static ref VUE_COMPONENT_REGEX: regex::Regex = regex::Regex::new(r#"<([A-Z][a-zA-Z0-9-]+)([^>]*?)>([\s\S]*?)</\1>"#).unwrap();
         }
@@ -87,6 +97,19 @@ impl HtmlRenderer {
             
             // 保留 Vue 组件标签，不进行 Markdown 解析
             format!(r#"<{} {}>{}</{}>"#, component_name, attributes, content, component_name)
+        }).to_string();
+        
+        // 3. 处理自闭合 Vue 组件标签
+        lazy_static::lazy_static! {
+            static ref VUE_SELF_CLOSING_REGEX: regex::Regex = regex::Regex::new(r#"<([A-Z][a-zA-Z0-9-]+)([^>]*?)/>"#).unwrap();
+        }
+        
+        result = VUE_SELF_CLOSING_REGEX.replace_all(&result, |caps: &regex::Captures| {
+            let component_name = caps.get(1).unwrap().as_str();
+            let attributes = caps.get(2).unwrap().as_str();
+            
+            // 保留自闭合 Vue 组件标签
+            format!(r#"<{} {} />"#, component_name, attributes)
         }).to_string();
         
         result

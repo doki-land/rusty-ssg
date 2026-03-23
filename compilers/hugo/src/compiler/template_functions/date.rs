@@ -116,12 +116,12 @@ impl DateFunctions {
 
         for format in &formats {
             if let Ok(ndt) = NaiveDateTime::parse_from_str(date_str, format) {
-                if let Some(dt) = Utc.from_utc_datetime(&ndt).single() {
-                    return Ok(dt);
-                }
+                let dt = Utc.from_utc_datetime(&ndt);
+                return Ok(dt);
             }
             if let Ok(nd) = chrono::NaiveDate::parse_from_str(date_str, format) {
-                if let Some(dt) = Utc.from_utc_datetime(&nd.and_hms_opt(0, 0, 0).unwrap()).single() {
+                if let Some(ndt) = nd.and_hms_opt(0, 0, 0) {
+                    let dt = Utc.from_utc_datetime(&ndt);
                     return Ok(dt);
                 }
             }

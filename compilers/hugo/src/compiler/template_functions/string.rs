@@ -2,7 +2,6 @@
 //! 提供 Hugo 兼容的字符串处理函数
 
 use serde_json::Value;
-use slug::Slugify;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -74,17 +73,18 @@ impl StringFunctions {
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
         
-        let mut slug = String::new();
-        for c in input.slugify() {
-            if c.is_alphanumeric() || c == '-' {
-                slug.push(c);
-            }
-        }
+        // 转换为小写
+        let slug = input.to_lowercase();
+        // 替换非字母数字字符为空格
+        let slug = NON_ALPHANUMERIC_RE.replace_all(&slug, " ");
+        // 替换多个空格为单个空格
+        let slug = WHITESPACE_RE.replace_all(&slug, " ");
+        // 替换空格为连字符
+        let slug = slug.replace(' ', "-");
+        // 去除首尾连字符
+        let slug = slug.trim_matches('-');
         
-        let re = Regex::new(r"-+").unwrap();
-        let slug = re.replace_all(&slug, "-");
-        
-        Ok(Value::String(slug.trim_matches('-').to_string()))
+        Ok(Value::String(slug.to_string()))
     }
 
     /// truncate - 截断字符串

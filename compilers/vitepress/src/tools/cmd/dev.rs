@@ -13,6 +13,8 @@ use fs_extra::dir::{CopyOptions, copy};
 #[cfg(feature = "dev")]
 use notify::{Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 #[cfg(feature = "dev")]
+use open;
+#[cfg(feature = "dev")]
 use std::{
     collections::HashMap,
     fs,
@@ -242,19 +244,28 @@ impl DevCommand {
     }
 
     /// 启动 HTTP 服务器
-    pub async fn start_http_server(port: u16, _state: DevServerState) -> Result<()> {
+    pub async fn start_http_server(host: &str, port: u16, _state: DevServerState, open: bool) -> Result<()> {
         let output_dir = _state.output_dir;
         let router = static_files_router(&output_dir, "");
 
-        let addr: SocketAddr = ([127, 0, 0, 1], port).into();
+        let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
 
         println!("\n{}", style("Dev server is running!").green().bold());
         println!("  Local:   http://{}/", addr);
         println!("\n  {} Press Ctrl+C to stop", style("ℹ").blue());
 
+        // 自动打开浏览器
+        if open {
+            let url = format!("http://{}/", addr);
+            println!("  {} Opening browser at {}", style("→").blue(), url);
+            if let Err(e) = open::that(url) {
+                println!("  {} Failed to open browser: {}", style("⚠").yellow(), e);
+            }
+        }
+
         let server = HttpsServerBuilder::new().addr(addr).router(router).build();
 
-        server.serve().await.map_err(|e| crate::types::VitePressError::ConfigError { message: e.to_string() })?;
+        server.serve().await.map_err(|e| crate::types::VitePressError::ConfigError { message: e.to_string(), path: None, suggestion: None })?;
 
         Ok(())
     }

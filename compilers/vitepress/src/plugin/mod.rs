@@ -3,12 +3,13 @@
 
 use nargo_types::NargoValue;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 pub mod katex;
 pub mod prism;
 
 /// 插件类型
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PluginType {
     /// 核心插件
     Core,
@@ -169,8 +170,8 @@ pub trait VitePressPlugin: Send + Sync {
 pub struct PluginRegistry {
     /// 已注册的插件列表
     plugins: Vec<Box<dyn VitePressPlugin>>,
-    /// 按类型分类的插件
-    plugins_by_type: HashMap<PluginType, Vec<Box<dyn VitePressPlugin>>>,
+    /// 按类型分类的插件索引
+    plugins_by_type: HashMap<PluginType, Vec<usize>>,
 }
 
 impl PluginRegistry {
@@ -186,12 +187,13 @@ impl PluginRegistry {
     pub fn register<P: VitePressPlugin + 'static>(&mut self, plugin: P) {
         let plugin_box = Box::new(plugin);
         let plugin_type = plugin_box.meta().plugin_type.clone();
+        let index = self.plugins.len();
         
-        self.plugins.push(plugin_box.clone());
+        self.plugins.push(plugin_box);
         self.plugins_by_type
             .entry(plugin_type)
             .or_insert_with(Vec::new)
-            .push(plugin_box);
+            .push(index);
     }
 
     /// 初始化所有已注册的插件
@@ -271,8 +273,10 @@ impl PluginRegistry {
     }
 
     /// 按类型获取插件
-    pub fn plugins_by_type(&self, plugin_type: PluginType) -> Option<&Vec<Box<dyn VitePressPlugin>>> {
-        self.plugins_by_type.get(&plugin_type)
+    pub fn plugins_by_type(&self, plugin_type: PluginType) -> Option<Vec<&Box<dyn VitePressPlugin>>> {
+        self.plugins_by_type.get(&plugin_type).map(|indices| {
+            indices.iter().filter_map(|&index| self.plugins.get(index)).collect()
+        })
     }
 
     /// 检查是否注册了指定名称的插件

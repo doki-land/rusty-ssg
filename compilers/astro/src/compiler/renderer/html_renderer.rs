@@ -39,7 +39,7 @@ impl HtmlRenderer {
         let preprocessed_content = self.execute_plugins(content);
 
         // 简单的 Markdown 渲染实现
-        let mut html_output = preprocessed_content;
+        let html_output = preprocessed_content;
 
         // 执行插件后处理
         self.execute_plugins(&html_output)
@@ -69,15 +69,14 @@ impl HtmlRenderer {
         // 或者 <ComponentName prop1="value1" prop2={value2}>内容</ComponentName>
 
         let mut result = content.to_string();
-
-        // 处理框架特定的语法
-        // 1. 处理 React 组件语法
+        
+        // 处理 React 组件语法
         result = self.process_react_syntax(&result);
-
-        // 2. 处理 Vue 组件语法
+        
+        // 处理 Vue 组件语法
         result = self.process_vue_syntax(&result);
-
-        // 3. 处理 Svelte 组件语法
+        
+        // 处理 Svelte 组件语法
         result = self.process_svelte_syntax(&result);
 
         result
@@ -86,7 +85,7 @@ impl HtmlRenderer {
     /// 处理 React 组件语法
     fn process_react_syntax(&self, content: &str) -> String {
         // 处理 JSX 语法
-        let mut result = content.to_string();
+        let result = content.to_string();
 
         // 这里可以添加更复杂的 JSX 语法处理
         // 例如：
@@ -100,7 +99,7 @@ impl HtmlRenderer {
     /// 处理 Vue 组件语法
     fn process_vue_syntax(&self, content: &str) -> String {
         // 处理 Vue 模板语法
-        let mut result = content.to_string();
+        let result = content.to_string();
 
         // 这里可以添加更复杂的 Vue 语法处理
         // 例如：
@@ -114,7 +113,7 @@ impl HtmlRenderer {
     /// 处理 Svelte 组件语法
     fn process_svelte_syntax(&self, content: &str) -> String {
         // 处理 Svelte 模板语法
-        let mut result = content.to_string();
+        let result = content.to_string();
 
         // 这里可以添加更复杂的 Svelte 语法处理
         // 例如：

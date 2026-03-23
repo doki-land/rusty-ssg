@@ -174,8 +174,8 @@ fn process_files(project_path: &Path, cache_manager: &CacheManager) -> (Componen
 
 /// 生成静态文件
 fn generate_static_files(
-    parser: &ComponentParser,
-    analyzer: &DependencyAnalyzer,
+    _parser: &ComponentParser,
+    _analyzer: &DependencyAnalyzer,
     project_path: &Path,
     outdir: &str,
     config: &AstroConfig,

@@ -1,7 +1,7 @@
 //! Liquid 模板引擎测试
 //! 测试 Jekyll Liquid 模板引擎功能
 
-use crate::jekyll::{FrontMatterParser, JekyllConfig, JekyllStructure, LiquidEngine};
+use jekyll::{FrontMatterParser, JekyllConfig, JekyllStructure, LiquidEngine};
 use serde_json::Value;
 use std::fs;
 use tempfile::tempdir;
@@ -11,7 +11,7 @@ fn test_render_template() {
     let temp_dir = tempdir().unwrap();
     let structure = JekyllStructure::new(temp_dir.path()).unwrap();
     let config = JekyllConfig::new();
-    let engine = LiquidEngine::new(structure, config);
+    let mut engine = LiquidEngine::new(structure, config);
 
     let template = "Hello {{ name }}!";
     let mut context = serde_json::Map::new();
@@ -26,7 +26,7 @@ fn test_render_template_with_filters() {
     let temp_dir = tempdir().unwrap();
     let structure = JekyllStructure::new(temp_dir.path()).unwrap();
     let config = JekyllConfig::new();
-    let engine = LiquidEngine::new(structure, config);
+    let mut engine = LiquidEngine::new(structure, config);
 
     let template = "Hello {{ name | upcase }}!";
     let mut context = serde_json::Map::new();
@@ -44,7 +44,7 @@ fn test_create_jekyll_context() {
         .with_title("Test Site".to_string())
         .with_description("A test site".to_string())
         .with_url("https://example.com".to_string());
-    let engine = LiquidEngine::new(structure, config);
+    let mut engine = LiquidEngine::new(structure, config);
 
     let content = r#"---
 title: Test Page

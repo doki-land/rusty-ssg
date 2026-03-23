@@ -1,62 +1,102 @@
 //! 配置解析器测试
+//! 测试 VitePress 配置解析器的功能
 
-use serde_json;
-use std::io::Write;
-use tempfile::NamedTempFile;
-use vitepress::config::VitePressConfig;
+use vitepress::{types::config::{ConfigError, ConfigValidation, VitePressConfig}, types::VitePressError};
+use std::fs;
+use std::path::PathBuf;
 
 #[test]
-fn test_load_json_config() {
+fn test_config_parser_toml() {
+    // 创建临时 TOML 配置文件
+    let config_content = r#"# VitePress 配置文件
+
+title = "测试站点"
+description = "这是一个测试站点"
+base = "/test/"
+
+[theme]
+name = "default"
+
+[build]
+out_dir = "dist"
+"#;
+
+    let temp_path = PathBuf::from(".vitepress").join("vitepress.config.toml");
+
+    // 创建目录并写入配置文件
+    if let Some(parent) = temp_path.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+    fs::write(&temp_path, config_content).unwrap();
+
+    // 解析配置文件
+    let result = VitePressConfig::load_from_file(temp_path);
+
+    // 检查解析结果
+    println!("TOML 解析结果: {:?}", result);
+    assert!(result.is_ok());
+    let config = result.unwrap();
+    println!("TOML 配置内容: {:?}", config);
+    assert_eq!(config.title, Some("测试站点".to_string()));
+    assert_eq!(config.description, Some("这是一个测试站点".to_string()));
+    assert_eq!(config.base, Some("/test/".to_string()));
+
+    // 清理临时文件
+    fs::remove_file(".vitepress/vitepress.config.toml").unwrap();
+
+    println!("TOML 配置解析测试通过！");
+}
+
+#[test]
+fn test_config_parser_json() {
     // 创建临时 JSON 配置文件
-    let json_content = r#"{
+    let config_content = r#"{
+  "title": "测试站点",
+  "description": "这是一个测试站点",
   "base": "/test/",
-  "lang": "zh-CN",
-  "title": "Test Site",
-  "description": "A test site",
   "theme": {
     "name": "default"
   },
   "build": {
-    "outDir": ".vitepress/dist"
+    "out_dir": "dist"
   }
 }"#;
 
-    let temp_file = tempfile::Builder::new().suffix(".json").tempfile().unwrap();
-    temp_file.as_file().write_all(json_content.as_bytes()).unwrap();
-    let temp_path = temp_file.path().to_path_buf();
+    let temp_path = PathBuf::from(".vitepress").join("vitepress.config.json");
 
-    // 加载配置文件
-    let config = VitePressConfig::load_from_file(&temp_path).unwrap();
+    // 创建目录并写入配置文件
+    if let Some(parent) = temp_path.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+    fs::write(&temp_path, config_content).unwrap();
 
-    // 验证配置
+    // 解析配置文件
+    let result = VitePressConfig::load_from_file(temp_path);
+
+    // 检查解析结果
+    assert!(result.is_ok());
+    let config = result.unwrap();
+    assert_eq!(config.title, Some("测试站点".to_string()));
+    assert_eq!(config.description, Some("这是一个测试站点".to_string()));
     assert_eq!(config.base, Some("/test/".to_string()));
-    assert_eq!(config.lang, Some("zh-CN".to_string()));
-    assert_eq!(config.title, Some("Test Site".to_string()));
-    assert_eq!(config.description, Some("A test site".to_string()));
-    assert!(config.theme.is_some());
-    assert!(config.build.is_some());
+
+    // 清理临时文件
+    fs::remove_file(".vitepress/vitepress.config.json").unwrap();
+
+    println!("JSON 配置解析测试通过！");
 }
 
 #[test]
-fn test_default_config() {
-    let config = VitePressConfig::default();
-    assert_eq!(config.base, None);
-    assert_eq!(config.lang, None);
-    assert_eq!(config.title, None);
-    assert_eq!(config.description, None);
-    assert!(config.head.is_none() || config.head.as_ref().unwrap().is_empty());
-    assert!(config.locales.is_none() || config.locales.as_ref().unwrap().is_empty());
-    assert!(config.theme.is_none());
-    assert!(config.build.is_none());
-    assert_eq!(config.out_dir, None);
-    assert_eq!(config.temp, None);
-    assert_eq!(config.cache_dir, None);
-    assert_eq!(config.public, None);
-    assert_eq!(config.debug, None);
-    assert!(config.page_patterns.is_none() || config.page_patterns.as_ref().unwrap().is_empty());
-    assert!(config.permalink_pattern.is_none());
-    assert_eq!(config.host, None);
-    assert_eq!(config.port, None);
-    assert_eq!(config.open, None);
-    assert!(config.plugins.is_none() || config.plugins.as_ref().unwrap().is_empty());
+fn test_config_parser_validation() {
+    // 创建一个有效的配置
+    let config = VitePressConfig::new()
+        .with_title("测试站点".to_string())
+        .with_description("这是一个测试站点".to_string())
+        .with_base("/test/".to_string());
+
+    // 验证配置
+    let result = config.validate();
+    assert!(result.is_ok());
+
+    println!("配置验证测试通过！");
 }

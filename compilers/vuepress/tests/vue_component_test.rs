@@ -49,7 +49,8 @@ This is a test page with Vue components.
 #[test]
 fn test_html_renderer_with_vue_components() {
     // 创建 HTML 渲染器实例
-    let renderer = HtmlRenderer::new();
+    let config = VuePressConfig::new();
+    let renderer = HtmlRenderer::new(config);
 
     // 测试包含 Vue 组件的 Markdown 内容
     let markdown = r#"

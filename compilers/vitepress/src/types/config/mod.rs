@@ -932,7 +932,23 @@ impl VitePressConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
     pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
-        let config: Self = oak_toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        // 尝试使用 serde_json 解析，作为调试
+        println!("TOML 字符串: {}", toml_str);
+        
+        // 尝试使用 serde_json 解析 JSON 格式的配置，作为对照
+        let json_str = r#"{
+  "title": "测试站点",
+  "description": "这是一个测试站点",
+  "base": "/test/"
+}"#;
+        println!("JSON 字符串: {}", json_str);
+        let json_config: Self = serde_json::from_str(json_str).map_err(|e| ConfigError::json_parse_error(e.to_string()))?;
+        println!("JSON 解析后的配置: {:?}", json_config);
+        
+        // 使用 toml 库解析
+        let config: Self = toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        println!("TOML 解析后的配置: {:?}", config);
+        
         config.validate()?;
         Ok(config)
     }

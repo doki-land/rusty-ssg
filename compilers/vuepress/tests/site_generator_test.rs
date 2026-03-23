@@ -18,17 +18,31 @@ fn test_site_generator() {
     let mut documents = HashMap::new();
     
     let doc1 = Document {
-        path: "index.md".to_string(),
+        meta: nargo_types::document::DocumentMeta {
+            path: "index.md".to_string(),
+            title: Some("Home Page".to_string()),
+            lang: None,
+            last_updated: None,
+            extra: std::collections::HashMap::new(),
+        },
+        frontmatter: nargo_types::document::FrontMatter::default(),
         content: "# Home Page\n\nThis is the home page.".to_string(),
         rendered_content: Some("<h1>Home Page</h1><p>This is the home page.</p>".to_string()),
-        frontmatter: HashMap::new(),
+        span: Default::default(),
     };
     
     let doc2 = Document {
-        path: "guide/getting-started.md".to_string(),
+        meta: nargo_types::document::DocumentMeta {
+            path: "guide/getting-started.md".to_string(),
+            title: Some("Getting Started".to_string()),
+            lang: None,
+            last_updated: None,
+            extra: std::collections::HashMap::new(),
+        },
+        frontmatter: nargo_types::document::FrontMatter::default(),
         content: "# Getting Started\n\nThis is the getting started guide.".to_string(),
         rendered_content: Some("<h1>Getting Started</h1><p>This is the getting started guide.</p>".to_string()),
-        frontmatter: HashMap::new(),
+        span: Default::default(),
     };
     
     documents.insert("index.md".to_string(), doc1);

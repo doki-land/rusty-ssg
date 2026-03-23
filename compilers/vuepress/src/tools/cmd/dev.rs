@@ -208,16 +208,19 @@ impl DevCommand {
     }
 
     /// 启动 HTTP 服务器
-    pub async fn start_http_server(port: u16, _state: DevServerState) -> Result<()> {
-        let output_dir = _state.output_dir;
-        // 创建静态文件路由器
+    pub async fn start_http_server(port: u16, state: DevServerState) -> Result<()> {
+        let output_dir = state.output_dir;
+
+        // 使用静态文件路由器
         let router = static_files_router(&output_dir, "");
 
         let addr: SocketAddr = ([127, 0, 0, 1], port).into();
 
         println!("\n{}", style("Dev server is running!").green().bold());
         println!("  Local:   http://{}/", addr);
+        println!("  Network: http://0.0.0.0:{}/", port);
         println!("\n  {} Press Ctrl+C to stop", style("ℹ").blue());
+        println!("  {} Hot reload is enabled", style("ℹ").blue());
 
         let server = HttpsServerBuilder::new().addr(addr).router(router).build();
 

@@ -34,6 +34,7 @@ slug = { workspace = true }
 fs_extra = { workspace = true }
 notify = { workspace = true, optional = true }
 wae-https = { workspace = true }
+http = "1.1.0"
 
 [dev-dependencies]
 ntest = "0.9.5"

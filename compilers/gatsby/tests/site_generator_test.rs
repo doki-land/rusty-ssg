@@ -1,81 +1,124 @@
-use gatsby::{GatsbyConfig, StaticSiteGenerator};
-use nargo_types::Document;
-use std::{collections::HashMap, fs};
+//! 站点生成器测试
+
+use gatsby::tools::site_generator::SiteGenerator;
+use std::fs;
 use tempfile::tempdir;
 
 #[test]
 fn test_site_generator_creation() {
-    let config = GatsbyConfig::new();
-    let result = StaticSiteGenerator::new(config);
-    assert!(result.is_ok());
+    // 创建临时目录
+    let temp_dir = tempdir().unwrap();
+    let output_dir = temp_dir.path().join("public");
+    
+    // 创建站点生成器
+    let generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    
+    // 验证生成器配置
+    assert_eq!(generator.output_dir(), output_dir.to_str().unwrap());
 }
 
 #[test]
 fn test_site_generator_generate() {
-    let config = GatsbyConfig::new();
-    let mut generator = StaticSiteGenerator::new(config).unwrap();
-
-    let mut documents = HashMap::new();
-
-    let mut doc1 = Document::default();
-    doc1.frontmatter.title = Some("Test Page 1".to_string());
-    doc1.rendered_content = Some("<h1>Test Page 1</h1><p>Content 1</p>".to_string());
-    documents.insert("page1.md".to_string(), doc1);
-
-    let mut doc2 = Document::default();
-    doc2.frontmatter.title = Some("Test Page 2".to_string());
-    doc2.rendered_content = Some("<h1>Test Page 2</h1><p>Content 2</p>".to_string());
-    documents.insert("page2.md".to_string(), doc2);
-
+    // 创建临时目录
     let temp_dir = tempdir().unwrap();
-    let output_dir = temp_dir.path().join("output");
+    let output_dir = temp_dir.path().join("public");
+    
+    // 创建站点生成器
+    let mut generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    
+    // 生成站点
+    let content = r#"
+---
+title: Test Page
+date: 2024-01-01
+---
 
-    let result = generator.generate(&documents, &output_dir);
-    assert!(result.is_ok());
+# Test Page
 
-    // Check if output directory was created
-    assert!(output_dir.exists());
-
-    // Check if root index.html was created
-    let root_index = output_dir.join("index.html");
-    assert!(root_index.exists());
-
-    // Check if 404.html was created
-    let not_found = output_dir.join("404.html");
-    assert!(not_found.exists());
-
-    // Check if sitemap.xml was created
-    let sitemap = output_dir.join("sitemap.xml");
-    assert!(sitemap.exists());
-
-    // Check if robots.txt was created
-    let robots = output_dir.join("robots.txt");
-    assert!(robots.exists());
+This is a test page.
+"#;
+    
+    generator.generate("test-page", content).unwrap();
+    
+    // 验证文件是否生成
+    let output_file = output_dir.join("test-page.html");
+    assert!(output_file.exists());
+    
+    // 验证文件内容
+    let file_content = fs::read_to_string(output_file).unwrap();
+    assert!(file_content.contains("<h1>Test Page</h1>"));
+    assert!(file_content.contains("<p>This is a test page.</p>"));
 }
 
 #[test]
-fn test_site_generator_generate_with_language() {
-    let config = GatsbyConfig::new();
-    let mut generator = StaticSiteGenerator::new(config).unwrap();
-
-    let mut documents = HashMap::new();
-
-    let mut doc = Document::default();
-    doc.frontmatter.title = Some("Test Page".to_string());
-    doc.rendered_content = Some("<h1>Test Page</h1><p>Content</p>".to_string());
-    documents.insert("en/page.md".to_string(), doc);
-
+fn test_site_generator_generate_multiple_pages() {
+    // 创建临时目录
     let temp_dir = tempdir().unwrap();
-    let output_dir = temp_dir.path().join("output");
+    let output_dir = temp_dir.path().join("public");
+    
+    // 创建站点生成器
+    let mut generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    
+    // 生成多个页面
+    let pages = vec![
+        ("page1", r#"
+---
+title: Page 1
+date: 2024-01-01
+---
 
-    let result = generator.generate(&documents, &output_dir);
-    assert!(result.is_ok());
+# Page 1
 
-    // Check if language-specific directory was created
-    let en_dir = output_dir.join("en");
-    assert!(en_dir.exists());
+This is page 1.
+"#),
+        ("page2", r#"
+---
+title: Page 2
+date: 2024-01-02
+---
 
-    // Check if page.html was created in language directory
-    let page_html = en_dir.join("page.html");
-    assert!(page_html.exists());
+# Page 2
+
+This is page 2.
+"#)
+    ];
+    
+    for (path, content) in pages {
+        generator.generate(path, content).unwrap();
+    }
+    
+    // 验证文件是否生成
+    let page1_file = output_dir.join("page1.html");
+    let page2_file = output_dir.join("page2.html");
+    
+    assert!(page1_file.exists());
+    assert!(page2_file.exists());
+    
+    // 验证文件内容
+    let page1_content = fs::read_to_string(page1_file).unwrap();
+    let page2_content = fs::read_to_string(page2_file).unwrap();
+    
+    assert!(page1_content.contains("<h1>Page 1</h1>"));
+    assert!(page2_content.contains("<h1>Page 2</h1>"));
+}
+
+#[test]
+fn test_site_generator_clean() {
+    // 创建临时目录
+    let temp_dir = tempdir().unwrap();
+    let output_dir = temp_dir.path().join("public");
+    fs::create_dir_all(&output_dir).unwrap();
+    
+    // 创建测试文件
+    let test_file = output_dir.join("test.html");
+    fs::write(test_file, "test content").unwrap();
+    
+    // 创建站点生成器
+    let mut generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    
+    // 清理输出目录
+    generator.clean().unwrap();
+    
+    // 验证文件是否被删除
+    assert!(!test_file.exists());
 }

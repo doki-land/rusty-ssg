@@ -1,6 +1,6 @@
 //! HTML 渲染器测试
 
-use astro::compiler::html_renderer::{Context, HtmlRenderer};
+use astro::compiler::renderer::html_renderer::{Context, HtmlRenderer};
 use serde_json::json;
 
 #[test]

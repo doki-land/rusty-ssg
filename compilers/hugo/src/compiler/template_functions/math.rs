@@ -31,7 +31,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(result.into()))
+        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
     }
 
     /// sub - 减法
@@ -48,7 +48,7 @@ impl MathFunctions {
             result -= num;
         }
 
-        Ok(Value::Number(result.into()))
+        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
     }
 
     /// mul - 乘法
@@ -69,7 +69,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(result.into()))
+        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
     }
 
     /// div - 除法
@@ -89,7 +89,7 @@ impl MathFunctions {
             result /= num;
         }
 
-        Ok(Value::Number(result.into()))
+        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
     }
 
     /// mod - 取模
@@ -106,7 +106,7 @@ impl MathFunctions {
         }
 
         let result = first % second;
-        Ok(Value::Number(result.into()))
+        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
     }
 
     /// math.Max - 最大值
@@ -123,7 +123,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(max_val.unwrap().into()))
+        Ok(Value::Number(serde_json::Number::from_f64(max_val.unwrap()).unwrap()))
     }
 
     /// math.Min - 最小值
@@ -140,7 +140,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(min_val.unwrap().into()))
+        Ok(Value::Number(serde_json::Number::from_f64(min_val.unwrap()).unwrap()))
     }
 
     /// math.Abs - 绝对值
@@ -152,7 +152,7 @@ impl MathFunctions {
         let num = args[0].as_f64().ok_or("Argument must be a number")?;
         let result = num.abs();
 
-        Ok(Value::Number(result.into()))
+        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
     }
 }
 

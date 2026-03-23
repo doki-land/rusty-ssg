@@ -180,10 +180,10 @@ impl MarkdownRenderer {
     }
 
     /// 替换模式
-    fn replace_pattern(&self, text: &str, pattern: &str, replacement: &str) -> String {
+    fn replace_pattern(&self, text: &str, pattern: &str, _replacement: &str) -> String {
         // 简单的模式替换实现
         // 实际应该使用正则表达式
-        let mut result = text.to_string();
+        let result = text.to_string();
         let mut start = 0;
 
         while let Some(match_start) = result[start..].find(&pattern[0..1]) {

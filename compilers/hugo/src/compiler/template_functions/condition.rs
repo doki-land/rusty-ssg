@@ -4,6 +4,7 @@
 use serde_json::Value;
 
 /// 条件函数集合
+#[derive(Clone)]
 pub struct ConditionFunctions;
 
 impl ConditionFunctions {

@@ -45,7 +45,7 @@ impl PluginHost {
         _request: crate::types::ipc::InvokePluginRequest,
         _timeout: std::time::Duration,
     ) -> Result<crate::types::ipc::InvokePluginResponse> {
-        Err(VitePressError::ConfigError { message: "Plugin host not implemented".to_string() })
+        Err(VitePressError::ConfigError { message: "Plugin host not implemented".to_string(), path: None, suggestion: None })
     }
 
     /// 关闭插件宿主

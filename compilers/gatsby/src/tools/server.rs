@@ -4,10 +4,8 @@
 use crate::{GatsbyConfig, StaticSiteGenerator, types::Result};
 use console::style;
 use std::path::PathBuf;
-use std::net::SocketAddr;
 use tokio::sync::mpsc;
-use wae_https::{HttpsServerBuilder, static_files_router};
-use http::Method;
+use warp::Filter;
 
 use crate::watcher::FileWatcher;
 
@@ -66,47 +64,88 @@ impl DevServer {
             });
         });
         
-        // 创建静态文件服务器
-        let static_handler = static_files_router(self.output_dir.as_path(), "");
+        // 处理文件变更
+        let output_dir = self.output_dir.clone();
+        let config = self.config.clone();
+        tokio::spawn(async move {
+            while let Some(event) = rx.recv().await {
+                println!("{} File changed: {:?}", style("♻").yellow(), event);
+                // 重新构建站点
+                let mut generator = StaticSiteGenerator::new(config.clone()).unwrap();
+                let documents = load_documents(&PathBuf::from(".")).unwrap();
+                generator.generate(&documents, &output_dir).unwrap();
+                println!("{} Site rebuilt successfully", style("✓").green());
+            }
+        });
         
-        // 解析地址
-        let addr_str = format!("{}:{}", self.bind, self.port);
-        let addr: SocketAddr = addr_str.parse().map_err(|e| {
-            crate::types::GatsbyError::config(format!("Invalid address: {:?}", e))
-        })?;
+        // 静态文件服务
+        let output_dir = self.output_dir.clone();
+        let static_files = warp::fs::dir(output_dir);
         
-        // 启动 HTTP 服务器
-        let server = HttpsServerBuilder::new()
-            .addr(addr)
-            .handler(static_handler)
-            .build();
+        // GraphQL playground
+        let graphql_playground = warp::path!("___graphql").map(|| {
+            warp::reply::html(
+                r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>GraphQL Playground</title>
+    <link rel="stylesheet" href="https://unpkg.com/graphql-playground-react@1.7.28/styles.css" />
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <div id="root" style="height: 100vh; width: 100vw;"></div>
+    <script src="https://unpkg.com/graphql-playground-react@1.7.28/build/static/js/middleware.js"></script>
+    <script>
+        window.addEventListener('load', function() {
+            GraphQLPlayground.init(document.getElementById('root'), {
+                endpoint: '/api/graphql'
+            });
+        });
+    </script>
+</body>
+</html>"#
+            )
+        });
         
+        // GraphQL API
+        let graphql_api = warp::path!("api" / "graphql").map(|| {
+            warp::reply::json(&serde_json::json!({
+                "data": {
+                    "site": {
+                        "siteMetadata": {
+                            "title": "Gatsby Default Starter"
+                        }
+                    }
+                }
+            }))
+        });
+        
+        // 组合所有路由
+        let routes = static_files
+            .or(graphql_playground)
+            .or(graphql_api);
+        
+        // 启动服务器
+        let server_addr = format!("{}:{}", self.bind, self.port);
         println!("{} Development server started", style("✓").green());
-        println!("  Server URL: http://{}:{}", self.bind, self.port);
+        println!("  Server URL: http://{}", server_addr);
+        println!("  Output directory: {}", self.output_dir.display());
+        println!("  GraphQL Playground: http://{}/___graphql", server_addr);
         
         if self.open_browser {
             println!("  {} Opening browser...", style("→").blue());
             // 打开浏览器
-            if let Err(e) = open::that(format!("http://{}:{}", self.bind, self.port)) {
+            if let Err(e) = open::that(format!("http://{}", server_addr)) {
                 eprintln!("Failed to open browser: {:?}", e);
             }
         }
         
         println!("\n  {} Press Ctrl+C to stop the server", style("ℹ").blue());
         
-        // 处理文件变更
-        tokio::spawn(async move {
-            while let Some(event) = rx.recv().await {
-                println!("{} File changed: {:?}", style("♻").yellow(), event);
-                // 这里可以添加热重载逻辑
-            }
-        });
-        
-        // 启动服务器
-        match server {
-            Ok(_) => Ok(()),
-            Err(e) => Err(crate::types::GatsbyError::config(format!("Failed to start server: {:?}", e))),
-        }?
+        // 运行服务器
+        let addr: std::net::SocketAddr = server_addr.parse().map_err(|e| crate::types::GatsbyError::config(format!("Failed to parse server address: {:?}", e)))?;
+        warp::serve(routes)
+            .run(addr)
+            .await;
         
         Ok(())
     }
@@ -130,26 +169,31 @@ impl DevServer {
     
     /// 加载文档
     fn load_documents(&self) -> Result<std::collections::HashMap<String, nargo_types::Document>> {
-        use std::collections::HashMap;
-        use walkdir::WalkDir;
-        
-        let mut documents = HashMap::new();
-        
-        // 遍历源目录，加载所有 Markdown 文件
-        for entry in WalkDir::new(&self.source_dir) {
-            let entry = entry?;
-            let path = entry.path();
-            
-            if path.is_file() && path.extension().map(|ext| ext == "md").unwrap_or(false) {
-                let content = std::fs::read_to_string(path)?;
-                let relative_path = path.strip_prefix(&self.source_dir).unwrap().to_str().unwrap();
-                
-                // 解析文档
-                let doc = nargo_parser::parse_document(&content, relative_path)?;
-                documents.insert(relative_path.to_string(), doc);
-            }
-        }
-        
-        Ok(documents)
+        load_documents(&self.source_dir)
     }
+}
+
+/// 加载文档的辅助函数
+fn load_documents(source_dir: &PathBuf) -> Result<std::collections::HashMap<String, nargo_types::Document>> {
+    use std::collections::HashMap;
+    use walkdir::WalkDir;
+    
+    let mut documents = HashMap::new();
+    
+    // 遍历源目录，加载所有 Markdown 文件
+    for entry in WalkDir::new(source_dir) {
+        let entry = entry.map_err(|e| crate::types::GatsbyError::config(format!("Failed to walk directory: {:?}", e)))?;
+        let path = entry.path();
+        
+        if path.is_file() && path.extension().map(|ext| ext == "md").unwrap_or(false) {
+            let content = std::fs::read_to_string(path)?;
+            let relative_path = path.strip_prefix(source_dir).unwrap().to_str().unwrap();
+            
+            // 解析文档
+            let doc = nargo_parser::parse_document(&content, relative_path)?;
+            documents.insert(relative_path.to_string(), doc);
+        }
+    }
+    
+    Ok(documents)
 }

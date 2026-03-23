@@ -51,9 +51,9 @@ impl PluginManager {
     ///
     /// # 返回值
     /// - `Result<(), PluginError>`: 加载结果
-    pub fn load_plugin(&mut self, config: &PluginConfig, project_path: &Path) -> Result<(), PluginError> {
+    pub fn load_plugin(&mut self, config: &PluginConfig, _project_path: &Path) -> Result<(), PluginError> {
         // 尝试从本地加载插件
-        let plugin = self.create_plugin(config)?;
+        let _plugin = self.create_plugin(config)?;
         // 直接使用插件实例创建 Arc，而不是先创建 Box
         let plugin_arc = Arc::new(super::DefaultPlugin::new(&config.name, Some(config.clone())));
         self.register(plugin_arc)

@@ -12,6 +12,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod parser;
 mod renderer;
 pub use renderer::html_renderer::{HtmlRenderer, HtmlRendererConfig};
 
@@ -199,7 +200,7 @@ impl VitePressCompiler {
         let timeout = Duration::from_secs(30);
         let response = plugin_host
             .invoke_plugin(request, timeout)
-            .map_err(|e| crate::types::VitePressError::ConfigError { message: format!("{}", e) })?;
+            .map_err(|e| crate::types::VitePressError::ConfigError { message: format!("{}", e), path: None, suggestion: None })?;
 
         if response.success {
             Ok(response.content.unwrap_or_default())
@@ -207,6 +208,8 @@ impl VitePressCompiler {
         else {
             Err(crate::types::VitePressError::ConfigError {
                 message: response.error.unwrap_or_else(|| "Unknown plugin error".to_string()),
+                path: None,
+                suggestion: None,
             })
         }
     }

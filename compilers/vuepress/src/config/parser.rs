@@ -140,7 +140,49 @@ impl ConfigParser {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
-        let config: VuePressConfig = oak_toml::from_str(&content)?;
+        let mut config = VuePressConfig::new();
+        let toml_config: VuePressConfig = oak_toml::from_str(&content)?;
+        
+        // 合并配置，保留 TOML 中的值，未指定的使用默认值
+        if let Some(base) = &toml_config.base {
+            config.base = Some(base.clone());
+        }
+        if let Some(lang) = &toml_config.lang {
+            config.lang = Some(lang.clone());
+        }
+        if let Some(title) = &toml_config.title {
+            config.title = Some(title.clone());
+        }
+        if let Some(description) = &toml_config.description {
+            config.description = Some(description.clone());
+        }
+        if toml_config.head.is_some() { config.head = toml_config.head; }
+        if toml_config.locales.is_some() { config.locales = toml_config.locales; }
+        if toml_config.theme.is_some() { config.theme = toml_config.theme; }
+        if toml_config.bundler.is_some() { config.bundler = toml_config.bundler; }
+        if toml_config.dest.is_some() { config.dest = toml_config.dest; }
+        if toml_config.temp.is_some() { config.temp = toml_config.temp; }
+        if toml_config.cache.is_some() { config.cache = toml_config.cache; }
+        if toml_config.public.is_some() { config.public = toml_config.public; }
+        if toml_config.debug.is_some() { config.debug = toml_config.debug; }
+        if toml_config.page_patterns.is_some() { config.page_patterns = toml_config.page_patterns; }
+        if toml_config.permalink_pattern.is_some() { config.permalink_pattern = toml_config.permalink_pattern; }
+        if toml_config.host.is_some() { config.host = toml_config.host; }
+        if toml_config.port.is_some() { config.port = toml_config.port; }
+        if toml_config.open.is_some() { config.open = toml_config.open; }
+        if toml_config.template_dev.is_some() { config.template_dev = toml_config.template_dev; }
+        if toml_config.should_preload.is_some() { config.should_preload = toml_config.should_preload; }
+        if toml_config.should_prefetch.is_some() { config.should_prefetch = toml_config.should_prefetch; }
+        if toml_config.template_build.is_some() { config.template_build = toml_config.template_build; }
+        if toml_config.template_build_renderer.is_some() { config.template_build_renderer = toml_config.template_build_renderer; }
+        if toml_config.markdown.is_some() { config.markdown = toml_config.markdown; }
+        if toml_config.plugins.is_some() { config.plugins = toml_config.plugins; }
+        if toml_config.nav.is_some() { config.nav = toml_config.nav; }
+        if toml_config.sidebar.is_some() { config.sidebar = toml_config.sidebar; }
+        if toml_config.page.is_some() { config.page = toml_config.page; }
+        if toml_config.build.is_some() { config.build = toml_config.build; }
+        if toml_config.devServer.is_some() { config.devServer = toml_config.devServer; }
+        
         Ok(config)
     }
 

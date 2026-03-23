@@ -3,9 +3,11 @@
 
 use oak_core::{Builder, parser::session::ParseSession, source::SourceText};
 use oak_markdown::{MarkdownBuilder, MarkdownLanguage};
-use nargo_types::Document;
+use oak_yaml;
+use nargo_types::{Document, FrontMatter};
+use serde_json::Value;
 
-use crate::types::Result;
+use crate::types::{Result, VitePressError};
 
 /// Markdown 解析器
 /// 使用 oaks 解析 Markdown 文档
@@ -49,18 +51,26 @@ impl MarkdownParser {
         let output = builder.build(&source_text, &[], &mut session);
 
         match output.result {
-            Ok(root) => {
+            Ok(_root) => {
                 let frontmatter = self.extract_frontmatter(source)?;
                 Ok(Document {
-                    path: path.to_string(),
+                    meta: nargo_types::DocumentMeta {
+                        path: path.to_string(),
+                        title: frontmatter.title.clone(),
+                        lang: None,
+                        last_updated: None,
+                        extra: std::collections::HashMap::new(),
+                    },
                     frontmatter,
                     content: source.to_string(),
                     rendered_content: None,
+                    span: nargo_types::Span::unknown(),
                 })
             }
-            Err(e) => Err(crate::types::VitePressError::ParserError {
+            Err(e) => Err(VitePressError::ParseError {
                 message: format!("Failed to parse Markdown: {}", e),
-                path: path.to_string(),
+                span: nargo_types::Span::unknown(),
+                path: Some(path.to_string()),
             }),
         }
     }
@@ -79,12 +89,17 @@ impl MarkdownParser {
         // 实际实现可能需要更复杂的解析
         let mut frontmatter = nargo_types::FrontMatter::default();
 
-        if source.starts_with("---") {
-            let lines: Vec<&str> = source.lines().collect();
-            if lines.len() > 2 {
+        // 找到第一个非空行
+        let mut lines = source.lines().skip_while(|line| line.trim().is_empty());
+        
+        // 检查是否以 --- 开头
+        if let Some(first_line) = lines.next() {
+            if first_line.trim() == "---" {
                 let mut frontmatter_lines = Vec::new();
-                for line in &lines[1..] {
-                    if line == "---" {
+                
+                // 收集 frontmatter 内容，直到遇到 --- 或文件结束
+                for line in lines {
+                    if line.trim() == "---" {
                         break;
                     }
                     frontmatter_lines.push(line);
@@ -92,7 +107,7 @@ impl MarkdownParser {
 
                 let frontmatter_content = frontmatter_lines.join("\n");
                 // 解析 YAML frontmatter
-                if let Ok(parsed) = oak_yaml::from_str::<serde::Value>(&frontmatter_content) {
+                if let Ok(parsed) = oak_yaml::from_str::<Value>(&frontmatter_content) {
                     if let Some(obj) = parsed.as_object() {
                         for (key, value) in obj {
                             match key.as_str() {
@@ -113,11 +128,11 @@ impl MarkdownParser {
                                 },
                                 _ => {
                                     if let Some(value_str) = value.as_str() {
-                                        frontmatter.custom.insert(key.to_string(), value_str.to_string());
+                                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value_str.to_string()));
                                     } else if let Some(value_num) = value.as_f64() {
-                                        frontmatter.custom.insert(key.to_string(), value_num.to_string());
+                                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value_num.to_string()));
                                     } else if let Some(value_bool) = value.as_bool() {
-                                        frontmatter.custom.insert(key.to_string(), value_bool.to_string());
+                                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value_bool.to_string()));
                                     }
                                 }
                             }

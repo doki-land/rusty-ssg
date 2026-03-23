@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    net::AddrParseError,
 };
 
 /// VitePress 错误类型
@@ -155,18 +156,6 @@ impl From<serde_json::Error> for VitePressError {
     }
 }
 
-impl From<oak_toml::Error> for VitePressError {
-    fn from(e: oak_toml::Error) -> Self {
-        VitePressError::ConfigError { message: e.to_string(), path: None, suggestion: None }
-    }
-}
-
-impl From<oak_yaml::Error> for VitePressError {
-    fn from(e: oak_yaml::Error) -> Self {
-        VitePressError::ConfigError { message: e.to_string(), path: None, suggestion: None }
-    }
-}
-
 impl From<crate::config::ConfigError> for VitePressError {
     fn from(e: crate::config::ConfigError) -> Self {
         VitePressError::ConfigError { message: e.to_string(), path: None, suggestion: None }
@@ -183,6 +172,12 @@ impl From<walkdir::Error> for VitePressError {
 impl From<notify::Error> for VitePressError {
     fn from(e: notify::Error) -> Self {
         VitePressError::IoError { message: e.to_string(), path: None }
+    }
+}
+
+impl From<AddrParseError> for VitePressError {
+    fn from(e: AddrParseError) -> Self {
+        VitePressError::ConfigError { message: e.to_string(), path: None, suggestion: None }
     }
 }
 

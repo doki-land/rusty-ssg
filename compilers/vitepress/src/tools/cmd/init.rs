@@ -13,10 +13,32 @@ impl InitCommand {
         println!("{}", style("Initializing VitePress project...").cyan());
 
         let project_name = args.name.unwrap_or_else(|| "vitepress-docs".to_string());
+        let target_dir = args.path.unwrap_or_else(|| PathBuf::from(&project_name));
         let current_dir = std::env::current_dir()?;
+        let final_dir = current_dir.join(&target_dir);
 
         println!("  Project name: {}", style(&project_name).green());
-        println!("  Directory: {}", style(current_dir.display()).green());
+        println!("  Template: {}", style(&args.template).green());
+        println!("  Target directory: {}", style(final_dir.display()).green());
+        println!("  Force: {}", args.force);
+
+        // 检查目标目录是否存在
+        if final_dir.exists() && !args.force {
+            return Err(crate::types::VitePressError::ConfigError {
+                message: format!("Directory {} already exists. Use --force to overwrite.", final_dir.display()),
+                path: Some(final_dir.to_string_lossy().to_string()),
+                suggestion: Some("Use the --force flag to overwrite existing files".to_string()),
+            });
+        }
+
+        // 创建目标目录
+        if !final_dir.exists() {
+            fs::create_dir_all(&final_dir)?;
+            println!("  {} Created directory: {}", style("✓").green(), final_dir.display());
+        }
+
+        // 切换到目标目录
+        std::env::set_current_dir(&final_dir)?;
 
         Self::create_directory_structure()?;
         Self::create_config_file(&project_name)?;

@@ -1,5 +1,5 @@
-use crate::jekyll::post::*;
-use chrono::NaiveDate;
+use jekyll::{Post, FrontMatterParser, JekyllConfig, JekyllStructure, PostManager};
+use chrono::{NaiveDate, Datelike};
 use std::{fs, path::Path};
 use tempfile::tempdir;
 
@@ -24,7 +24,7 @@ categories:
   - Rust
 ---
 Content here."#;
-    let front_matter = crate::jekyll::FrontMatterParser::parse(content).unwrap();
+    let front_matter = FrontMatterParser::parse(content).unwrap();
     let path = Path::new("_posts/test.md");
 
     let categories = Post::extract_categories(&front_matter, path);
@@ -37,7 +37,7 @@ fn test_extract_categories_from_path() {
 title: Test Post
 ---
 Content here."#;
-    let front_matter = crate::jekyll::FrontMatterParser::parse(content).unwrap();
+    let front_matter = FrontMatterParser::parse(content).unwrap();
     let path = Path::new("_posts/programming/rust/test.md");
 
     let categories = Post::extract_categories(&front_matter, path);
@@ -51,7 +51,7 @@ title: Test Post
 tags: rust, programming, web
 ---
 Content here."#;
-    let front_matter = crate::jekyll::FrontMatterParser::parse(content).unwrap();
+    let front_matter = FrontMatterParser::parse(content).unwrap();
 
     let tags = Post::extract_tags(&front_matter);
     assert_eq!(tags, vec!["rust", "programming", "web"]);
@@ -62,8 +62,7 @@ fn test_generate_permalink() {
     let config = JekyllConfig::new().with_permalink("/:categories/:year/:month/:day/:title/".to_string());
     let title = "Test Post";
     let date = NaiveDate::from_ymd(2024, 1, 1);
-    let categories = vec!["programming", "rust"];
-
+    let categories = vec!["programming".to_string(), "rust".to_string()];
     let permalink = Post::generate_permalink(title, &date, &categories, &config).unwrap();
     assert_eq!(permalink, "/programming/rust/2024/01/01/test-post/");
 }
@@ -113,6 +112,6 @@ Second post content."#;
     assert!(manager.posts()[0].date >= manager.posts()[1].date);
 
     // 检查分类分组
-    let programming_posts = manager.get_posts_by_category("programming").unwrap();
+    let programming_posts = manager.get_posts_by_category("programming");
     assert_eq!(programming_posts.len(), 2);
 }

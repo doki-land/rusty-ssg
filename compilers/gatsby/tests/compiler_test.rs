@@ -1,94 +1,96 @@
-use gatsby::{GatsbyCompiler, compile_batch, compile_single};
-use std::collections::HashMap;
+//! 编译器测试
+
+use gatsby::compiler::{Compiler, Parser, Renderer};
 
 #[test]
 fn test_compiler_creation() {
-    let compiler = GatsbyCompiler::new();
-    assert!(compiler.config().site_metadata.is_none());
+    // 创建编译器
+    let compiler = Compiler::new();
+    
+    // 验证编译器组件
+    assert!(compiler.parser().is_some());
+    assert!(compiler.renderer().is_some());
 }
 
 #[test]
-fn test_compile_single_document() {
-    let markdown = r#"---
-title: "Test Page"
-description: "Test Description"
-layout: "default"
+fn test_compiler_parse() {
+    // 创建编译器
+    let compiler = Compiler::new();
+    
+    // 解析内容
+    let content = r#"
+---
+title: Test Page
+date: 2024-01-01
+tags:
+  - test
+  - gatsby
 ---
 
-# Hello World
+# Test Page
 
 This is a test page.
 "#;
-
-    let result = compile_single(markdown, "test.md");
-    assert!(result.is_ok());
-
-    let doc = result.unwrap();
-    assert_eq!(doc.frontmatter.title, Some("Test Page".to_string()));
-    assert_eq!(doc.frontmatter.description, Some("Test Description".to_string()));
-    assert_eq!(doc.frontmatter.layout, Some("default".to_string()));
-    assert!(doc.rendered_content.is_some());
+    
+    let parsed = compiler.parse(content).unwrap();
+    
+    // 验证解析结果
+    assert_eq!(parsed["title"], "Test Page");
+    assert_eq!(parsed["date"], "2024-01-01");
+    assert!(parsed["tags"].as_array().unwrap().contains(&serde_json::Value::String("test".to_string())));
+    assert!(parsed["content"].as_str().unwrap().contains("This is a test page"));
 }
 
 #[test]
-fn test_compile_batch_documents() {
-    let mut documents = HashMap::new();
-
-    let markdown1 = r#"---
-title: "Page 1"
+fn test_compiler_render() {
+    // 创建编译器
+    let compiler = Compiler::new();
+    
+    // 解析内容
+    let content = r#"
+---
+title: Test Page
+date: 2024-01-01
 ---
 
-# Page 1
+# Test Page
+
+This is a test page.
 "#;
-
-    let markdown2 = r#"---
-title: "Page 2"
----
-
-# Page 2
-"#;
-
-    documents.insert("page1.md".to_string(), markdown1.to_string());
-    documents.insert("page2.md".to_string(), markdown2.to_string());
-
-    let result = compile_batch(&documents);
-    assert!(result.success);
-    assert_eq!(result.documents.len(), 2);
-    assert!(result.errors.is_empty());
+    
+    let parsed = compiler.parse(content).unwrap();
+    
+    // 渲染内容
+    let rendered = compiler.render(&parsed).unwrap();
+    
+    // 验证渲染结果
+    assert!(rendered.contains("<h1>Test Page</h1>"));
+    assert!(rendered.contains("<p>This is a test page.</p>"));
 }
 
 #[test]
-fn test_compiler_caching() {
-    let mut compiler = GatsbyCompiler::new();
-
-    let markdown = r#"---
-title: "Test"
+fn test_compiler_full_process() {
+    // 创建编译器
+    let compiler = Compiler::new();
+    
+    // 完整编译过程
+    let content = r#"
+---
+title: Test Page
+date: 2024-01-01
+tags:
+  - test
+  - gatsby
 ---
 
-Content
+# Test Page
+
+This is a test page with **bold** text and *italic* text.
 "#;
-
-    let doc1 = compiler.compile_document(markdown, "test.md").unwrap();
-    let doc2 = compiler.get_cached("test.md");
-
-    assert!(doc2.is_some());
-    assert_eq!(doc1.meta.path, doc2.unwrap().meta.path);
-}
-
-#[test]
-fn test_compiler_clear_cache() {
-    let mut compiler = GatsbyCompiler::new();
-
-    let markdown = r#"---
-title: "Test"
----
-
-Content
-"#;
-
-    compiler.compile_document(markdown, "test.md").unwrap();
-    assert!(compiler.get_cached("test.md").is_some());
-
-    compiler.clear_cache();
-    assert!(compiler.get_cached("test.md").is_none());
+    
+    let result = compiler.compile(content).unwrap();
+    
+    // 验证编译结果
+    assert!(result.contains("<h1>Test Page</h1>"));
+    assert!(result.contains("<p>This is a test page with <strong>bold</strong> text and <em>italic</em> text.</p>"));
 }

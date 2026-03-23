@@ -6,7 +6,7 @@ use jekyll::{Collection, CollectionConfig, CollectionItem, CollectionManager, Je
 
 #[test]
 fn test_collection_config() {
-    let config = CollectionConfig::new("products".to_string()).with_output(true).with_permalink("/products/:name/".to_string());
+    let config = CollectionConfig::new("products".to_string()).with_output(true).with_permalink("/products/:name/");
 
     assert_eq!(config.name, "products");
     assert!(config.output);
@@ -68,7 +68,7 @@ Product 2 content."#,
 
     let count = collection.load_items().unwrap();
     assert_eq!(count, 2);
-    assert_eq!(collection.items.len(), 2);
+    assert_eq!(collection.items().len(), 2);
 }
 
 #[test]
@@ -96,7 +96,7 @@ Product content."#,
     let mut product_config = serde_json::Map::new();
     product_config.insert("output".to_string(), Value::Bool(true));
     collections.insert("products".to_string(), Value::Object(product_config));
-    jekyll_config.collections = Some(collections);
+    jekyll_config.collections = Some(serde_json::Map::from_iter(collections));
 
     // 创建结构和管理器
     let structure = JekyllStructure::new(temp_dir.path()).unwrap();
@@ -107,5 +107,5 @@ Product content."#,
     assert!(manager.has_collection("products"));
 
     let collection = manager.get_collection("products").unwrap();
-    assert_eq!(collection.items.len(), 1);
+    assert_eq!(collection.items().len(), 1);
 }

@@ -297,4 +297,58 @@ impl VuePressConfig {
             plugins: Some(vec![]),
         }
     }
+
+    /// 设置站点标题
+    pub fn with_title(mut self, title: String) -> Self {
+        self.title = Some(title);
+        self
+    }
+
+    /// 设置站点语言
+    pub fn with_lang(mut self, lang: String) -> Self {
+        self.lang = Some(lang);
+        self
+    }
+
+    /// 设置站点描述
+    pub fn with_description(mut self, description: String) -> Self {
+        self.description = Some(description);
+        self
+    }
+
+    /// 设置基础 URL
+    pub fn with_base(mut self, base: String) -> Self {
+        self.base = Some(base);
+        self
+    }
+
+    /// 设置输出目录
+    pub fn with_dest(mut self, dest: String) -> Self {
+        self.dest = Some(dest);
+        self
+    }
+
+    /// 设置开发服务器端口
+    pub fn with_port(mut self, port: u16) -> Self {
+        self.port = Some(port);
+        self
+    }
+
+    /// 设置开发服务器主机
+    pub fn with_host(mut self, host: String) -> Self {
+        self.host = Some(host);
+        self
+    }
+
+    /// 设置是否自动打开浏览器
+    pub fn with_open(mut self, open: bool) -> Self {
+        self.open = Some(open);
+        self
+    }
+
+    /// 设置是否启用调试模式
+    pub fn with_debug(mut self, debug: bool) -> Self {
+        self.debug = Some(debug);
+        self
+    }
 }

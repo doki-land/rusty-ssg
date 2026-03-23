@@ -24,6 +24,14 @@ pub struct SiteLocaleData {
     pub description: String,
     /// 头部标签配置
     pub head: Vec<HeadConfig>,
+    /// 是否为默认语言
+    pub default: Option<bool>,
+    /// 语言标签
+    pub label: Option<String>,
+    /// 导航栏配置
+    pub nav: Option<Vec<NavItem>>,
+    /// 侧边栏配置
+    pub sidebar: Option<std::collections::HashMap<String, Vec<SidebarLink>>>,
 }
 
 /// 锚点插件配置
@@ -180,6 +188,15 @@ pub struct SidebarLink {
     pub items: Option<Vec<SidebarLink>>,
 }
 
+/// 主题页脚配置
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+pub struct ThemeFooter {
+    /// 页脚消息
+    pub message: Option<String>,
+    /// 页脚版权
+    pub copyright: Option<String>,
+}
+
 /// 主题配置
 #[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct Theme {
@@ -191,6 +208,8 @@ pub struct Theme {
     pub nav: Option<Vec<NavItem>>,
     /// 侧边栏配置
     pub sidebar: Option<std::collections::HashMap<String, Vec<SidebarLink>>>,
+    /// 页脚配置
+    pub footer: Option<ThemeFooter>,
 }
 
 /// 打包器配置
@@ -225,6 +244,36 @@ pub enum ShouldPrefetch {
     All(bool),
     /// 自定义函数
     Custom(String),
+}
+
+/// 构建配置
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+pub struct BuildConfig {
+    /// 输出目录
+    pub outDir: Option<String>,
+    /// 是否启用 source map
+    pub sourcemap: Option<bool>,
+    /// 是否清空输出目录
+    pub emptyOutDir: Option<bool>,
+    /// 是否生成 html 文件
+    pub ssr: Option<bool>,
+    /// 是否生成服务端渲染的 html 文件
+    pub ssrTemplate: Option<String>,
+}
+
+/// 开发服务器配置
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
+pub struct DevServerConfig {
+    /// 主机地址
+    pub host: Option<String>,
+    /// 端口
+    pub port: Option<u16>,
+    /// 是否自动打开浏览器
+    pub open: Option<bool>,
+    /// 是否启用 https
+    pub https: Option<bool>,
+    /// 代理配置
+    pub proxy: Option<std::collections::HashMap<String, serde_json::Value>>,
 }
 
 /// 页面配置
@@ -306,9 +355,9 @@ pub struct VuePressConfig {
     /// 页面配置
     pub page: Option<PageConfig>,
     /// 构建配置
-    pub build: Option<serde_json::Value>,
+    pub build: Option<BuildConfig>,
     /// 开发服务器配置
-    pub devServer: Option<serde_json::Value>,
+    pub devServer: Option<DevServerConfig>,
 }
 
 impl VuePressConfig {

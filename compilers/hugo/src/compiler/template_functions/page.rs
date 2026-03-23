@@ -4,6 +4,7 @@
 use serde_json::Value;
 
 /// 页面处理函数集合
+#[derive(Clone)]
 pub struct PageFunctions;
 
 impl PageFunctions {

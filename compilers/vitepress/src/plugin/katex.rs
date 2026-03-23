@@ -2,7 +2,7 @@
 //!
 //! 提供对 Markdown 中 LaTeX 数学公式的支持，包括行内公式 `$...$` 和块级公式 `$$...$$`
 
-use crate::plugin::{PluginContext, PluginMeta, VitePressPlugin};
+use crate::plugin::{PluginContext, PluginMeta, PluginType, VitePressPlugin};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -27,6 +27,7 @@ impl KaTeXPlugin {
                 "vutex-plugin-katex".to_string(),
                 "0.1.0".to_string(),
                 "KaTeX 数学公式渲染插件，支持行内公式和块级公式".to_string(),
+                PluginType::Markdown,
             ),
         }
     }
@@ -94,6 +95,6 @@ impl VitePressPlugin for KaTeXPlugin {
     /// 处理后的插件上下文
     fn before_render(&self, context: PluginContext) -> PluginContext {
         let content = self.process_inline_math(&context.content);
-        PluginContext { content, frontmatter: context.frontmatter, path: context.path }
+        PluginContext { content, frontmatter: context.frontmatter, path: context.path, config: context.config, site_data: context.site_data }
     }
 }

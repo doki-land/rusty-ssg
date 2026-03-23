@@ -126,7 +126,7 @@ Another line here.
 
     let front_matter = FrontMatterParser::parse(content).unwrap();
 
-    assert!(front_matter.variables().is_empty());
+    assert!(front_matter.variables().as_object().unwrap().is_empty());
     assert!(front_matter.raw_yaml().is_empty());
     assert!(front_matter.content().contains("Just plain content"));
 }
@@ -141,7 +141,7 @@ Content after empty front matter.
 
     let front_matter = FrontMatterParser::parse(content).unwrap();
 
-    assert!(front_matter.variables().is_empty());
+    assert!(front_matter.variables().as_object().unwrap().is_empty());
     assert!(front_matter.content().contains("Content after empty front matter"));
 }
 

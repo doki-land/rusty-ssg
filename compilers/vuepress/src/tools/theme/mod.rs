@@ -3,4 +3,4 @@
 
 pub mod default_theme;
 
-pub use default_theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, TemplateEngineType};
+pub use default_theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink, TemplateEngineType, Theme};

@@ -7,7 +7,8 @@ use crate::{
         Result,
         theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     },
-    types::{LocaleConfig, VuePressConfig},
+    config::types::{SiteLocaleData, Theme},
+    types::VuePressConfig,
 };
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -18,14 +19,14 @@ pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
 pub struct StaticSiteGenerator {
     /// 配置
     config: VuePressConfig,
-    /// 默认主题
-    theme: DefaultTheme,
+    /// 主题
+    theme: Box<dyn crate::tools::theme::Theme>,
 }
 
 impl StaticSiteGenerator {
     /// 创建新的静态站点生成器
     pub fn new(config: VuePressConfig) -> Result<Self> {
-        let theme = DefaultTheme::new(config.clone())?;
+        let theme: Box<dyn crate::tools::theme::Theme> = Box::new(DefaultTheme::new(config.clone())?) as Box<dyn crate::tools::theme::Theme>;
 
         Ok(Self { config, theme })
     }
@@ -118,6 +119,8 @@ impl StaticSiteGenerator {
         }
 
         self.generate_root_index(output_dir)?;
+        self.generate_404_page(output_dir)?;
+        self.generate_robots_txt(output_dir)?;
 
         Ok(())
     }
@@ -254,6 +257,80 @@ impl StaticSiteGenerator {
         Ok(())
     }
 
+    /// 生成 404 页面
+    fn generate_404_page(&self, output_dir: &PathBuf) -> Result<()> {
+        let html = r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 24px;
+        }
+        a {
+            color: #007acc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>404</h1>
+        <p>Page not found</p>
+        <p>The page you are looking for does not exist.</p>
+        <a href="/">Go back to home</a>
+    </div>
+</body>
+</html>"#;
+
+        let page_404_path = output_dir.join("404.html");
+        fs::write(page_404_path, html)?;
+
+        Ok(())
+    }
+
+    /// 生成 robots.txt 文件
+    fn generate_robots_txt(&self, output_dir: &PathBuf) -> Result<()> {
+        let robots_content = r#"User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: /sitemap.xml"#;
+
+        let robots_path = output_dir.join("robots.txt");
+        fs::write(robots_path, robots_content)?;
+
+        Ok(())
+    }
+
     /// 按语言分组文档
     fn group_documents_by_language(&self, documents: &HashMap<String, Document>) -> LanguageDocuments {
         let mut result = LanguageDocuments::new();
@@ -297,7 +374,7 @@ impl StaticSiteGenerator {
     }
 
     /// 获取可用的语言列表
-    fn get_available_locales(&self) -> Vec<(String, LocaleConfig)> {
+    fn get_available_locales(&self) -> Vec<(String, crate::types::LocaleConfig)> {
         self.config.locales.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
     }
 
@@ -308,7 +385,7 @@ impl StaticSiteGenerator {
         current_lang: &str,
         nav_items: &[NavItem],
         sidebar_groups: &[SidebarGroup],
-        locales: &[(String, LocaleConfig)],
+        locales: &[(String, crate::types::LocaleConfig)],
         current_path: String,
     ) -> Result<String> {
         let doc_title = document.title().unwrap_or("");
@@ -458,7 +535,7 @@ impl StaticSiteGenerator {
         current_lang: &str,
         nav_items: &[NavItem],
         sidebar_groups: &[SidebarGroup],
-        locales: &[(String, LocaleConfig)],
+        locales: &[(String, crate::types::LocaleConfig)],
         current_full_path: String,
         current_html_path: String,
     ) -> Result<String> {
