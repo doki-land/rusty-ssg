@@ -1,5 +1,5 @@
-//! VuTeX 类型定义模块
-//! 提供 VuTeX 文档编译器所需的所有类型定义，包括配置、错误、AST 等
+//! VitePress 类型定义模块
+//! 提供 VitePress 文档编译器所需的所有类型定义，包括配置、错误、AST 等
 
 pub mod ast;
 pub mod config;
@@ -14,7 +14,7 @@ pub use nargo_types::{
 
 pub use config::{
     BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, Sidebar,
-    SidebarItem, SocialLink, ThemeConfig, VutexConfig,
+    SidebarItem, SocialLink, ThemeConfig, VitePressConfig,
 };
-pub use errors::{Result, VutexError};
+pub use errors::{Result, VitePressError};
 pub use ipc::{InvokePluginRequest, InvokePluginResponse, IpcMessage, PluginContext};

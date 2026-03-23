@@ -78,6 +78,30 @@ impl PageParams {
     }
 }
 
+/// 菜单项
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct MenuItem {
+    /// 菜单项名称
+    pub name: Option<String>,
+    /// 菜单项 URL
+    pub url: Option<String>,
+    /// 菜单项权重
+    pub weight: Option<i32>,
+    /// 菜单项父级
+    pub parent: Option<String>,
+}
+
+/// 分类项
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct TaxonomyItem {
+    /// 分类名称
+    pub name: String,
+    /// 分类计数
+    pub count: i32,
+    /// 分类链接
+    pub permalink: String,
+}
+
 /// Hugo 站点信息
 ///
 /// 对应 Hugo 中的 .Site 变量
@@ -99,6 +123,14 @@ pub struct HugoSite {
     pub params: SiteParams,
     /// 语言配置
     pub languages: HashMap<String, LanguageConfig>,
+    /// 菜单配置
+    pub menus: HashMap<String, Vec<MenuItem>>,
+    /// 分类配置
+    pub taxonomies: HashMap<String, Vec<TaxonomyItem>>,
+    /// 数据文件
+    pub data: serde_json::Value,
+    /// 所有页面
+    pub pages: Vec<HugoPage>,
 }
 
 impl HugoSite {
@@ -187,6 +219,48 @@ impl HugoSite {
         self.languages.insert(code, config);
         self
     }
+
+    /// 添加菜单项
+    ///
+    /// # Arguments
+    ///
+    /// * `menu_name` - 菜单名称
+    /// * `item` - 菜单项
+    pub fn with_menu_item(mut self, menu_name: String, item: MenuItem) -> Self {
+        self.menus.entry(menu_name).or_default().push(item);
+        self
+    }
+
+    /// 添加分类项
+    ///
+    /// # Arguments
+    ///
+    /// * `taxonomy_name` - 分类名称
+    /// * `item` - 分类项
+    pub fn with_taxonomy_item(mut self, taxonomy_name: String, item: TaxonomyItem) -> Self {
+        self.taxonomies.entry(taxonomy_name).or_default().push(item);
+        self
+    }
+
+    /// 设置数据
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - 数据值
+    pub fn with_data(mut self, data: serde_json::Value) -> Self {
+        self.data = data;
+        self
+    }
+
+    /// 添加页面
+    ///
+    /// # Arguments
+    ///
+    /// * `page` - 页面
+    pub fn with_page(mut self, page: HugoPage) -> Self {
+        self.pages.push(page);
+        self
+    }
 }
 
 /// 语言配置
@@ -245,6 +319,21 @@ impl LanguageConfig {
     }
 }
 
+/// 文件信息
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct FileInfo {
+    /// 文件路径
+    pub path: Option<String>,
+    /// 文件名称
+    pub name: Option<String>,
+    /// 文件扩展名
+    pub extension: Option<String>,
+    /// 文件大小
+    pub size: Option<u64>,
+    /// 文件修改时间
+    pub modified: Option<String>,
+}
+
 /// Hugo 页面信息
 ///
 /// 对应 Hugo 中的 .Page 变量
@@ -258,6 +347,8 @@ pub struct HugoPage {
     pub content: Option<String>,
     /// 页面摘要
     pub summary: Option<String>,
+    /// 页面关键词
+    pub keywords: Vec<String>,
     /// 页面 URL 路径
     pub permalink: Option<String>,
     /// 页面相对路径
@@ -284,8 +375,16 @@ pub struct HugoPage {
     pub categories: Vec<String>,
     /// 页面参数
     pub params: PageParams,
-    /// 页面文件路径
-    pub file_path: Option<String>,
+    /// 页面文件信息
+    pub file: FileInfo,
+    /// 子页面
+    pub pages: Vec<HugoPage>,
+    /// 父页面
+    pub parent: Option<Box<HugoPage>>,
+    /// 下一个页面
+    pub next: Option<Box<HugoPage>>,
+    /// 上一个页面
+    pub prev: Option<Box<HugoPage>>,
 }
 
 impl HugoPage {
@@ -464,13 +563,63 @@ impl HugoPage {
         self
     }
 
-    /// 设置文件路径
+    /// 添加关键词
     ///
     /// # Arguments
     ///
-    /// * `file_path` - 文件路径
-    pub fn with_file_path(mut self, file_path: String) -> Self {
-        self.file_path = Some(file_path);
+    /// * `keyword` - 关键词
+    pub fn add_keyword(mut self, keyword: String) -> Self {
+        self.keywords.push(keyword);
+        self
+    }
+
+    /// 设置文件信息
+    ///
+    /// # Arguments
+    ///
+    /// * `file` - 文件信息
+    pub fn with_file(mut self, file: FileInfo) -> Self {
+        self.file = file;
+        self
+    }
+
+    /// 添加子页面
+    ///
+    /// # Arguments
+    ///
+    /// * `page` - 子页面
+    pub fn add_page(mut self, page: HugoPage) -> Self {
+        self.pages.push(page);
+        self
+    }
+
+    /// 设置父页面
+    ///
+    /// # Arguments
+    ///
+    /// * `parent` - 父页面
+    pub fn with_parent(mut self, parent: HugoPage) -> Self {
+        self.parent = Some(Box::new(parent));
+        self
+    }
+
+    /// 设置下一个页面
+    ///
+    /// # Arguments
+    ///
+    /// * `next` - 下一个页面
+    pub fn with_next(mut self, next: HugoPage) -> Self {
+        self.next = Some(Box::new(next));
+        self
+    }
+
+    /// 设置上一个页面
+    ///
+    /// # Arguments
+    ///
+    /// * `prev` - 上一个页面
+    pub fn with_prev(mut self, prev: HugoPage) -> Self {
+        self.prev = Some(Box::new(prev));
         self
     }
 }

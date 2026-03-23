@@ -91,7 +91,7 @@ impl CompileResult {
 ///
 /// 编译后的文档
 pub fn compile_single(source: &str, path: &str) -> Result<Document> {
-    let mut compiler = VutexCompiler::new();
+    let mut compiler = VitePressCompiler::new();
     compiler.compile_document(source, path)
 }
 
@@ -105,6 +105,6 @@ pub fn compile_single(source: &str, path: &str) -> Result<Document> {
 ///
 /// 编译结果
 pub fn compile_batch(documents: &HashMap<String, String>) -> CompileResult {
-    let mut compiler = VutexCompiler::new();
+    let mut compiler = VitePressCompiler::new();
     compiler.compile_batch(documents)
 }

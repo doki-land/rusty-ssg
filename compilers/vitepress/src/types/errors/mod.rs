@@ -1,4 +1,4 @@
-//! VuTeX 错误定义
+//! VitePress 错误定义
 
 use nargo_types::{Error as NargoError, Span};
 use serde::{Deserialize, Serialize};
@@ -7,9 +7,9 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
-/// VuTeX 错误类型
+/// VitePress 错误类型
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum VutexError {
+pub enum VitePressError {
     /// 解析错误
     ParseError {
         /// 错误信息
@@ -45,117 +45,117 @@ pub enum VutexError {
     },
 }
 
-impl Display for VutexError {
+impl Display for VitePressError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            VutexError::ParseError { message, span } => {
+            VitePressError::ParseError { message, span } => {
                 write!(f, "Parse error at {:?}: {}", span, message)
             }
-            VutexError::DocumentNotFound { path } => {
+            VitePressError::DocumentNotFound { path } => {
                 write!(f, "Document not found: {}", path)
             }
-            VutexError::ConfigError { message } => {
+            VitePressError::ConfigError { message } => {
                 write!(f, "Config error: {}", message)
             }
-            VutexError::IoError { message } => {
+            VitePressError::IoError { message } => {
                 write!(f, "IO error: {}", message)
             }
-            VutexError::External { message, .. } => {
+            VitePressError::External { message, .. } => {
                 write!(f, "{}", message)
             }
         }
     }
 }
 
-impl Error for VutexError {}
+impl Error for VitePressError {}
 
-impl From<NargoError> for VutexError {
+impl From<NargoError> for VitePressError {
     fn from(e: NargoError) -> Self {
-        VutexError::External { message: e.to_string(), span: e.span() }
+        VitePressError::External { message: e.to_string(), span: e.span() }
     }
 }
 
-impl From<std::io::Error> for VutexError {
+impl From<std::io::Error> for VitePressError {
     fn from(e: std::io::Error) -> Self {
-        VutexError::IoError { message: e.to_string() }
+        VitePressError::IoError { message: e.to_string() }
     }
 }
 
-impl From<serde_json::Error> for VutexError {
+impl From<serde_json::Error> for VitePressError {
     fn from(e: serde_json::Error) -> Self {
-        VutexError::ConfigError { message: e.to_string() }
+        VitePressError::ConfigError { message: e.to_string() }
     }
 }
 
-impl From<crate::config::ConfigError> for VutexError {
+impl From<crate::config::ConfigError> for VitePressError {
     fn from(e: crate::config::ConfigError) -> Self {
-        VutexError::ConfigError { message: e.to_string() }
+        VitePressError::ConfigError { message: e.to_string() }
     }
 }
 
-impl From<walkdir::Error> for VutexError {
+impl From<walkdir::Error> for VitePressError {
     fn from(e: walkdir::Error) -> Self {
-        VutexError::IoError { message: e.to_string() }
+        VitePressError::IoError { message: e.to_string() }
     }
 }
 
 #[cfg(feature = "dev")]
-impl From<notify::Error> for VutexError {
+impl From<notify::Error> for VitePressError {
     fn from(e: notify::Error) -> Self {
-        VutexError::IoError { message: e.to_string() }
+        VitePressError::IoError { message: e.to_string() }
     }
 }
 
-impl VutexError {
+impl VitePressError {
     /// 获取错误的 i18n key
     pub fn i18n_key(&self) -> &'static str {
         match self {
-            VutexError::ParseError { .. } => "vitepress.error.parse",
-            VutexError::DocumentNotFound { .. } => "vitepress.error.document_not_found",
-            VutexError::ConfigError { .. } => "vitepress.error.config",
-            VutexError::IoError { .. } => "vitepress.error.io",
-            VutexError::External { .. } => "vitepress.error.external",
+            VitePressError::ParseError { .. } => "vitepress.error.parse",
+            VitePressError::DocumentNotFound { .. } => "vitepress.error.document_not_found",
+            VitePressError::ConfigError { .. } => "vitepress.error.config",
+            VitePressError::IoError { .. } => "vitepress.error.io",
+            VitePressError::External { .. } => "vitepress.error.external",
         }
     }
 
     /// 创建解析错误
     pub fn parse_error(message: String, span: Span) -> Self {
-        VutexError::ParseError { message, span }
+        VitePressError::ParseError { message, span }
     }
 
     /// 创建文档未找到错误
     pub fn document_not_found(path: String) -> Self {
-        VutexError::DocumentNotFound { path }
+        VitePressError::DocumentNotFound { path }
     }
 
     /// 创建配置错误
     pub fn config_error(message: String) -> Self {
-        VutexError::ConfigError { message }
+        VitePressError::ConfigError { message }
     }
 
     /// 创建 IO 错误
     pub fn io_error(message: String) -> Self {
-        VutexError::IoError { message }
+        VitePressError::IoError { message }
     }
 
     /// 获取错误发生的位置
     pub fn span(&self) -> Span {
         match self {
-            VutexError::ParseError { span, .. } => *span,
-            VutexError::External { span, .. } => *span,
+            VitePressError::ParseError { span, .. } => *span,
+            VitePressError::External { span, .. } => *span,
             _ => Span::unknown(),
         }
     }
 }
 
-impl From<VutexError> for NargoError {
-    fn from(err: VutexError) -> Self {
+impl From<VitePressError> for NargoError {
+    fn from(err: VitePressError) -> Self {
         match err {
-            VutexError::External { message, span } => NargoError::external_error("vutex".to_string(), message, span),
-            _ => NargoError::external_error("vutex".to_string(), err.to_string(), err.span()),
+            VitePressError::External { message, span } => NargoError::external_error("vitepress".to_string(), message, span),
+            _ => NargoError::external_error("vitepress".to_string(), err.to_string(), err.span()),
         }
     }
 }
 
 /// Result 类型别名
-pub type Result<T> = std::result::Result<T, VutexError>;
+pub type Result<T> = std::result::Result<T, VitePressError>;

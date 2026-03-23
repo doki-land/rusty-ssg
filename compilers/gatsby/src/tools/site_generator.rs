@@ -3,7 +3,7 @@
 
 use crate::{
     tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    types::{GatsbyConfig, Result},
+    GatsbyConfig, types::Result,
 };
 use nargo_types::Document;
 use std::{collections::HashMap, fs, path::PathBuf};

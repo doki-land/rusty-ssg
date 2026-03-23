@@ -1,7 +1,7 @@
 //! 插件主机模块
 //! 负责管理和加载插件
 
-use crate::{Result, types::VutexConfig};
+use crate::{Result, types::VuePressConfig};
 use std::fmt;
 
 /// 插件主机错误

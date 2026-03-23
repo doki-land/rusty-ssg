@@ -258,7 +258,7 @@ impl HtmlRenderer {
                                 let processed_content = self.render_ast(content, context);
                                 result.push_str(&processed_content);
                             }
-                            result.push_str(&format!("</{}}", name));
+                            result.push_str(&format!("</{}", name));
                         }
                     }
                 }

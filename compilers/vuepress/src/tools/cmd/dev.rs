@@ -31,10 +31,10 @@ pub struct DevServerState {
 impl DevCommand {
     /// 执行 dev 命令
     pub async fn execute(args: DevArgs) -> Result<()> {
-        println!("{}", style("Starting VuTeX dev server...").cyan());
+        println!("{}", style("Starting VuePress dev server...").cyan());
 
         let source_dir = args.source.unwrap_or_else(|| PathBuf::from("."));
-        let output_dir = PathBuf::from(".vutex").join("temp");
+        let output_dir = PathBuf::from(".vuepress").join("temp");
 
         println!("  Source directory: {}", source_dir.display());
         println!("  Output directory: {}", output_dir.display());
@@ -91,7 +91,7 @@ impl DevCommand {
         }
 
         let project_root = std::env::current_dir()?;
-        let ipc_server_path = project_root.join("runtimes").join("vutex-ipc-server").join("dist").join("index.js");
+        let ipc_server_path = project_root.join("runtimes").join("vuepress-ipc-server").join("dist").join("index.js");
 
         let result;
 
@@ -195,7 +195,7 @@ impl DevCommand {
                         }
                     }
                     if let Some(file_name) = path.file_name() {
-                        if file_name == "vutex.config.ts" {
+                        if file_name == "vuepress.config.ts" {
                             return true;
                         }
                     }

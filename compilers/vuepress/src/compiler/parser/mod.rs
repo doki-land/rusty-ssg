@@ -16,7 +16,7 @@ use nargo_types::Document;
 ///
 /// 解析后的文档
 pub fn parse_markdown(source: &str, path: &str) -> Result<Document> {
-    parse_document(source, path)
+    Ok(parse_document(source, path)?)
 }
 
 /// 解析 Vue 组件文件
@@ -32,7 +32,7 @@ pub fn parse_markdown(source: &str, path: &str) -> Result<Document> {
 pub fn parse_vue_component(source: &str, path: &str) -> Result<Document> {
     // 暂时使用 Markdown 解析器处理 Vue 组件
     // 实际实现需要解析 Vue 组件的结构
-    parse_document(source, path)
+    Ok(parse_document(source, path)?)
 }
 
 /// 解析内容文件
@@ -52,6 +52,6 @@ pub fn parse_content_file(source: &str, path: &str) -> Result<Document> {
         parse_vue_component(source, path)
     } else {
         // 对于其他文件类型，尝试使用 Markdown 解析器
-        parse_document(source, path)
+        Ok(parse_document(source, path)?)
     }
 }

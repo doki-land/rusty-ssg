@@ -13,20 +13,12 @@ categories = ["command-line-utilities", "compilers"]
 [dependencies]
 oak-core = { workspace = true }
 oak-yaml = { workspace = true, features = ["serde"] }
-oak-toml = { workspace = true, features = ["serde"] }
-oak-vfs = { workspace = true }
 oak-markdown = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 walkdir = { workspace = true }
 chrono = { workspace = true }
-nargo-types = { workspace = true }
-nargo-parser = { workspace = true }
-nargo-template = { workspace = true }
-nargo-document = { workspace = true }
 csv = { workspace = true }
-
-
 regex = { workspace = true }
 lazy_static = { workspace = true }
 clap = { workspace = true, features = ["derive"] }

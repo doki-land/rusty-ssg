@@ -1,28 +1,22 @@
 //! 编译器模块
-//! 提供 VuTeX 文档编译器的核心功能
+//! 提供 VitePress 文档编译器的核心功能
 
-use crate::types::{
-    Result, VutexConfig,
-    ipc::{InvokePluginRequest, PluginContext},
-};
+use crate::types::{Result, VitePressConfig, ipc::{InvokePluginRequest, PluginContext},};
 use nargo_parser::parse_document;
 use nargo_types::Document;
-use std::{
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use std::{collections::HashMap, time::{Duration, Instant},};
 
 mod renderer;
 pub use renderer::html_renderer::{HtmlRenderer, HtmlRendererConfig};
 
 pub use crate::plugin_host::PluginHost;
 
-/// VuTeX 文档编译器
+/// VitePress 文档编译器
 ///
-/// 负责将 Markdown 文档编译为 VuTeX 文档格式，支持通过 Node.js 混合执行模式调用插件
-pub struct VutexCompiler {
+/// 负责将 Markdown 文档编译为 VitePress 文档格式，支持通过 Node.js 混合执行模式调用插件
+pub struct VitePressCompiler {
     /// 编译器配置
-    config: VutexConfig,
+    config: VitePressConfig,
     /// HTML 渲染器
     html_renderer: HtmlRenderer,
     /// 编译缓存
@@ -31,10 +25,10 @@ pub struct VutexCompiler {
     plugin_host: Option<PluginHost>,
 }
 
-impl VutexCompiler {
+impl VitePressCompiler {
     /// 创建新的编译器（无插件支持，降级模式）
     pub fn new() -> Self {
-        Self { config: VutexConfig::new(), html_renderer: HtmlRenderer::new(), cache: HashMap::new(), plugin_host: None }
+        Self { config: VitePressConfig::new(), html_renderer: HtmlRenderer::new(), cache: HashMap::new(), plugin_host: None }
     }
 
     /// 创建带配置的编译器（无插件支持，降级模式）
@@ -42,7 +36,7 @@ impl VutexCompiler {
     /// # Arguments
     ///
     /// * `config` - 编译器配置
-    pub fn with_config(config: VutexConfig) -> Self {
+    pub fn with_config(config: VitePressConfig) -> Self {
         Self { config, html_renderer: HtmlRenderer::new(), cache: HashMap::new(), plugin_host: None }
     }
 
@@ -52,7 +46,7 @@ impl VutexCompiler {
     ///
     /// * `config` - 编译器配置
     /// * `html_config` - HTML 渲染器配置
-    pub fn with_html_config(config: VutexConfig, html_config: HtmlRendererConfig) -> Self {
+    pub fn with_html_config(config: VitePressConfig, html_config: HtmlRendererConfig) -> Self {
         Self { config, html_renderer: HtmlRenderer::with_config(html_config), cache: HashMap::new(), plugin_host: None }
     }
 
@@ -63,7 +57,7 @@ impl VutexCompiler {
     /// * `plugin_host` - 插件宿主实例
     pub fn with_plugin_host(plugin_host: PluginHost) -> Self {
         Self {
-            config: VutexConfig::new(),
+            config: VitePressConfig::new(),
             html_renderer: HtmlRenderer::new(),
             cache: HashMap::new(),
             plugin_host: Some(plugin_host),
@@ -76,17 +70,17 @@ impl VutexCompiler {
     ///
     /// * `config` - 编译器配置
     /// * `plugin_host` - 插件宿主实例
-    pub fn with_config_and_plugin_host(config: VutexConfig, plugin_host: PluginHost) -> Self {
+    pub fn with_config_and_plugin_host(config: VitePressConfig, plugin_host: PluginHost) -> Self {
         Self { config, html_renderer: HtmlRenderer::new(), cache: HashMap::new(), plugin_host: Some(plugin_host) }
     }
 
     /// 获取编译器配置
-    pub fn config(&self) -> &VutexConfig {
+    pub fn config(&self) -> &VitePressConfig {
         &self.config
     }
 
     /// 获取可变的编译器配置
-    pub fn config_mut(&mut self) -> &mut VutexConfig {
+    pub fn config_mut(&mut self) -> &mut VitePressConfig {
         &mut self.config
     }
 
@@ -198,13 +192,13 @@ impl VutexCompiler {
         let timeout = Duration::from_secs(30);
         let response = plugin_host
             .invoke_plugin(request, timeout)
-            .map_err(|e| crate::types::VutexError::ConfigError { message: format!("{}", e) })?;
+            .map_err(|e| crate::types::VitePressError::ConfigError { message: format!("{}", e) })?;
 
         if response.success {
             Ok(response.content.unwrap_or_default())
         }
         else {
-            Err(crate::types::VutexError::ConfigError {
+            Err(crate::types::VitePressError::ConfigError {
                 message: response.error.unwrap_or_else(|| "Unknown plugin error".to_string()),
             })
         }

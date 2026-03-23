@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::errors::{JekyllError, PostError, Result};
 
-use super::{FrontMatterParser, JekyllConfig, JekyllStructure};
+use super::{FrontMatter, FrontMatterParser, JekyllConfig, JekyllStructure};
 
 /// Jekyll 博客帖子
 #[derive(Debug, Clone)]

@@ -1,7 +1,7 @@
 //! HTML 渲染器模块
 //! 负责将解析后的内容渲染为 HTML
 
-use crate::{Result, types::VutexConfig};
+use crate::{Result, types::VuePressConfig};
 
 /// HTML 渲染器配置
 pub struct HtmlRendererConfig {
@@ -18,14 +18,14 @@ impl Default for HtmlRendererConfig {
 /// HTML 渲染器
 pub struct HtmlRenderer {
     /// 渲染器配置
-    config: VutexConfig,
+    config: VuePressConfig,
     /// HTML 渲染器配置
     html_config: HtmlRendererConfig,
 }
 
 impl HtmlRenderer {
     /// 创建新的 HTML 渲染器实例
-    pub fn new(config: VutexConfig) -> Self {
+    pub fn new(config: VuePressConfig) -> Self {
         Self { config, html_config: HtmlRendererConfig::default() }
     }
 

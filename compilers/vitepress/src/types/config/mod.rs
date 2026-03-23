@@ -1,5 +1,5 @@
-//! VuTeX 配置模块
-//! 定义 VuTeX 兼容 VitePress 的配置结构，支持从 TOML、YAML 和 JSON 文件加载配置
+//! VitePress 配置模块
+//! 定义 VitePress 兼容的配置结构，支持从 TOML、YAML 和 JSON 文件加载配置
 
 use serde::{Deserialize, Serialize};
 use std::{
@@ -684,9 +684,9 @@ pub struct PluginConfig {
     pub options: Option<HashMap<String, String>>,
 }
 
-/// VuTeX 主配置，完全兼容 VitePress
+/// VitePress 主配置，完全兼容原版 VitePress
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
-pub struct VutexConfig {
+pub struct VitePressConfig {
     /// 基础路径
     pub base: Option<String>,
     /// 站点语言
@@ -838,8 +838,8 @@ impl Default for BuildConfig {
     }
 }
 
-impl VutexConfig {
-    /// 创建新的 VuTeX 配置
+impl VitePressConfig {
+    /// 创建新的 VitePress 配置
     pub fn new() -> Self {
         Self::default()
     }
@@ -926,10 +926,8 @@ impl VutexConfig {
     /// 2. .vitepress/vitepress.config.json
     /// 3. vitepress.config.toml
     /// 4. vitepress.config.json
-    /// 5. vutex.toml
-    /// 6. vutex.json
-    /// 7. config.toml
-    /// 8. config.json
+    /// 5. config.toml
+    /// 6. config.json
     ///
     /// # Arguments
     ///
@@ -946,8 +944,6 @@ impl VutexConfig {
             dir.join(".vitepress").join("vitepress.config.json"),
             dir.join("vitepress.config.toml"),
             dir.join("vitepress.config.json"),
-            dir.join("vutex.toml"),
-            dir.join("vutex.json"),
             dir.join("config.toml"),
             dir.join("config.json"),
         ];
@@ -980,7 +976,7 @@ impl VutexConfig {
     }
 }
 
-impl ConfigValidation for VutexConfig {
+impl ConfigValidation for VitePressConfig {
     fn validate(&self) -> Result<(), ConfigError> {
         if let Some(base) = &self.base {
             if base.is_empty() {

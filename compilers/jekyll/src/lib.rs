@@ -18,10 +18,10 @@ pub mod types;
 pub mod watcher;
 
 /// 导出错误类型
-pub use errors::*;
+pub use errors::Result;
 
 /// 导出类型模块
-pub use types::*;
+pub use types::{BuildArgs, CheckArgs, CompileResult, DevArgs, InitArgs};
 
 /// 导出编译器模块
 pub use compiler::*;
@@ -33,7 +33,7 @@ pub use plugin::*;
 pub use jekyll::*;
 
 /// 导出工具模块
-pub use tools::*;
+pub use tools::cmd::*;
 
 use clap::Parser;
 

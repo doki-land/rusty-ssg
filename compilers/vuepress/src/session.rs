@@ -1,7 +1,7 @@
 //! 会话模块
 //! 管理编译会话状态
 
-use crate::{Result, types::VutexConfig};
+use crate::{Result, types::VuePressConfig};
 
 /// 编译会话
 pub struct CompileSession {
