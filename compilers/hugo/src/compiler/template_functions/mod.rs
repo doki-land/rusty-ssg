@@ -1,0 +1,204 @@
+//! Hugo 模板函数模块
+//! 提供与 Hugo 兼容的模板函数实现
+
+pub mod url;
+pub mod string;
+pub mod collection;
+pub mod date;
+pub mod math;
+pub mod condition;
+pub mod content;
+
+pub use url::UrlFunctions;
+pub use string::StringFunctions;
+pub use collection::CollectionFunctions;
+pub use date::DateFunctions;
+pub use math::MathFunctions;
+pub use condition::ConditionFunctions;
+pub use content::ContentFunctions;
+
+use serde_json::Value;
+use std::collections::HashMap;
+
+/// 模板函数注册表
+pub struct TemplateFunctions {
+    /// 函数映射表
+    functions: HashMap<String, Box<dyn Fn(&[Value]) -> Result<Value, String> + Send + Sync>>,
+}
+
+impl TemplateFunctions {
+    /// 创建新的函数注册表
+    pub fn new() -> Self {
+        let mut registry = Self {
+            functions: HashMap::new(),
+        };
+        
+        registry.register_all();
+        registry
+    }
+    
+    /// 注册所有函数
+    fn register_all(&mut self) {
+        self.register_url_functions();
+        self.register_string_functions();
+        self.register_collection_functions();
+        self.register_date_functions();
+        self.register_math_functions();
+        self.register_condition_functions();
+        self.register_content_functions();
+    }
+    
+    /// 注册 URL 处理函数
+    fn register_url_functions(&mut self) {
+        let funcs = UrlFunctions::new();
+        
+        self.register("relURL", Box::new(move |args| funcs.rel_url(args)));
+        self.register("absURL", Box::new(move |args| funcs.abs_url(args)));
+        self.register("urlize", Box::new(move |args| funcs.urlize(args)));
+    }
+    
+    /// 注册字符串处理函数
+    fn register_string_functions(&mut self) {
+        let funcs = StringFunctions::new();
+        
+        self.register("lower", Box::new(move |args| funcs.lower(args)));
+        self.register("upper", Box::new(move |args| funcs.upper(args)));
+        self.register("title", Box::new(move |args| funcs.title(args)));
+        self.register("slug", Box::new(move |args| funcs.slug(args)));
+        self.register("truncate", Box::new(move |args| funcs.truncate(args)));
+        self.register("replace", Box::new(move |args| funcs.replace(args)));
+        self.register("substr", Box::new(move |args| funcs.substr(args)));
+        self.register("split", Box::new(move |args| funcs.split(args)));
+        self.register("trim", Box::new(move |args| funcs.trim(args)));
+    }
+    
+    /// 注册集合处理函数
+    fn register_collection_functions(&mut self) {
+        let funcs = CollectionFunctions::new();
+        
+        self.register("slice", Box::new(move |args| funcs.slice(args)));
+        self.register("dict", Box::new(move |args| funcs.dict(args)));
+        self.register("first", Box::new(move |args| funcs.first(args)));
+        self.register("last", Box::new(move |args| funcs.last(args)));
+        self.register("after", Box::new(move |args| funcs.after(args)));
+        self.register("before", Box::new(move |args| funcs.before(args)));
+        self.register("append", Box::new(move |args| funcs.append(args)));
+        self.register("prepend", Box::new(move |args| funcs.prepend(args)));
+    }
+    
+    /// 注册日期处理函数
+    fn register_date_functions(&mut self) {
+        let funcs = DateFunctions::new();
+        
+        self.register("now", Box::new(move |args| funcs.now(args)));
+        self.register("dateFormat", Box::new(move |args| funcs.date_format(args)));
+    }
+    
+    /// 注册数学函数
+    fn register_math_functions(&mut self) {
+        let funcs = MathFunctions::new();
+        
+        self.register("add", Box::new(move |args| funcs.add(args)));
+        self.register("sub", Box::new(move |args| funcs.sub(args)));
+        self.register("mul", Box::new(move |args| funcs.mul(args)));
+        self.register("div", Box::new(move |args| funcs.div(args)));
+        self.register("mod", Box::new(move |args| funcs.mod_(args)));
+    }
+    
+    /// 注册条件函数
+    fn register_condition_functions(&mut self) {
+        let funcs = ConditionFunctions::new();
+        
+        self.register("cond", Box::new(move |args| funcs.cond(args)));
+        self.register("default", Box::new(move |args| funcs.default(args)));
+        self.register("isset", Box::new(move |args| funcs.isset(args)));
+        self.register("empty", Box::new(move |args| funcs.empty(args)));
+    }
+    
+    /// 注册内容处理函数
+    fn register_content_functions(&mut self) {
+        let funcs = ContentFunctions::new();
+        
+        self.register("markdownify", Box::new(move |args| funcs.markdownify(args)));
+        self.register("plainify", Box::new(move |args| funcs.plainify(args)));
+    }
+    
+    /// 注册单个函数
+    pub fn register<F>(&mut self, name: &str, func: F)
+    where
+        F: Fn(&[Value]) -> Result<Value, String> + Send + Sync + 'static,
+    {
+        self.functions.insert(name.to_string(), Box::new(func));
+    }
+    
+    /// 调用函数
+    pub fn call(&self, name: &str, args: &[Value]) -> Result<Value, String> {
+        self.functions
+            .get(name)
+            .ok_or_else(|| format!("Function not found: {}", name))?
+            .call(args)
+    }
+    
+    /// 获取所有已注册的函数名
+    pub fn list_functions(&self) -> Vec<&String> {
+        self.functions.keys().collect()
+    }
+}
+
+impl Default for TemplateFunctions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    
+    #[test]
+    fn test_string_functions() {
+        let funcs = TemplateFunctions::new();
+        
+        assert_eq!(
+            funcs.call("lower", &[json!("HELLO")]).unwrap(),
+            json!("hello")
+        );
+        
+        assert_eq!(
+            funcs.call("upper", &[json!("hello")]).unwrap(),
+            json!("HELLO")
+        );
+        
+        assert_eq!(
+            funcs.call("title", &[json!("hello world")]).unwrap(),
+            json!("Hello World")
+        );
+    }
+    
+    #[test]
+    fn test_url_functions() {
+        let funcs = TemplateFunctions::new();
+        
+        assert_eq!(
+            funcs.call("urlize", &[json!("Hello World!")]).unwrap(),
+            json!("hello-world")
+        );
+    }
+    
+    #[test]
+    fn test_collection_functions() {
+        let funcs = TemplateFunctions::new();
+        
+        let arr = json!([1, 2, 3, 4, 5]);
+        assert_eq!(
+            funcs.call("first", &[json!(2), arr.clone()]).unwrap(),
+            json!([1, 2])
+        );
+        
+        assert_eq!(
+            funcs.call("last", &[json!(2), arr]).unwrap(),
+            json!([4, 5])
+        );
+    }
+}

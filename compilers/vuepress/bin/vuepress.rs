@@ -1,12 +1,12 @@
 #![warn(missing_docs)]
-#![doc = "VuTeX 文档系统 CLI 入口点"]
+#![doc = "VuePress 文档系统 CLI 入口点"]
 
 use clap::Parser;
 use vuepress::types::Result;
 
 // 直接从工具模块导入必要的类型
 use vuepress::tools::{
-    Commands, VutexCli,
+    Commands, VuePressCli,
     cmd::{BuildCommand, CheckCommand, InitCommand},
 };
 
@@ -16,7 +16,7 @@ use vuepress::tools::cmd::DevCommand;
 /// 主函数入口
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = VutexCli::parse();
+    let cli = VuePressCli::parse();
 
     match cli.command {
         Commands::Build(args) => {

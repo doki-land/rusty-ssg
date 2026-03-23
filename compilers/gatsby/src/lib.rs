@@ -4,6 +4,12 @@
 
 /// 编译器模块
 pub mod compiler;
+/// 配置模块
+pub mod config;
+/// 数据处理模块
+pub mod data;
+/// 错误处理模块
+pub mod errors;
 /// 插件模块
 pub mod plugin;
 /// 工具模块
@@ -11,9 +17,9 @@ pub mod tools;
 /// 类型定义模块
 pub mod types;
 
-pub use types::{
-    AdapterConfig, CompileResult, ConfigError, ConfigValidation, DevelopConfig, FlagsConfig, GatsbyConfig, GatsbyError,
-    GraphQLTypegenConfig, PluginConfig, ProxyConfig, Result, SiteMetadata, SocialLink, TrailingSlash,
+pub use config::{
+    AdapterConfig, ConfigError, ConfigValidation, DevelopConfig, FlagsConfig, GatsbyConfig, GraphQLTypegenConfig, PluginConfig,
+    ProxyConfig, SiteMetadata, SocialLink, TrailingSlash,
 };
 
 pub use tools::{

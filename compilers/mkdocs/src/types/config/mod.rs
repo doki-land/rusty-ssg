@@ -10,53 +10,128 @@ use std::collections::HashMap;
 /// MkDocs 主配置
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MkDocsConfig {
+    /// 配置继承路径
+    #[serde(default, rename = "INHERIT")]
+    pub inherit: Option<String>,
+
     /// 站点名称
     pub site_name: String,
+
     /// 站点描述
     #[serde(default)]
     pub site_description: Option<String>,
+
     /// 站点作者
     #[serde(default)]
     pub site_author: Option<String>,
+
     /// 站点 URL
     #[serde(default)]
     pub site_url: Option<String>,
+
     /// 仓库 URL
     #[serde(default)]
     pub repo_url: Option<String>,
+
     /// 仓库名称
     #[serde(default)]
     pub repo_name: Option<String>,
+
+    /// 编辑 URI
+    #[serde(default)]
+    pub edit_uri: Option<String>,
+
+    /// 编辑 URI 模板
+    #[serde(default)]
+    pub edit_uri_template: Option<String>,
+
     /// 版权信息
     #[serde(default)]
     pub copyright: Option<String>,
+
     /// 文档目录
     #[serde(default = "default_docs_dir")]
     pub docs_dir: String,
+
     /// 站点目录
     #[serde(default = "default_site_dir")]
     pub site_dir: String,
+
     /// 主题配置
     #[serde(default)]
     pub theme: ThemeConfig,
+
     /// 导航配置
     #[serde(default)]
     pub nav: Vec<NavItem>,
+
     /// Markdown 扩展配置
     #[serde(default)]
-    pub markdown_extensions: Vec<String>,
+    pub markdown_extensions: Vec<MarkdownExtension>,
+
     /// 插件配置
     #[serde(default)]
     pub plugins: Vec<PluginConfig>,
+
     /// 额外配置
     #[serde(default)]
     pub extra: HashMap<String, serde_json::Value>,
+
     /// 额外的 CSS 文件
     #[serde(default)]
     pub extra_css: Vec<String>,
+
     /// 额外的 JavaScript 文件
     #[serde(default)]
-    pub extra_javascript: Vec<String>,
+    pub extra_javascript: Vec<ExtraJavaScript>,
+
+    /// 额外模板
+    #[serde(default)]
+    pub extra_templates: Vec<String>,
+
+    /// Hooks 脚本
+    #[serde(default)]
+    pub hooks: Vec<String>,
+
+    /// 验证配置
+    #[serde(default)]
+    pub validation: ValidationConfig,
+
+    /// 排除文档模式
+    #[serde(default)]
+    pub exclude_docs: Option<String>,
+
+    /// 草稿文档模式
+    #[serde(default)]
+    pub draft_docs: Option<String>,
+
+    /// 不在导航中的文档
+    #[serde(default)]
+    pub not_in_nav: Option<String>,
+
+    /// 是否使用目录 URL
+    #[serde(default = "default_true")]
+    pub use_directory_urls: bool,
+
+    /// 严格模式
+    #[serde(default)]
+    pub strict: bool,
+
+    /// 开发服务器地址
+    #[serde(default = "default_dev_addr")]
+    pub dev_addr: String,
+
+    /// 远程分支
+    #[serde(default = "default_remote_branch")]
+    pub remote_branch: String,
+
+    /// 远程名称
+    #[serde(default = "default_remote_name")]
+    pub remote_name: String,
+
+    /// 监听目录
+    #[serde(default)]
+    pub watch: Vec<String>,
 }
 
 fn default_docs_dir() -> String {
@@ -65,6 +140,130 @@ fn default_docs_dir() -> String {
 
 fn default_site_dir() -> String {
     "site".to_string()
+}
+
+fn default_dev_addr() -> String {
+    "127.0.0.1:8000".to_string()
+}
+
+fn default_remote_branch() -> String {
+    "gh-pages".to_string()
+}
+
+fn default_remote_name() -> String {
+    "origin".to_string()
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// Markdown 扩展配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MarkdownExtension {
+    /// 简单扩展名称
+    String(String),
+    /// 带配置的扩展
+    Map(HashMap<String, serde_json::Value>),
+}
+
+/// 额外 JavaScript 文件配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ExtraJavaScript {
+    /// 简单路径
+    String(String),
+    /// 带配置的 JavaScript
+    Object(ExtraJavaScriptConfig),
+}
+
+/// 额外 JavaScript 配置
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ExtraJavaScriptConfig {
+    /// 文件路径
+    pub path: String,
+
+    /// 脚本类型
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+
+    /// 是否异步加载
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#async: Option<bool>,
+
+    /// 是否延迟加载
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub defer: Option<bool>,
+}
+
+/// 验证配置
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ValidationConfig {
+    /// 导航验证配置
+    #[serde(default)]
+    pub nav: NavValidationConfig,
+
+    /// 链接验证配置
+    #[serde(default)]
+    pub links: LinksValidationConfig,
+}
+
+/// 导航验证配置
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct NavValidationConfig {
+    /// 遗漏文件的处理方式
+    #[serde(default = "default_validation_level_info")]
+    pub omitted_files: ValidationLevel,
+
+    /// 未找到文件的处理方式
+    #[serde(default = "default_validation_level_warn")]
+    pub not_found: ValidationLevel,
+
+    /// 绝对链接的处理方式
+    #[serde(default = "default_validation_level_info")]
+    pub absolute_links: ValidationLevel,
+}
+
+/// 链接验证配置
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct LinksValidationConfig {
+    /// 未找到链接的处理方式
+    #[serde(default = "default_validation_level_warn")]
+    pub not_found: ValidationLevel,
+
+    /// 锚点的处理方式
+    #[serde(default = "default_validation_level_info")]
+    pub anchors: ValidationLevel,
+
+    /// 绝对链接的处理方式
+    #[serde(default = "default_validation_level_info")]
+    pub absolute_links: ValidationLevel,
+
+    /// 未识别链接的处理方式
+    #[serde(default = "default_validation_level_info")]
+    pub unrecognized_links: ValidationLevel,
+}
+
+/// 验证级别
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ValidationLevel {
+    /// 忽略
+    Ignore,
+    /// 信息
+    #[default]
+    Info,
+    /// 警告
+    Warn,
+}
+
+fn default_validation_level_info() -> ValidationLevel {
+    ValidationLevel::Info
+}
+
+fn default_validation_level_warn() -> ValidationLevel {
+    ValidationLevel::Warn
 }
 
 /// 主题配置

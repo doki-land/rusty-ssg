@@ -1,20 +1,20 @@
 #![warn(missing_docs)]
-#![doc = "VuTeX 文档系统 CLI 工具库"]
+#![doc = "VuePress 文档系统 CLI 工具库"]
 
 pub use crate::{
     CompileResult, CompileSession, Document, PluginHost,
-    compiler::VutexCompiler,
-    types::{Result, VutexConfig, VutexError},
+    compiler::VuePressCompiler,
+    types::{Result, VuePressConfig, VutexError},
 };
 
 use clap::Parser;
 use std::path::PathBuf;
 
-/// VuTeX CLI 主命令
+/// VuePress CLI 主命令
 #[derive(Parser, Debug)]
-#[command(name = "vutex")]
-#[command(about = "VuTeX 文档系统工具", long_about = None)]
-pub struct VutexCli {
+#[command(name = "vuepress")]
+#[command(about = "VuePress 文档系统工具", long_about = None)]
+pub struct VuePressCli {
     /// 子命令
     #[command(subcommand)]
     pub command: Commands,
@@ -59,7 +59,7 @@ pub struct DevArgs {
     pub source: Option<PathBuf>,
 
     /// 端口
-    #[arg(short, long, default_value = "5173")]
+    #[arg(short, long, default_value = "8080")]
     pub port: u16,
 }
 
