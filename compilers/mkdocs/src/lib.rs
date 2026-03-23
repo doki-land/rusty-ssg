@@ -13,8 +13,9 @@ pub use nargo_types::{
 };
 
 pub use types::{
-    AlternatePalette, FontConfig, IconConfig, MkDocsConfig, NavItem, NavValue, PaletteConfig, PluginConfig, PluginOptions,
-    ThemeConfig, ToggleConfig,
+    AlternatePalette, ExtraJavaScript, ExtraJavaScriptConfig, FontConfig, IconConfig, LinksValidationConfig, MarkdownExtension,
+    MkDocsConfig, NavItem, NavValue, NavValidationConfig, PaletteConfig, PluginConfig, PluginOptions, ThemeConfig, ToggleConfig,
+    ValidationConfig, ValidationLevel,
 };
 
 pub use types::{MkDocsError, Result};

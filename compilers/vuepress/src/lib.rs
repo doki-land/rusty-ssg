@@ -21,7 +21,7 @@ pub use types_config::{
 
 pub use types::{Result, VutexError};
 
-pub use plugin::{PluginContext, PluginMeta, PluginRegistry, VutexPlugin, katex::KaTeXPlugin};
+pub use plugin::{PluginContext, PluginMeta, PluginRegistry, VuePressPlugin, katex::KaTeXPlugin};
 pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage};
 
 pub use compiler::VuePressCompiler;

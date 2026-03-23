@@ -113,4 +113,120 @@ impl GraphQLService {
             .with_field(GraphQLField::new("markdownRemark", GraphQLFieldType::Custom("MarkdownRemark".to_string()))
                 .with_description("A single MarkdownRemark node")
                 .with_argument(super::GraphQLArgument::new("id", GraphQLFieldType::ID)
-                    .with_description("The ID
+                    .with_description("The ID of the MarkdownRemark node")))
+            .with_field(GraphQLField::new("allFile", GraphQLFieldType::List(Box::new(GraphQLFieldType::Custom("File".to_string())))
+                .with_description("All File nodes"))
+            .with_field(GraphQLField::new("file", GraphQLFieldType::Custom("File".to_string()))
+                .with_description("A single File node")
+                .with_argument(super::GraphQLArgument::new("id", GraphQLFieldType::ID)
+                    .with_description("The ID of the File node")));
+
+        // 创建 Schema
+        GraphQLSchema::new("Query")
+            .with_type(query_type)
+            .with_type(file_type)
+            .with_type(markdown_remark_type)
+            .with_type(frontmatter_type)
+            .with_type(site_type)
+            .with_type(site_metadata_type)
+            .with_type(social_type)
+    }
+
+    /// 添加节点到存储
+    pub fn add_node(&mut self, node: Node) -> super::GraphQLResult<()> {
+        self.node_store.add_node(node)
+    }
+
+    /// 处理 GraphQL 查询
+    pub fn execute_query(&self, request: GraphQLRequest) -> GraphQLResponse {
+        // 这里实现简单的查询处理
+        // 实际实现需要解析查询字符串并执行相应的操作
+        let data = ConstValue::Object(HashMap::new());
+        GraphQLResponse::success(data)
+    }
+
+    /// 获取 GraphQL Schema
+    pub fn get_schema(&self) -> &GraphQLSchema {
+        &self.schema
+    }
+
+    /// 生成 schema SDL
+    pub fn generate_schema_sdl(&self) -> String {
+        // 这里实现 schema SDL 生成
+        // 实际实现需要将 GraphQLSchema 转换为 SDL 字符串
+        """
+        type Query {
+            site: Site
+            allMarkdownRemark: [MarkdownRemark]
+            markdownRemark(id: ID!): MarkdownRemark
+            allFile: [File]
+            file(id: ID!): File
+        }
+
+        type File {
+            id: ID!
+            name: String
+            relativePath: String
+            absolutePath: String
+            extension: String
+            size: Int
+            modifiedTime: DateTime
+        }
+
+        type MarkdownRemark {
+            id: ID!
+            frontmatter: Frontmatter
+            html: String
+            excerpt: String
+            file: File
+        }
+
+        type Frontmatter {
+            title: String
+            description: String
+            date: Date
+            author: String
+            tags: [String]
+            categories: [String]
+        }
+
+        type Site {
+            siteMetadata: SiteMetadata
+        }
+
+        type SiteMetadata {
+            title: String
+            description: String
+            author: String
+            siteUrl: String
+            social: Social
+        }
+
+        type Social {
+            twitter: String
+            github: String
+            linkedin: String
+        }
+
+        scalar Date
+        scalar DateTime
+        ""
+        .to_string()
+    }
+
+    /// 获取节点存储
+    pub fn node_store(&self) -> &NodeStore {
+        &self.node_store
+    }
+
+    /// 获取可变节点存储
+    pub fn node_store_mut(&mut self) -> &mut NodeStore {
+        &mut self.node_store
+    }
+}
+
+impl Default for GraphQLService {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -1,7 +1,7 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::{Result, types::VutexConfig};
+use crate::{Result, types::VuePressConfig};
 use nargo_template::{TemplateEngine, TemplateManager, ToJsonValue};
 use serde_json::json;
 use std::collections::HashMap;
@@ -148,7 +148,7 @@ impl ToJsonValue for PageContext {
 /// 默认主题
 pub struct DefaultTheme {
     /// 主题配置
-    config: VutexConfig,
+    config: VuePressConfig,
     /// 模板引擎类型
     engine_type: TemplateEngineType,
     /// 模板管理器
@@ -157,7 +157,7 @@ pub struct DefaultTheme {
 
 impl DefaultTheme {
     /// 创建新的默认主题实例（使用 Dejavu 引擎）
-    pub fn new(config: VutexConfig) -> Result<Self> {
+    pub fn new(config: VuePressConfig) -> Result<Self> {
         Self::with_engine(config, TemplateEngineType::Dejavu)
     }
 
@@ -171,7 +171,7 @@ impl DefaultTheme {
     /// # Returns
     ///
     /// 新的默认主题实例
-    pub fn with_engine(config: VutexConfig, engine_type: TemplateEngineType) -> Result<Self> {
+    pub fn with_engine(config: VuePressConfig, engine_type: TemplateEngineType) -> Result<Self> {
         let mut template_manager = TemplateManager::new();
 
         // 注册 Dejavu 模板
@@ -204,7 +204,7 @@ impl DefaultTheme {
     ///
     /// 站点标题字符串
     pub fn site_title(&self) -> &str {
-        self.config.title.as_deref().unwrap_or("VuTeX Documentation")
+        self.config.title.as_deref().unwrap_or("VuePress Documentation")
     }
 
     /// 获取当前使用的模板引擎类型

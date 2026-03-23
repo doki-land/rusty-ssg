@@ -8,17 +8,25 @@ use regex::Regex;
 pub struct UrlFunctions {
     /// 基础 URL
     base_url: Option<String>,
+    /// 当前语言
+    current_lang: Option<String>,
 }
 
 impl UrlFunctions {
     /// 创建新的 URL 函数集合
     pub fn new() -> Self {
-        Self { base_url: None }
+        Self { base_url: None, current_lang: None }
     }
     
     /// 设置基础 URL
     pub fn with_base_url(mut self, base_url: String) -> Self {
         self.base_url = Some(base_url);
+        self
+    }
+    
+    /// 设置当前语言
+    pub fn with_current_lang(mut self, lang: String) -> Self {
+        self.current_lang = Some(lang);
         self
     }
     
@@ -93,6 +101,77 @@ impl UrlFunctions {
         let slug = Self::create_slug(input);
         
         Ok(Value::String(slug))
+    }
+    
+    /// absLangURL - 生成带语言前缀的绝对 URL
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - URL 路径
+    ///
+    /// # Returns
+    ///
+    /// 带语言前缀的绝对 URL 字符串
+    pub fn abs_lang_url(&self, args: &[Value]) -> Result<Value, String> {
+        if args.is_empty() {
+            return Err("absLangURL requires at least 1 argument".to_string());
+        }
+        
+        let path = args[0].as_str().ok_or("Argument must be a string")?;
+        
+        let base = self.base_url.as_deref().unwrap_or("https://example.com");
+        let lang = self.current_lang.as_deref().unwrap_or("");
+        
+        let url = if lang.is_empty() {
+            if path.starts_with('/') {
+                format!("{}{}", base.trim_end_matches('/'), path)
+            } else {
+                format!("{}/{}", base.trim_end_matches('/'), path)
+            }
+        } else {
+            if path.starts_with('/') {
+                format!("{}/{}{}", base.trim_end_matches('/'), lang, path)
+            } else {
+                format!("{}/{}/{}  ", base.trim_end_matches('/'), lang, path)
+            }
+        };
+        
+        Ok(Value::String(url.trim().to_string()))
+    }
+    
+    /// relLangURL - 生成带语言前缀的相对 URL
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - URL 路径
+    ///
+    /// # Returns
+    ///
+    /// 带语言前缀的相对 URL 字符串
+    pub fn rel_lang_url(&self, args: &[Value]) -> Result<Value, String> {
+        if args.is_empty() {
+            return Err("relLangURL requires at least 1 argument".to_string());
+        }
+        
+        let path = args[0].as_str().ok_or("Argument must be a string")?;
+        
+        let lang = self.current_lang.as_deref().unwrap_or("");
+        
+        let url = if lang.is_empty() {
+            if path.starts_with('/') {
+                path.to_string()
+            } else {
+                format!("/{}", path)
+            }
+        } else {
+            if path.starts_with('/') {
+                format!("/{}{}", lang, path)
+            } else {
+                format!("/{}/{}", lang, path)
+            }
+        };
+        
+        Ok(Value::String(url))
     }
     
     /// 创建 URL slug
@@ -171,6 +250,39 @@ mod tests {
         assert_eq!(
             funcs.urlize(&[json!("Multiple   Spaces")]).unwrap(),
             json!("multiple-spaces")
+        );
+    }
+    
+    #[test]
+    fn test_abs_lang_url() {
+        let funcs = UrlFunctions::new()
+            .with_base_url("https://example.com".to_string())
+            .with_current_lang("en".to_string());
+        
+        assert_eq!(
+            funcs.abs_lang_url(&[json!("path/to/file")]).unwrap(),
+            json!("https://example.com/en/path/to/file")
+        );
+        
+        assert_eq!(
+            funcs.abs_lang_url(&[json!("/absolute/path")]).unwrap(),
+            json!("https://example.com/en/absolute/path")
+        );
+    }
+    
+    #[test]
+    fn test_rel_lang_url() {
+        let funcs = UrlFunctions::new()
+            .with_current_lang("en".to_string());
+        
+        assert_eq!(
+            funcs.rel_lang_url(&[json!("path/to/file")]).unwrap(),
+            json!("/en/path/to/file")
+        );
+        
+        assert_eq!(
+            funcs.rel_lang_url(&[json!("/absolute/path")]).unwrap(),
+            json!("/en/absolute/path")
         );
     }
 }

@@ -231,6 +231,74 @@ impl StringFunctions {
 
         Ok(Value::String(result.to_string()))
     }
+
+    /// trimSuffix - 去除后缀
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - 字符串
+    /// * `args[1]` - 要去除的后缀
+    pub fn trim_suffix(&self, args: &[Value]) -> Result<Value, String> {
+        if args.len() < 2 {
+            return Err("trimSuffix requires 2 arguments".to_string());
+        }
+
+        let input = args[0].as_str().ok_or("First argument must be a string")?;
+        let suffix = args[1].as_str().ok_or("Second argument must be a string")?;
+
+        let result = if input.ends_with(suffix) {
+            &input[..input.len() - suffix.len()]
+        } else {
+            input
+        };
+
+        Ok(Value::String(result.to_string()))
+    }
+
+    /// trimPrefix - 去除前缀
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - 字符串
+    /// * `args[1]` - 要去除的前缀
+    pub fn trim_prefix(&self, args: &[Value]) -> Result<Value, String> {
+        if args.len() < 2 {
+            return Err("trimPrefix requires 2 arguments".to_string());
+        }
+
+        let input = args[0].as_str().ok_or("First argument must be a string")?;
+        let prefix = args[1].as_str().ok_or("Second argument must be a string")?;
+
+        let result = if input.starts_with(prefix) {
+            &input[prefix.len()..]
+        } else {
+            input
+        };
+
+        Ok(Value::String(result.to_string()))
+    }
+
+    /// replaceRE - 使用正则表达式替换
+    ///
+    /// # Arguments
+    ///
+    /// * `args[0]` - 正则表达式
+    /// * `args[1]` - 替换为的字符串
+    /// * `args[2]` - 要处理的字符串
+    pub fn replace_re(&self, args: &[Value]) -> Result<Value, String> {
+        if args.len() < 3 {
+            return Err("replaceRE requires 3 arguments".to_string());
+        }
+
+        let pattern = args[0].as_str().ok_or("First argument must be a string")?;
+        let replacement = args[1].as_str().ok_or("Second argument must be a string")?;
+        let input = args[2].as_str().ok_or("Third argument must be a string")?;
+
+        let re = Regex::new(pattern).map_err(|e| format!("Invalid regex: {}", e))?;
+        let result = re.replace_all(input, replacement);
+
+        Ok(Value::String(result.to_string()))
+    }
 }
 
 impl Default for StringFunctions {
@@ -284,6 +352,46 @@ mod tests {
         assert_eq!(
             funcs.replace(&[json!("Hello World"), json!("World"), json!("Hugo")]).unwrap(),
             json!("Hello Hugo")
+        );
+    }
+
+    #[test]
+    fn test_trim_suffix() {
+        let funcs = StringFunctions::new();
+        
+        assert_eq!(
+            funcs.trim_suffix(&[json!("Hello World"), json!("World")]).unwrap(),
+            json!("Hello ")
+        );
+        
+        assert_eq!(
+            funcs.trim_suffix(&[json!("Hello"), json!("World")]).unwrap(),
+            json!("Hello")
+        );
+    }
+
+    #[test]
+    fn test_trim_prefix() {
+        let funcs = StringFunctions::new();
+        
+        assert_eq!(
+            funcs.trim_prefix(&[json!("Hello World"), json!("Hello")]).unwrap(),
+            json!(" World")
+        );
+        
+        assert_eq!(
+            funcs.trim_prefix(&[json!("Hello"), json!("World")]).unwrap(),
+            json!("Hello")
+        );
+    }
+
+    #[test]
+    fn test_replace_re() {
+        let funcs = StringFunctions::new();
+        
+        assert_eq!(
+            funcs.replace_re(&[json!("\d+"), json!("[NUMBER]"), json!("There are 42 apples")]).unwrap(),
+            json!("There are [NUMBER] apples")
         );
     }
 }

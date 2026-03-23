@@ -55,6 +55,8 @@ impl TemplateFunctions {
         self.register("relURL", Box::new(move |args| funcs.rel_url(args)));
         self.register("absURL", Box::new(move |args| funcs.abs_url(args)));
         self.register("urlize", Box::new(move |args| funcs.urlize(args)));
+        self.register("absLangURL", Box::new(move |args| funcs.abs_lang_url(args)));
+        self.register("relLangURL", Box::new(move |args| funcs.rel_lang_url(args)));
     }
     
     /// 注册字符串处理函数
@@ -67,9 +69,12 @@ impl TemplateFunctions {
         self.register("slug", Box::new(move |args| funcs.slug(args)));
         self.register("truncate", Box::new(move |args| funcs.truncate(args)));
         self.register("replace", Box::new(move |args| funcs.replace(args)));
+        self.register("replaceRE", Box::new(move |args| funcs.replace_re(args)));
         self.register("substr", Box::new(move |args| funcs.substr(args)));
         self.register("split", Box::new(move |args| funcs.split(args)));
         self.register("trim", Box::new(move |args| funcs.trim(args)));
+        self.register("trimSuffix", Box::new(move |args| funcs.trim_suffix(args)));
+        self.register("trimPrefix", Box::new(move |args| funcs.trim_prefix(args)));
     }
     
     /// 注册集合处理函数

@@ -323,4 +323,113 @@ impl Lexer<AstroLanguage> for AstroLexer {
                 ')' => {
                     chars.next();
                     position += 1;
-                    tokens.push(Token::new(AstroTokenType::RightParen,
+                    tokens.push(Token::new(AstroTokenType::RightParen, start..position));
+                    continue;
+                }
+                // 处理左中括号
+                '[' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::LeftBracket, start..position));
+                    continue;
+                }
+                // 处理右中括号
+                ']' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::RightBracket, start..position));
+                    continue;
+                }
+                // 处理左大括号
+                '{' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::LeftBrace, start..position));
+                    continue;
+                }
+                // 处理右大括号
+                '}' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::RightBrace, start..position));
+                    continue;
+                }
+                // 处理加号
+                '+' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::Plus, start..position));
+                    continue;
+                }
+                // 处理减号
+                '-' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::Minus, start..position));
+                    continue;
+                }
+                // 处理乘号
+                '*' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::Multiply, start..position));
+                    continue;
+                }
+                // 处理除号
+                '/' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::Divide, start..position));
+                    continue;
+                }
+                // 处理冒号
+                ':' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::Colon, start..position));
+                    continue;
+                }
+                // 处理分号
+                ';' => {
+                    chars.next();
+                    position += 1;
+                    tokens.push(Token::new(AstroTokenType::Semicolon, start..position));
+                    continue;
+                }
+                // 处理空白字符
+                c if c.is_whitespace() => {
+                    while let Some(&c) = chars.peek() {
+                        if c.is_whitespace() {
+                            chars.next();
+                            position += 1;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+                // 处理其他字符，作为文本
+                _ => {
+                    let mut text = String::new();
+                    while let Some(&c) = chars.peek() {
+                        if c == '{' || c == '}' || c == '%' || c == '<' || c == '>' || c == '-' || c == '"' || c == '\'' {
+                            break;
+                        }
+                        text.push(c);
+                        chars.next();
+                        position += 1;
+                    }
+                    if !text.is_empty() {
+                        tokens.push(Token::new(AstroTokenType::Text, start..position));
+                    }
+                    continue;
+                }
+            }
+        }
+        
+        tokens.push(Token::new(AstroTokenType::Eof, position..position));
+        
+        LexOutput::ok(Tokens::new(tokens))
+    }
+}

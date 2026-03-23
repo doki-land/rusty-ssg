@@ -136,7 +136,7 @@ impl VuePressCompiler {
             return Ok(cached.clone());
         }
 
-        let mut doc = crate::compiler::parser::parse_content_file(source, path)?
+        let mut doc = crate::compiler::parser::parse_content_file(source, path)?;
 
         let frontmatter_map = self.convert_frontmatter_to_map(&doc);
 

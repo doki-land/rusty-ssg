@@ -3,6 +3,8 @@
 
 /// GraphQL 数据类型
 pub mod graphql;
+/// GraphQL 服务
+pub mod graphql_service;
 
 use std::{collections::HashMap, error::Error, fmt};
 
@@ -309,3 +311,6 @@ impl BuildStats {
         Self::default()
     }
 }
+
+pub use graphql::{Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType, GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType, Selection, SelectionSet};
+pub use graphql_service::GraphQLService;
