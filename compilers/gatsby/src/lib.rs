@@ -34,8 +34,8 @@ pub use watcher::{FileChangeEvent, FileWatcher};
 #[cfg(feature = "dev")]
 pub use tools::DevelopArgs;
 
-pub use compiler::{GatsbyCompiler, HtmlRenderer, HtmlRendererConfig};
-pub use nargo_parser::{DocumentMeta, FrontMatter, FrontMatterParser, MarkdownParser, parse_document, parse_frontmatter};
+pub use compiler::{GatsbyCompiler, HtmlRenderer, HtmlRendererConfig, MarkdownParser, Parser, ParserConfig};
+pub use nargo_parser::{DocumentMeta, FrontMatter, FrontMatterParser, parse_frontmatter};
 pub use nargo_types::Document;
 
 pub use plugin::{Page, Plugin, PluginContext, PluginError, PluginMeta, PluginRegistry};

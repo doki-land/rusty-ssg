@@ -7,6 +7,7 @@
 use std::path::{Path, PathBuf};
 
 use serde_json::{self, Value};
+use oak_yaml;
 
 use crate::errors::{JekyllError, Result};
 

@@ -57,6 +57,14 @@ impl Parser {
                         }
                     }
                 }
+                Token::Comment(_) => {
+                    // 跳过注释
+                    self.next_token();
+                }
+                Token::Whitespace(_) => {
+                    // 跳过空白字符
+                    self.next_token();
+                }
                 _ => {
                     // 跳过未知 token
                     self.next_token();

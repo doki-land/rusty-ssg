@@ -6,6 +6,7 @@ use std::{fs::File, io::Read, path::Path};
 
 use crate::config::types::VuePressConfig;
 use lazy_static::lazy_static;
+use oak_toml::from_str;
 use regex::Regex;
 
 /// 配置文件解析器
@@ -140,21 +141,30 @@ impl ConfigParser {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
+        // 解析 TOML 配置
+        let toml_config: VuePressConfig = from_str(&content)?;
+
+        // 调试信息
+        println!("TOML config base: {:?}", toml_config.base);
+        println!("TOML config lang: {:?}", toml_config.lang);
+        println!("TOML config title: {:?}", toml_config.title);
+
+        // 使用默认配置作为基础
         let mut config = VuePressConfig::new();
-        let toml_config: VuePressConfig = toml::from_str(&content)?;
 
         // 合并配置，保留 TOML 中的值，未指定的使用默认值
-        if let Some(base) = &toml_config.base {
-            config.base = Some(base.clone());
+        if let Some(base) = toml_config.base {
+            config.base = Some(base);
+            println!("Merged base: {:?}", config.base);
         }
-        if let Some(lang) = &toml_config.lang {
-            config.lang = Some(lang.clone());
+        if let Some(lang) = toml_config.lang {
+            config.lang = Some(lang);
         }
-        if let Some(title) = &toml_config.title {
-            config.title = Some(title.clone());
+        if let Some(title) = toml_config.title {
+            config.title = Some(title);
         }
-        if let Some(description) = &toml_config.description {
-            config.description = Some(description.clone());
+        if let Some(description) = toml_config.description {
+            config.description = Some(description);
         }
         if toml_config.head.is_some() {
             config.head = toml_config.head;
@@ -168,38 +178,38 @@ impl ConfigParser {
         if toml_config.bundler.is_some() {
             config.bundler = toml_config.bundler;
         }
-        if toml_config.dest.is_some() {
-            config.dest = toml_config.dest;
+        if let Some(dest) = toml_config.dest {
+            config.dest = Some(dest);
         }
-        if toml_config.temp.is_some() {
-            config.temp = toml_config.temp;
+        if let Some(temp) = toml_config.temp {
+            config.temp = Some(temp);
         }
-        if toml_config.cache.is_some() {
-            config.cache = toml_config.cache;
+        if let Some(cache) = toml_config.cache {
+            config.cache = Some(cache);
         }
-        if toml_config.public.is_some() {
-            config.public = toml_config.public;
+        if let Some(public) = toml_config.public {
+            config.public = Some(public);
         }
-        if toml_config.debug.is_some() {
-            config.debug = toml_config.debug;
+        if let Some(debug) = toml_config.debug {
+            config.debug = Some(debug);
         }
         if toml_config.page_patterns.is_some() {
             config.page_patterns = toml_config.page_patterns;
         }
-        if toml_config.permalink_pattern.is_some() {
-            config.permalink_pattern = toml_config.permalink_pattern;
+        if let Some(permalink_pattern) = toml_config.permalink_pattern {
+            config.permalink_pattern = Some(permalink_pattern);
         }
-        if toml_config.host.is_some() {
-            config.host = toml_config.host;
+        if let Some(host) = toml_config.host {
+            config.host = Some(host);
         }
-        if toml_config.port.is_some() {
-            config.port = toml_config.port;
+        if let Some(port) = toml_config.port {
+            config.port = Some(port);
         }
-        if toml_config.open.is_some() {
-            config.open = toml_config.open;
+        if let Some(open) = toml_config.open {
+            config.open = Some(open);
         }
-        if toml_config.template_dev.is_some() {
-            config.template_dev = toml_config.template_dev;
+        if let Some(template_dev) = toml_config.template_dev {
+            config.template_dev = Some(template_dev);
         }
         if toml_config.should_preload.is_some() {
             config.should_preload = toml_config.should_preload;
@@ -207,8 +217,8 @@ impl ConfigParser {
         if toml_config.should_prefetch.is_some() {
             config.should_prefetch = toml_config.should_prefetch;
         }
-        if toml_config.template_build.is_some() {
-            config.template_build = toml_config.template_build;
+        if let Some(template_build) = toml_config.template_build {
+            config.template_build = Some(template_build);
         }
         if toml_config.template_build_renderer.is_some() {
             config.template_build_renderer = toml_config.template_build_renderer;

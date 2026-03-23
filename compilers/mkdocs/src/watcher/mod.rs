@@ -146,10 +146,10 @@ impl DevServer {
 
     /// 启动 HTTP 服务器
     async fn start_http_server(&self) -> Result<()> {
-        use http_body_util::BodyExt;
+        use http_body_util::{BodyExt, Full};
         use hyper::{
             Request, Response, StatusCode,
-            body::{Bytes, Full, Incoming as IncomingBody},
+            body::{Bytes, Incoming as IncomingBody},
             header::CONTENT_TYPE,
         };
         use hyper_util::rt::tokio::TokioIo;
@@ -180,15 +180,19 @@ impl DevServer {
 
                             let content_type = mime_guess::from_path(&file_path).first_or_octet_stream();
 
-                            Ok(Response::builder()
+                            let response = Response::builder()
                                 .status(StatusCode::OK)
                                 .header(CONTENT_TYPE, content_type.to_string())
-                                .body(http_body_util::BodyExt::boxed(Full::from(content))?))
+                                .body(Full::from(content))
+                                .unwrap();
+                            Ok(response)
                         }
                         else {
-                            Ok(Response::builder()
+                            let response = Response::builder()
                                 .status(StatusCode::NOT_FOUND)
-                                .body(http_body_util::BodyExt::boxed(Full::from("404 Not Found"))?))
+                                .body(Full::from("404 Not Found"))
+                                .unwrap();
+                            Ok(response)
                         }
                     }
                 });

@@ -35,6 +35,7 @@ http = { workspace = true }
 notify.workspace = true
 hyper.workspace = true
 hyper-util.workspace = true
+http-body-util = "0.1.0"
 
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }

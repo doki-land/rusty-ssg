@@ -50,7 +50,8 @@ impl MarkdownDataSource {
     ///
     /// 创建的节点
     pub fn create_node_from_markdown(&self, content: &str, path: &str) -> Result<Node, String> {
-        let doc = crate::parse_document(content, path).map_err(|e| e.to_string())?;
+        let parser = crate::MarkdownParser::new();
+        let doc = parser.parse(content, path).map_err(|e| e.to_string())?;
         self.create_node_from_document(doc, content)
     }
 

@@ -203,8 +203,10 @@ impl HtmlRenderer {
             html.push_str(&format!("<input type=\"checkbox\" disabled {} /> ", checked));
         }
 
-        // 直接使用列表项的内容
-        html.push_str(&self.escape_html(&list_item.content));
+        // 渲染列表项的内容
+        for block in &list_item.content {
+            html.push_str(&self.render_block(block));
+        }
 
         html.push_str("</li>\n");
         html
@@ -240,7 +242,10 @@ impl HtmlRenderer {
     ///
     /// 渲染后的 HTML 字符串
     fn render_blockquote(&self, blockquote: &Blockquote) -> String {
-        let content = self.escape_html(&blockquote.content);
+        let mut content = String::new();
+        for block in &blockquote.content {
+            content.push_str(&self.render_block(block));
+        }
         format!("<blockquote>\n{}</blockquote>\n", content)
     }
 
@@ -268,7 +273,7 @@ impl HtmlRenderer {
         html.push_str("<tbody>\n");
         for row in &table.rows {
             html.push_str("<tr>\n");
-            for cell in row {
+            for cell in &row.cells {
                 let content = self.escape_html(&cell.content);
                 html.push_str(&format!("<td>{}</td>\n", content));
             }

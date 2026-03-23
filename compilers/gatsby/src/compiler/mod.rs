@@ -6,12 +6,13 @@ use crate::{
     types::{CompileResult, Result},
 };
 use nargo_document::generator::markdown::MarkdownRenderer;
-use nargo_parser::parse_document;
 use nargo_types::Document;
 use rayon::prelude::*;
 use std::{collections::HashMap, sync::Arc, time::Instant};
 
+mod parser;
 mod renderer;
+pub use parser::{MarkdownParser, Parser, ParserConfig};
 pub use renderer::{HtmlRenderer, HtmlRendererConfig};
 
 /// Gatsby 文档编译器
@@ -20,6 +21,8 @@ pub use renderer::{HtmlRenderer, HtmlRendererConfig};
 pub struct GatsbyCompiler {
     /// 编译器配置
     config: GatsbyConfig,
+    /// Markdown 解析器
+    markdown_parser: MarkdownParser,
     /// Markdown 渲染器
     markdown_renderer: MarkdownRenderer,
     /// 编译缓存
@@ -29,7 +32,7 @@ pub struct GatsbyCompiler {
 impl GatsbyCompiler {
     /// 创建新的编译器
     pub fn new() -> Self {
-        Self { config: GatsbyConfig::new(), markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new() }
+        Self { config: GatsbyConfig::new(), markdown_parser: MarkdownParser::new(), markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new() }
     }
 
     /// 创建带配置的编译器
@@ -38,7 +41,7 @@ impl GatsbyCompiler {
     ///
     /// * `config` - 编译器配置
     pub fn with_config(config: GatsbyConfig) -> Self {
-        Self { config, markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new() }
+        Self { config, markdown_parser: MarkdownParser::new(), markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new() }
     }
 
     /// 获取编译器配置
@@ -95,7 +98,7 @@ impl GatsbyCompiler {
             return Ok(cached.clone());
         }
 
-        let mut doc = parse_document(source, path)?;
+        let mut doc = self.markdown_parser.parse(source, path).map_err(|e| crate::types::GatsbyError::CompileError { message: e })?;
 
         let content = doc.content.clone();
 
@@ -137,12 +140,13 @@ impl GatsbyCompiler {
 
         // 并行编译需要编译的文档
         let markdown_renderer = Arc::new(self.markdown_renderer.clone());
+        let markdown_parser = Arc::new(self.markdown_parser.clone());
         let compile_results: Vec<_> = to_compile
             .par_iter()
             .map(|(path, source)| {
-                let mut doc = match parse_document(source, path) {
+                let mut doc = match markdown_parser.parse(source, path) {
                     Ok(doc) => doc,
-                    Err(e) => return Err((path.clone(), crate::types::GatsbyError::from(e))),
+                    Err(e) => return Err((path.clone(), crate::types::GatsbyError::CompileError { message: e })),
                 };
 
                 let content = doc.content.clone();

@@ -36,7 +36,17 @@ pub struct PluginManager {
 impl PluginManager {
     /// 创建新的插件管理器
     pub fn new() -> Self {
-        Self { plugins: HashMap::new(), enabled_plugins: Vec::new() }
+        let mut manager = Self { plugins: HashMap::new(), enabled_plugins: Vec::new() };
+        manager.register_default_plugins();
+        manager
+    }
+
+    /// 注册默认插件
+    fn register_default_plugins(&mut self) {
+        self.register_plugin(Box::new(PrismPlugin::new(PluginOptions::new()))).unwrap();
+        self.register_plugin(Box::new(KatexPlugin::new(PluginOptions::new()))).unwrap();
+        self.register_plugin(Box::new(MermaidPlugin::new(PluginOptions::new()))).unwrap();
+        self.register_plugin(Box::new(SitemapPlugin::new(PluginOptions::new()))).unwrap();
     }
 
     /// 注册插件
@@ -95,6 +105,26 @@ impl PluginManager {
                 }
             }
         }
+    }
+
+    /// 获取所有注册的插件
+    pub fn registered_plugins(&self) -> Vec<&str> {
+        self.plugins.keys().map(|k| k.as_str()).collect()
+    }
+
+    /// 获取所有启用的插件
+    pub fn enabled_plugins(&self) -> &Vec<String> {
+        &self.enabled_plugins
+    }
+
+    /// 检查插件是否已注册
+    pub fn has_plugin(&self, name: &str) -> bool {
+        self.plugins.contains_key(name)
+    }
+
+    /// 检查插件是否已启用
+    pub fn is_plugin_enabled(&self, name: &str) -> bool {
+        self.enabled_plugins.contains(&name.to_string())
     }
 }
 

@@ -1,7 +1,7 @@
 use gatsby::{
     ContentDigest, DataLayerManager, FileDataSource, MarkdownDataSource, Node, NodeId, NodeType, SiteMetadataDataSource,
 };
-use nargo_parser::parse_document;
+use gatsby::MarkdownParser;
 
 #[test]
 fn test_markdown_data_source_creation() {
@@ -52,7 +52,8 @@ title: "Test Page"
 Content
 "#;
 
-    let doc = parse_document(markdown, "test.md").unwrap();
+    let parser = MarkdownParser::new();
+    let doc = parser.parse(markdown, "test.md").unwrap();
     let result = source.create_node_from_document(doc, markdown);
 
     assert!(result.is_ok());

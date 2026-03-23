@@ -470,3 +470,12 @@ impl From<CollectionError> for JekyllError {
         }
     }
 }
+
+impl From<MarkdownError> for JekyllError {
+    fn from(error: MarkdownError) -> Self {
+        match error {
+            MarkdownError::InvalidProcessor(message) => JekyllError::FrontMatterParseError(message),
+            MarkdownError::HighlightError(message) => JekyllError::FrontMatterParseError(message),
+        }
+    }
+}

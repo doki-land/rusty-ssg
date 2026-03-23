@@ -182,7 +182,8 @@ fn load_documents(source_dir: &PathBuf) -> Result<std::collections::HashMap<Stri
             let relative_path = path.strip_prefix(source_dir).unwrap().to_str().unwrap();
 
             // 解析文档
-            let doc = nargo_parser::parse_document(&content, relative_path)?;
+            let parser = crate::MarkdownParser::new();
+            let doc = parser.parse(&content, relative_path)?;
             documents.insert(relative_path.to_string(), doc);
         }
     }

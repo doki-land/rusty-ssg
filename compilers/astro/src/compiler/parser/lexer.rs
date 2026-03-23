@@ -34,11 +34,29 @@ impl Lexer {
         let current_char = self.chars.peek().unwrap();
 
         match current_char {
-            // 处理 '{' 字符，需要区分插值开始和指令开始
+            // 处理注释: {# #}
             '{' => {
                 self.chars.next(); // 消费 '{' 字符
+                // 检查是否是注释开始: {#
+                if let Some(&'#') = self.chars.peek() {
+                    self.chars.next(); // 消费 '#' 字符
+                    
+                    // 解析注释内容
+                    let mut comment_content = String::new();
+                    while let Some(&c) = self.chars.peek() {
+                        if c == '#' && self.chars.nth(1) == Some('}') {
+                            self.chars.next(); // 消费 '#' 字符
+                            self.chars.next(); // 消费 '}' 字符
+                            break;
+                        }
+                        comment_content.push(c);
+                        self.chars.next();
+                    }
+                    
+                    Token::Comment(comment_content)
+                }
                 // 检查是否是指令开始: {%
-                if let Some(&'%') = self.chars.peek() {
+                else if let Some(&'%') = self.chars.peek() {
                     self.chars.next(); // 消费 '%' 字符
                     Token::DirectiveStart
                 }
@@ -107,6 +125,32 @@ impl Lexer {
                     self.chars.next();
                     Token::TagEndStart
                 }
+                else if let Some(&'!') = self.chars.peek() {
+                    // 处理 HTML 注释: <!-- -->
+                    self.chars.next(); // 消费 '!'
+                    if let Some(&'-') = self.chars.peek() && let Some('-') = self.chars.nth(1) {
+                        self.chars.next(); // 消费 '-'
+                        self.chars.next(); // 消费 '-'
+                        
+                        let mut comment_content = String::new();
+                        while let Some(&c) = self.chars.peek() {
+                            if c == '-' && self.chars.nth(1) == Some('-') && self.chars.nth(2) == Some('>') {
+                                self.chars.next(); // 消费 '-'
+                                self.chars.next(); // 消费 '-'
+                                self.chars.next(); // 消费 '>'
+                                break;
+                            }
+                            comment_content.push(c);
+                            self.chars.next();
+                        }
+                        
+                        Token::Comment(comment_content)
+                    }
+                    else {
+                        self.chars.next();
+                        Token::Text("<!".to_string())
+                    }
+                }
                 else {
                     self.chars.next();
                     Token::TagStart
@@ -170,7 +214,7 @@ impl Lexer {
             c if c.is_alphabetic() || *c == '_' => {
                 let mut id = String::new();
                 while let Some(&c) = self.chars.peek() {
-                    if c.is_alphanumeric() || c == '_' || c == '-' {
+                    if c.is_alphanumeric() || c == '_' || c == '-' || c == '.' || c == ':' {
                         id.push(c);
                         self.chars.next();
                     }
@@ -226,7 +270,88 @@ impl Lexer {
                 self.chars.next();
                 Token::Multiply
             }
-
+            // 处理除号
+            '/' => {
+                self.chars.next();
+                Token::Divide
+            }
+            // 处理模运算
+            '%' => {
+                self.chars.next();
+                Token::Modulo
+            }
+            // 处理等于
+            '=' => {
+                if let Some(&'=') = self.chars.peek() {
+                    self.chars.next();
+                    self.chars.next();
+                    Token::Equal
+                }
+                else {
+                    self.chars.next();
+                    Token::Equals
+                }
+            }
+            // 处理不等于
+            '!' => {
+                if let Some(&'=') = self.chars.peek() {
+                    self.chars.next();
+                    self.chars.next();
+                    Token::NotEqual
+                }
+                else {
+                    self.chars.next();
+                    Token::Not
+                }
+            }
+            // 处理大于
+            '>' => {
+                if let Some(&'=') = self.chars.peek() {
+                    self.chars.next();
+                    self.chars.next();
+                    Token::GreaterThanOrEqual
+                }
+                else {
+                    self.chars.next();
+                    Token::GreaterThan
+                }
+            }
+            // 处理小于
+            '<' => {
+                if let Some(&'=') = self.chars.peek() {
+                    self.chars.next();
+                    self.chars.next();
+                    Token::LessThanOrEqual
+                }
+                else {
+                    self.chars.next();
+                    Token::LessThan
+                }
+            }
+            // 处理逻辑与
+            '&' => {
+                if let Some(&'&') = self.chars.peek() {
+                    self.chars.next();
+                    self.chars.next();
+                    Token::And
+                }
+                else {
+                    self.chars.next();
+                    Token::Text("&".to_string())
+                }
+            }
+            // 处理逻辑或
+            '|' => {
+                if let Some(&'|') = self.chars.peek() {
+                    self.chars.next();
+                    self.chars.next();
+                    Token::Or
+                }
+                else {
+                    self.chars.next();
+                    Token::Text("|".to_string())
+                }
+            }
             // 处理冒号
             ':' => {
                 self.chars.next();
@@ -237,11 +362,25 @@ impl Lexer {
                 self.chars.next();
                 Token::Semicolon
             }
+            // 处理空白字符
+            c if c.is_whitespace() => {
+                let mut whitespace = String::new();
+                while let Some(&c) = self.chars.peek() {
+                    if c.is_whitespace() {
+                        whitespace.push(c);
+                        self.chars.next();
+                    }
+                    else {
+                        break;
+                    }
+                }
+                Token::Whitespace(whitespace)
+            }
             // 处理其他字符，作为文本
             _ => {
                 let mut text = String::new();
                 while let Some(&c) = self.chars.peek() {
-                    if c == '{' || c == '}' || c == '%' || c == '<' || c == '>' {
+                    if c == '{' || c == '}' || c == '%' || c == '<' || c == '>' || c.is_whitespace() {
                         break;
                     }
                     text.push(c);

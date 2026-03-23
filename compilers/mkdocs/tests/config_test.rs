@@ -1,144 +1,102 @@
-//! 配置解析测试
+//! 配置测试
+//! 
+//! 测试 MkDocs 配置加载和处理功能
 
-use mkdocs::types::{MkDocsConfig, PaletteConfig, ThemeConfig};
-use tempfile::NamedTempFile;
+use mkdocs::{config, MkDocsConfig};
+use std::fs;
+use std::path::PathBuf;
+use tempfile::tempdir;
 
-#[test]
-fn test_parse_yaml_config() {
-    let yaml_content = r#"
+#[tokio::test]
+async fn test_load_config() {
+    // 创建临时目录
+    let temp_dir = tempdir().unwrap();
+    let config_file = temp_dir.path().join("mkdocs.yml");
+
+    // 创建测试配置文件
+    let config_content = r#"
 site_name: Test Site
-site_description: A test documentation site
-site_author: Test Author
-site_url: https://example.com
-repo_url: https://github.com/example/test
-repo_name: example/test
-copyright: Copyright © 2024 Test
+site_description: A test site
 docs_dir: docs
 site_dir: site
 
-theme:
-  name: material
-  language: zh
-  features:
-    - navigation.tabs
-    - navigation.sections
-  palette:
-    primary: indigo
-    accent: amber
-    scheme: default
-
 nav:
   - Home: index.md
-  - Getting Started:
-    - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quick-start.md
   - About: about.md
-
-markdown_extensions:
-  - admonition
-  - codehilite
-  - toc:
-      permalink: true
 
 plugins:
   - search
-  - minify:
-      enabled: true
-
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/example
-  version:
-    provider: mike
+  - navigation
 "#;
+    fs::write(&config_file, config_content).unwrap();
 
-    let config = MkDocsConfig::from_yaml(yaml_content).unwrap();
+    // 加载配置
+    let result = config::load_config(&config_file);
+    assert!(result.is_ok());
+    let config = result.unwrap();
 
-    assert_eq!(config.site_name(), "Test Site");
-    assert_eq!(config.site_description, Some("A test documentation site".to_string()));
-    assert_eq!(config.site_author, Some("Test Author".to_string()));
-    assert_eq!(config.site_url, Some("https://example.com".to_string()));
-    assert_eq!(config.repo_url, Some("https://github.com/example/test".to_string()));
-    assert_eq!(config.repo_name, Some("example/test".to_string()));
-    assert_eq!(config.copyright, Some("Copyright © 2024 Test".to_string()));
-    assert_eq!(config.docs_dir(), "docs");
-    assert_eq!(config.site_dir(), "site");
-
-    assert_eq!(config.theme().name(), "material");
-    assert_eq!(config.theme().language(), "zh");
-    assert_eq!(config.theme().features(), &vec!["navigation.tabs".to_string(), "navigation.sections".to_string()]);
-
-    let theme = config.theme();
-    assert!(theme.palette.is_some());
-    let palette = theme.palette.as_ref().unwrap();
-    assert_eq!(palette.primary, Some("indigo".to_string()));
-    assert_eq!(palette.accent, Some("amber".to_string()));
-    assert_eq!(palette.scheme, Some("default".to_string()));
-
-    assert_eq!(config.markdown_extensions().len(), 3);
-    assert_eq!(config.plugins().len(), 2);
+    // 验证配置内容
+    assert_eq!(config.site_name, "Test Site");
+    assert_eq!(config.site_description, Some("A test site".to_string()));
+    assert_eq!(config.docs_dir, "docs");
+    assert_eq!(config.site_dir, "site");
+    assert_eq!(config.nav.len(), 2);
+    assert_eq!(config.plugins.len(), 2);
 }
 
-#[test]
-fn test_default_config() {
-    let config = MkDocsConfig::default();
+#[tokio::test]
+async fn test_load_config_from_dir() {
+    // 创建临时目录
+    let temp_dir = tempdir().unwrap();
+    let config_file = temp_dir.path().join("mkdocs.yml");
 
-    assert_eq!(config.site_name(), "");
-    assert_eq!(config.site_description, None);
-    assert_eq!(config.site_author, None);
-    assert_eq!(config.site_url, None);
-    assert_eq!(config.repo_url, None);
-    assert_eq!(config.repo_name, None);
-    assert_eq!(config.copyright, None);
-    assert_eq!(config.docs_dir(), "docs");
-    assert_eq!(config.site_dir(), "site");
-
-    assert_eq!(config.theme().name(), "material");
-    assert_eq!(config.theme().language(), "en");
-    assert!(config.theme().features().is_empty());
-    assert!(config.theme().palette.is_none());
-
-    assert!(config.nav().is_empty());
-    assert!(config.markdown_extensions().is_empty());
-    assert!(config.plugins().is_empty());
-    assert!(config.extra().is_empty());
-    assert!(config.extra_css().is_empty());
-    assert!(config.extra_javascript().is_empty());
-}
-
-#[test]
-fn test_config_validation() {
-    let valid_config = MkDocsConfig { site_name: "Valid Site".to_string(), ..Default::default() };
-    assert!(valid_config.validate().is_ok());
-
-    let invalid_config = MkDocsConfig { site_name: "".to_string(), ..Default::default() };
-    assert!(invalid_config.validate().is_err());
-}
-
-#[test]
-fn test_minimal_config() {
-    let yaml_content = r#"
-site_name: Minimal Site
+    // 创建测试配置文件
+    let config_content = r#"
+site_name: Test Site
+docs_dir: docs
+site_dir: site
 "#;
+    fs::write(&config_file, config_content).unwrap();
 
-    let config = MkDocsConfig::from_yaml(yaml_content).unwrap();
-    assert_eq!(config.site_name(), "Minimal Site");
-    assert!(config.validate().is_ok());
+    // 从目录加载配置
+    let result = config::load_config_from_dir(&temp_dir.path().to_path_buf());
+    assert!(result.is_ok());
+    let config = result.unwrap();
+
+    // 验证配置内容
+    assert_eq!(config.site_name, "Test Site");
+    assert_eq!(config.docs_dir, "docs");
+    assert_eq!(config.site_dir, "site");
 }
 
-#[test]
-fn test_load_from_file() {
-    let yaml_content = r#"
-site_name: File Test Site
-site_description: Testing file loading
+#[tokio::test]
+async fn test_default_config() {
+    // 创建默认配置
+    let config = config::create_default_config();
+
+    // 验证默认值
+    assert_eq!(config.docs_dir, "docs");
+    assert_eq!(config.site_dir, "site");
+    assert_eq!(config.dev_addr, "127.0.0.1:8000");
+    assert_eq!(config.remote_branch, "gh-pages");
+    assert_eq!(config.remote_name, "origin");
+    assert!(config.use_directory_urls);
+}
+
+#[tokio::test]
+async fn test_config_validation() {
+    // 创建临时目录
+    let temp_dir = tempdir().unwrap();
+    let config_file = temp_dir.path().join("mkdocs.yml");
+
+    // 创建无效配置文件（缺少 site_name）
+    let config_content = r#"
+docs_dir: docs
+site_dir: site
 "#;
+    fs::write(&config_file, config_content).unwrap();
 
-    let mut temp_file = NamedTempFile::new().unwrap();
-    std::io::Write::write_all(&mut temp_file, yaml_content.as_bytes()).unwrap();
-    let temp_path = temp_file.path().to_path_buf();
-
-    let config = MkDocsConfig::load_from_file(&temp_path).unwrap();
-    assert_eq!(config.site_name(), "File Test Site");
-    assert_eq!(config.site_description, Some("Testing file loading".to_string()));
+    // 加载配置
+    let result = config::load_config(&config_file);
+    assert!(result.is_err());
 }
