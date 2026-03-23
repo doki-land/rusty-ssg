@@ -130,7 +130,11 @@ impl Component {
     /// 渲染 Astro 组件
     fn render_astro(&self, props: &Context) -> String {
         // 使用 HTML 渲染器处理组件模板
-        let renderer = crate::compiler::renderer::html_renderer::HtmlRenderer::new();
+        let mut renderer = crate::compiler::renderer::html_renderer::HtmlRenderer::new();
+        // 创建组件注册表并注册当前组件
+        let registry = crate::compiler::ComponentRegistry::new();
+        registry.register(self.clone());
+        renderer.set_component_registry(registry);
         renderer.render_astro(&self.template, props)
     }
 

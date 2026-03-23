@@ -66,7 +66,9 @@ impl Lexer {
             }
             // 处理插值结束
             '}' => {
-                let mut count = 0;
+                let mut count = 1; // 已经看到一个 '}'
+                self.chars.next(); // 消费第一个 '}'
+                
                 while self.chars.peek() == Some(&'}') {
                     self.chars.next();
                     count += 1;
@@ -245,7 +247,13 @@ impl Lexer {
                     text.push(c);
                     self.chars.next();
                 }
-                Token::Text(text)
+                if !text.is_empty() {
+                    Token::Text(text)
+                } else {
+                    // 消费当前字符并继续
+                    self.chars.next();
+                    self.next_token()
+                }
             }
         }
     }

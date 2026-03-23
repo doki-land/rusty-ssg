@@ -47,6 +47,16 @@ impl Parser {
                 Token::TagStart => {
                     nodes.push(self.parse_component());
                 }
+                Token::TagEndStart => {
+                    // 处理结束标签，直接跳过
+                    self.next_token();
+                    if let Token::Identifier(_) = self.current_token {
+                        self.next_token();
+                        if let Token::TagEnd = self.current_token {
+                            self.next_token();
+                        }
+                    }
+                }
                 _ => {
                     // 跳过未知 token
                     self.next_token();
@@ -229,23 +239,53 @@ impl Parser {
 
         // 解析组件内容（如果不是自闭合标签）
         let content = if !self_closing {
-            let content = self.parse_nodes();
-            // 跳过结束标签
-            if let Token::TagEndStart = self.current_token {
-                self.next_token();
-                match self.current_token.clone() {
-                    Token::Identifier(id) => {
-                        if id == component_name {
+            let mut content_nodes = Vec::new();
+            
+            // 解析内容直到遇到结束标签
+            while self.current_token != Token::Eof {
+                if let Token::TagEndStart = self.current_token {
+                    // 检查是否是当前组件的结束标签
+                    self.next_token();
+                    if let Token::Identifier(id) = &self.current_token {
+                        if id == &component_name {
                             self.next_token();
                             if let Token::TagEnd = self.current_token {
                                 self.next_token();
                             }
+                            break;
                         }
                     }
-                    _ => {}
+                    // 如果不是当前组件的结束标签，跳过
+                    while self.current_token != Token::TagEnd && self.current_token != Token::Eof {
+                        self.next_token();
+                    }
+                    if let Token::TagEnd = self.current_token {
+                        self.next_token();
+                    }
+                } else {
+                    match &self.current_token {
+                        Token::Text(text) => {
+                            content_nodes.push(AstNode::text(text));
+                            self.next_token();
+                        }
+                        Token::InterpolationStart(interpolation_type) => {
+                            content_nodes.push(self.parse_interpolation(interpolation_type.clone()));
+                        }
+                        Token::DirectiveStart => {
+                            content_nodes.push(self.parse_directive());
+                        }
+                        Token::TagStart => {
+                            content_nodes.push(self.parse_component());
+                        }
+                        _ => {
+                            // 跳过未知 token
+                            self.next_token();
+                        }
+                    }
                 }
             }
-            Some(content)
+            
+            Some(content_nodes)
         }
         else {
             None
