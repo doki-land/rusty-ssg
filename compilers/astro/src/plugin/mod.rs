@@ -26,6 +26,16 @@ impl std::fmt::Display for PluginError {
     }
 }
 
+impl std::error::Error for PluginError {
+    fn description(&self) -> &str {
+        match self {
+            PluginError::LoadError(_) => "Plugin load error",
+            PluginError::ExecuteError(_) => "Plugin execute error",
+            PluginError::LifecycleError(_) => "Plugin lifecycle error",
+        }
+    }
+}
+
 /// 插件配置
 #[derive(Debug, Default, Clone)]
 pub struct PluginConfig {

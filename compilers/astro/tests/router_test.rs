@@ -1,4 +1,4 @@
-use crate::router::RouteResolver;
+use astro::router::RouteResolver;
 use std::path::PathBuf;
 use tempfile::tempdir;
 

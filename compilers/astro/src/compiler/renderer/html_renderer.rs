@@ -135,8 +135,11 @@ impl HtmlRenderer {
 
     /// 执行插件
     fn execute_plugins(&self, content: &str) -> String {
-        // 插件系统暂时未实现，直接返回原始内容
-        content.to_string()
+        if let Some(plugin_host) = &self.plugin_host {
+            plugin_host.execute_plugins(content).unwrap_or_else(|_| content.to_string())
+        } else {
+            content.to_string()
+        }
     }
 
     /// 渲染 Astro 模板内容

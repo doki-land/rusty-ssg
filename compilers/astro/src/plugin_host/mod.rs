@@ -22,19 +22,19 @@ impl PluginHost {
 
     /// 注册插件
     pub fn register_plugin<P: Plugin + 'static>(&mut self, plugin: P) -> Result<(), Box<dyn std::error::Error>> {
-        self.manager.register(Arc::new(plugin))?;
+        self.manager.register(Arc::new(plugin)).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(())
     }
 
     /// 初始化所有插件
     pub fn init_plugins(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.manager.init_all()?;
+        self.manager.init_all().map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(())
     }
 
     /// 执行所有插件
     pub fn execute_plugins(&self, content: &str) -> Result<String, Box<dyn std::error::Error>> {
-        self.manager.execute_all(content)
+        self.manager.execute_all(content).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
     /// 获取插件管理器

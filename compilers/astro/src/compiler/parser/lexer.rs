@@ -132,11 +132,23 @@ impl Lexer {
                 self.chars.next();
                 Token::Equals
             }
-            // 处理引号
+            // 处理引号和字符串
             '"' | '\'' => {
                 let quote_char = *current_char;
                 self.chars.next();
-                Token::Quote(quote_char)
+                
+                // 解析字符串内容
+                let mut string_content = String::new();
+                while let Some(&c) = self.chars.peek() {
+                    if c == quote_char {
+                        self.chars.next(); // 消费引号
+                        break;
+                    }
+                    string_content.push(c);
+                    self.chars.next();
+                }
+                
+                Token::String(string_content)
             }
             // 处理数字
             c if c.is_digit(10) => {
