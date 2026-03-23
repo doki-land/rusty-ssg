@@ -1,5 +1,5 @@
-use jekyll::{Post, FrontMatterParser, JekyllConfig, JekyllStructure, PostManager};
-use chrono::{NaiveDate, Datelike};
+use chrono::{Datelike, NaiveDate};
+use jekyll::{FrontMatterParser, JekyllConfig, JekyllStructure, Post, PostManager};
 use std::{fs, path::Path};
 use tempfile::tempdir;
 
@@ -29,18 +29,19 @@ Content here."#;
 
     // 调试：打印 front matter 内容
     println!("Front matter variables: {:?}", front_matter.variables());
-    
+
     // 调试：检查 categories 字段
     if let Some(categories) = front_matter.get("categories") {
         println!("Categories field: {:?}", categories);
         println!("Categories type: {:?}", categories);
-    } else {
+    }
+    else {
         println!("Categories field not found");
     }
 
     let categories = Post::extract_categories(&front_matter, path);
     println!("Extracted categories: {:?}", categories);
-    
+
     assert_eq!(categories, vec!["Programming", "Rust"]);
 }
 

@@ -1,7 +1,9 @@
 //! Vue 组件渲染测试
 
-use vuepress::compiler::{HtmlRenderer, VuePressCompiler};
-use vuepress::types::VuePressConfig;
+use vuepress::{
+    compiler::{HtmlRenderer, VuePressCompiler},
+    types::VuePressConfig,
+};
 
 #[test]
 fn test_vue_component_rendering() {

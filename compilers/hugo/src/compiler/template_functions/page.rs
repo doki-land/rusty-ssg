@@ -24,7 +24,7 @@ impl PageFunctions {
         }
 
         let path = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 简单实现：返回基于路径的永久链接
         let permalink = format!("/{}", path.trim_start_matches('/'));
         Ok(Value::String(permalink))
@@ -41,7 +41,7 @@ impl PageFunctions {
         }
 
         let path = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 简单实现：返回基于路径的相对链接
         let rel_link = format!("/{}", path.trim_start_matches('/'));
         Ok(Value::String(rel_link))
@@ -58,7 +58,7 @@ impl PageFunctions {
         }
 
         let path = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 简单实现：返回一个模拟的页面对象
         let page = serde_json::json!({
             "Title": path.split('/').last().unwrap_or(path),

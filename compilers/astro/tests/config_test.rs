@@ -8,7 +8,7 @@ use tempfile::tempdir;
 fn test_config_manager_creation() {
     // 创建配置管理器
     let _config_manager = ConfigManager::new();
-    
+
     // 验证配置管理器创建成功
     assert!(true);
 }
@@ -17,7 +17,7 @@ fn test_config_manager_creation() {
 fn test_config_manager_default() {
     // 创建默认配置管理器
     let _config_manager = ConfigManager::default();
-    
+
     // 验证默认配置管理器创建成功
     assert!(true);
 }
@@ -26,7 +26,7 @@ fn test_config_manager_default() {
 fn test_config_manager_load_from_project() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
-    
+
     // 创建配置文件
     let config_file = temp_dir.path().join("astro.config.json");
     let config_content = r#"
@@ -37,13 +37,13 @@ fn test_config_manager_load_from_project() {
     }
     "#;
     fs::write(&config_file, config_content).unwrap();
-    
+
     // 创建配置管理器
     let mut config_manager = ConfigManager::new();
-    
+
     // 从项目目录加载配置
     let config = config_manager.load_from_project(temp_dir.path()).unwrap();
-    
+
     // 验证配置
     assert_eq!(config.site, Some("https://example.com".to_string()));
     assert_eq!(config.base, Some("/blog".to_string()));
@@ -54,13 +54,13 @@ fn test_config_manager_load_from_project() {
 fn test_config_manager_load_from_project_no_config() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
-    
+
     // 创建配置管理器
     let mut config_manager = ConfigManager::new();
-    
+
     // 从项目目录加载配置（没有配置文件）
     let config = config_manager.load_from_project(temp_dir.path()).unwrap();
-    
+
     // 验证默认配置
     assert_eq!(config.output, "static");
     assert_eq!(config.src_dir, "./src");
@@ -72,7 +72,7 @@ fn test_config_manager_load_from_project_no_config() {
 fn test_astro_config_default() {
     // 创建默认 Astro 配置
     let config = AstroConfig::default();
-    
+
     // 验证默认配置值
     assert_eq!(config.trailing_slash, "ignore");
     assert_eq!(config.output, "static");

@@ -25,8 +25,8 @@ pub use config::{
 };
 
 pub use tools::{
-    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, DevServer, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem, NewArgs,
-    PageContext, SidebarGroup, SidebarLink, StaticSiteGenerator, TemplateEngineType, UnifiedTemplateManager,
+    BuildArgs, CheckArgs, ConfigLoader, DefaultTheme, DevServer, GatsbyCli, GatsbyCommands, InitArgs, LocaleInfo, NavItem,
+    NewArgs, PageContext, SidebarGroup, SidebarLink, StaticSiteGenerator, TemplateEngineType, UnifiedTemplateManager,
 };
 
 pub use watcher::{FileChangeEvent, FileWatcher};

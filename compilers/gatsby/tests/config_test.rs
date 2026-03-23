@@ -1,4 +1,4 @@
-use gatsby::{ConfigError, ConfigValidation, GatsbyConfig, PluginConfig, SiteMetadata, DevelopConfig, TrailingSlash};
+use gatsby::{ConfigError, ConfigValidation, DevelopConfig, GatsbyConfig, PluginConfig, SiteMetadata, TrailingSlash};
 use std::collections::HashMap;
 
 #[test]

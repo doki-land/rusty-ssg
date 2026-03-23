@@ -1,4 +1,4 @@
-use nargo_document::{KaTeXPlugin, PluginContext, DocumentPlugin};
+use nargo_document::{DocumentPlugin, KaTeXPlugin, PluginContext};
 
 #[test]
 fn test_before_render() {

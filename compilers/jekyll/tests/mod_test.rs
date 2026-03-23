@@ -226,18 +226,18 @@ plugins:
     assert_eq!(config.description, Some("This is a Jekyll site".to_string()));
     assert_eq!(config.permalink, Some("/:categories/:year/:month/:day/:title/".to_string()));
     assert_eq!(config.markdown, Some("kramdown".to_string()));
-    
+
     // 检查 exclude 字段是否被正确解析
     if let Some(exclude) = &config.exclude {
         assert!(exclude.contains(&"Gemfile".to_string()));
         assert!(exclude.contains(&"Gemfile.lock".to_string()));
     }
-    
+
     // 检查 include 字段是否被正确解析
     if let Some(include) = &config.include {
         assert!(include.contains(&".htaccess".to_string()));
     }
-    
+
     // 检查 plugins 字段是否被正确解析
     if let Some(plugins) = &config.plugins {
         assert!(plugins.contains(&"jekyll-feed".to_string()));

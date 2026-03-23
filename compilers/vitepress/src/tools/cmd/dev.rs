@@ -91,7 +91,8 @@ impl DevCommand {
 
         let config = if let Some(config_path) = config_path {
             ConfigLoader::load_from_file(&config_path)?
-        } else {
+        }
+        else {
             ConfigLoader::load_from_dir(source_dir)?
         };
 
@@ -167,7 +168,12 @@ impl DevCommand {
     }
 
     /// 启动文件监听器
-    pub fn start_file_watcher(source_dir: PathBuf, output_dir: PathBuf, state: DevServerState, config_path: Option<PathBuf>) -> Result<()> {
+    pub fn start_file_watcher(
+        source_dir: PathBuf,
+        output_dir: PathBuf,
+        state: DevServerState,
+        config_path: Option<PathBuf>,
+    ) -> Result<()> {
         let (tx, rx) = std::sync::mpsc::channel();
 
         let mut watcher = RecommendedWatcher::new(
@@ -265,7 +271,11 @@ impl DevCommand {
 
         let server = HttpsServerBuilder::new().addr(addr).router(router).build();
 
-        server.serve().await.map_err(|e| crate::types::VitePressError::ConfigError { message: e.to_string(), path: None, suggestion: None })?;
+        server.serve().await.map_err(|e| crate::types::VitePressError::ConfigError {
+            message: e.to_string(),
+            path: None,
+            suggestion: None,
+        })?;
 
         Ok(())
     }

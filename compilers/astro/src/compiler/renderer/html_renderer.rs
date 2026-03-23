@@ -69,13 +69,13 @@ impl HtmlRenderer {
         // 或者 <ComponentName prop1="value1" prop2={value2}>内容</ComponentName>
 
         let mut result = content.to_string();
-        
+
         // 处理 React 组件语法
         result = self.process_react_syntax(&result);
-        
+
         // 处理 Vue 组件语法
         result = self.process_vue_syntax(&result);
-        
+
         // 处理 Svelte 组件语法
         result = self.process_svelte_syntax(&result);
 

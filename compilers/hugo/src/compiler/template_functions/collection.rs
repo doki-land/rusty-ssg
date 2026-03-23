@@ -1,10 +1,9 @@
 //! 集合处理函数
 //! 提供 Hugo 兼容的集合处理函数
 
+use rand::{seq::SliceRandom, thread_rng};
 use serde_json::Value;
 use std::collections::HashMap;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 
 /// 集合处理函数集合
 #[derive(Clone)]
@@ -36,7 +35,7 @@ impl CollectionFunctions {
         }
 
         let mut map = HashMap::new();
-        
+
         for chunk in args.chunks(2) {
             let key = chunk[0].as_str().ok_or("Dictionary keys must be strings")?;
             map.insert(key.to_string(), chunk[1].clone());
@@ -130,7 +129,7 @@ impl CollectionFunctions {
         }
 
         let mut arr = args[0].as_array().ok_or("First argument must be an array")?.clone();
-        
+
         for item in &args[1..] {
             arr.push(item.clone());
         }
@@ -186,16 +185,8 @@ impl CollectionFunctions {
         }
 
         let end = args[0].as_i64().ok_or("First argument must be an integer")?;
-        let start = if args.len() > 1 {
-            args[1].as_i64().ok_or("Second argument must be an integer")?
-        } else {
-            1
-        };
-        let step = if args.len() > 2 {
-            args[2].as_i64().ok_or("Third argument must be an integer")?
-        } else {
-            1
-        };
+        let start = if args.len() > 1 { args[1].as_i64().ok_or("Second argument must be an integer")? } else { 1 };
+        let step = if args.len() > 2 { args[2].as_i64().ok_or("Third argument must be an integer")? } else { 1 };
 
         if step == 0 {
             return Err("Step cannot be zero".to_string());
@@ -209,7 +200,8 @@ impl CollectionFunctions {
                 result.push(Value::Number(current.into()));
                 current += step;
             }
-        } else {
+        }
+        else {
             while current >= end {
                 result.push(Value::Number(current.into()));
                 current += step;

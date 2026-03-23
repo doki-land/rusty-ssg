@@ -149,7 +149,7 @@ impl ToJsonValue for PageContext {
 pub trait Theme {
     /// 渲染页面
     fn render_page(&self, context: &PageContext) -> Result<String>;
-    
+
     /// 获取站点标题
     fn site_title(&self) -> &str;
 }
@@ -173,7 +173,7 @@ impl Theme for DefaultTheme {
             .render(TemplateEngine::DejaVu, "page", &json_context)
             .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
     }
-    
+
     /// 获取站点标题
     fn site_title(&self) -> &str {
         self.config.title.as_deref().unwrap_or("VuePress Documentation")
@@ -214,7 +214,7 @@ impl DefaultTheme {
     pub fn engine_type(&self) -> &TemplateEngineType {
         &self.engine_type
     }
-    
+
     /// 从文件加载自定义主题
     ///
     /// # Arguments
@@ -227,18 +227,19 @@ impl DefaultTheme {
     /// 新的主题实例
     pub fn from_path(config: VuePressConfig, theme_path: &std::path::Path) -> Result<Self> {
         let mut template_manager = TemplateManager::new();
-        
+
         // 加载主题模板文件
         let page_template_path = theme_path.join("templates").join("page.dejavu");
         if page_template_path.exists() {
             let template_content = std::fs::read_to_string(page_template_path)?;
             template_manager.register_template(TemplateEngine::DejaVu, "page", &template_content)?;
-        } else {
+        }
+        else {
             // 使用默认模板
             let template_content = include_str!("../templates/page.dejavu");
             template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
         }
-        
+
         Ok(Self { config, engine_type: TemplateEngineType::Dejavu, template_manager })
     }
 }

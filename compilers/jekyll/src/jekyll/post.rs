@@ -184,7 +184,7 @@ impl Post {
             // 从路径中提取所有父目录作为分类
             let mut current = path.parent();
             let mut path_categories = Vec::new();
-            
+
             while let Some(parent) = current {
                 if let Some(dir_name) = parent.file_name().and_then(|n| n.to_str()) {
                     if dir_name == "_posts" {
@@ -196,7 +196,7 @@ impl Post {
                 }
                 current = parent.parent();
             }
-            
+
             // 反转顺序，因为我们是从子目录向上遍历的
             path_categories.reverse();
             categories.extend(path_categories);

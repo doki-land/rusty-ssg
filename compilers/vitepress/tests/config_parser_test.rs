@@ -1,9 +1,11 @@
 //! 配置解析器测试
 //! 测试 VitePress 配置解析器的功能
 
-use vitepress::{types::config::{ConfigError, ConfigValidation, VitePressConfig}, types::VitePressError};
-use std::fs;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
+use vitepress::types::{
+    VitePressError,
+    config::{ConfigError, ConfigValidation, VitePressConfig},
+};
 
 #[test]
 fn test_config_parser_toml() {

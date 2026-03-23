@@ -1,5 +1,5 @@
 //! Mermaid 图表渲染插件
-//! 
+//!
 //! 提供对 Markdown 中 Mermaid 图表的支持
 
 use crate::plugin::{PluginContext, PluginMeta, VuePressPlugin};
@@ -42,7 +42,7 @@ impl MermaidPlugin {
         MERMAID_BLOCK_RE
             .replace_all(content, |caps: &regex::Captures| {
                 let diagram = &caps[1];
-                
+
                 format!(
                     r#"<div class="mermaid">
 {}

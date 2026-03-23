@@ -38,7 +38,8 @@ impl BuildCommand {
         println!("  {} Loading configuration...", style("→").blue());
         let config = if let Some(config_path) = args.config {
             ConfigLoader::load_from_file(&config_path)?
-        } else {
+        }
+        else {
             ConfigLoader::load_from_dir(&source_dir)?
         };
         println!("  {} Configuration loaded", style("✓").green());

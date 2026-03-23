@@ -86,13 +86,11 @@ pub trait JekyllPlugin: Send + Sync {
 
     /// 站点构建前钩子
     /// 在站点构建开始前调用
-    fn pre_build(&self) {
-    }
+    fn pre_build(&self) {}
 
     /// 站点构建后钩子
     /// 在站点构建完成后调用
-    fn post_build(&self) {
-    }
+    fn post_build(&self) {}
 }
 
 /// 插件注册表

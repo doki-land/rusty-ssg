@@ -183,8 +183,6 @@ impl Component {
         format!(r#"<div data-component="{}" data-props="{}"></div>"#, self.name, Self::escape_html(&props_json))
     }
 
-
-
     /// HTML 转义
     fn escape_html(content: &str) -> String {
         content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")

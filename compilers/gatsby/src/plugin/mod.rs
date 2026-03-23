@@ -324,7 +324,7 @@ impl PluginRegistry {
                 Ok(plugin) => {
                     self.register_box(plugin);
                     println!("✅ Plugin {} loaded successfully", plugin_name);
-                },
+                }
                 Err(e) => {
                     // 如果加载失败，使用模拟插件
                     println!("⚠️  Failed to load plugin {}, using mock instead: {:?}", plugin_name, e);
@@ -347,14 +347,15 @@ impl PluginRegistry {
     /// # Returns
     ///
     /// 加载的插件或错误
-    fn load_plugin_from_filesystem(&self, plugin_name: &str, plugin_config: &crate::config::PluginConfig) -> Result<Box<dyn Plugin + 'static>> {
+    fn load_plugin_from_filesystem(
+        &self,
+        plugin_name: &str,
+        plugin_config: &crate::config::PluginConfig,
+    ) -> Result<Box<dyn Plugin + 'static>> {
         use std::path::Path;
 
         // 尝试在 node_modules 中查找插件
-        let plugin_paths = [
-            Path::new("./node_modules/").join(plugin_name),
-            Path::new("./plugins/").join(plugin_name),
-        ];
+        let plugin_paths = [Path::new("./node_modules/").join(plugin_name), Path::new("./plugins/").join(plugin_name)];
 
         for path in &plugin_paths {
             if path.exists() {
@@ -382,7 +383,11 @@ impl PluginRegistry {
     /// # Returns
     ///
     /// 创建的插件
-    fn create_plugin_from_config(&self, plugin_name: &str, plugin_config: &crate::config::PluginConfig) -> Box<dyn Plugin + 'static> {
+    fn create_plugin_from_config(
+        &self,
+        plugin_name: &str,
+        plugin_config: &crate::config::PluginConfig,
+    ) -> Box<dyn Plugin + 'static> {
         struct ConfiguredPlugin {
             meta: PluginMeta,
             options: Option<std::collections::HashMap<String, serde_json::Value>>,

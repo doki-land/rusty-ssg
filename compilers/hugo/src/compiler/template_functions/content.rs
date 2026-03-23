@@ -20,7 +20,7 @@ impl ContentFunctions {
         }
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 简单的 markdown 转换实现
         // 实际项目中应该使用真正的 markdown 解析器
         let html = input
@@ -46,14 +46,9 @@ impl ContentFunctions {
         }
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 简单的 HTML 标签移除
-        let plain = input
-            .replace('<', "<")
-            .replace('>', ">")
-            .replace(|c: char| c.is_control(), "")
-            .trim()
-            .to_string();
+        let plain = input.replace('<', "<").replace('>', ">").replace(|c: char| c.is_control(), "").trim().to_string();
 
         Ok(Value::String(plain))
     }
@@ -71,16 +66,13 @@ impl ContentFunctions {
         }
 
         let code = args[0].as_str().ok_or("First argument must be a string")?;
-        let language = if args.len() > 1 {
-            args[1].as_str().unwrap_or("")
-        } else {
-            ""
-        };
+        let language = if args.len() > 1 { args[1].as_str().unwrap_or("") } else { "" };
 
         // 简单的代码高亮实现
         let html = if language.is_empty() {
             format!("<pre><code>{}</code></pre>", code)
-        } else {
+        }
+        else {
             format!("<pre><code class=\"language-{}\">{}</code></pre>", language, code)
         };
 
@@ -98,7 +90,7 @@ impl ContentFunctions {
         }
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 简单的 Emoji 处理
         let result = input
             .replace(":smile:", "😊")

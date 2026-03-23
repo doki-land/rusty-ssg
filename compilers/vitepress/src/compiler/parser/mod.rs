@@ -1,10 +1,10 @@
 //! 编译器解析器模块
 //! 使用 oaks 解析 Markdown 文档
 
+use nargo_types::{Document, FrontMatter};
 use oak_core::{Builder, parser::session::ParseSession, source::SourceText};
 use oak_markdown::{MarkdownBuilder, MarkdownLanguage};
 use oak_yaml;
-use nargo_types::{Document, FrontMatter};
 use serde_json::Value;
 
 use crate::types::{Result, VitePressError};
@@ -19,9 +19,7 @@ pub struct MarkdownParser {
 impl MarkdownParser {
     /// 创建新的 Markdown 解析器
     pub fn new() -> Self {
-        Self {
-            lang_config: MarkdownLanguage::default(),
-        }
+        Self { lang_config: MarkdownLanguage::default() }
     }
 
     /// 创建带配置的 Markdown 解析器
@@ -91,12 +89,12 @@ impl MarkdownParser {
 
         // 找到第一个非空行
         let mut lines = source.lines().skip_while(|line| line.trim().is_empty());
-        
+
         // 检查是否以 --- 开头
         if let Some(first_line) = lines.next() {
             if first_line.trim() == "---" {
                 let mut frontmatter_lines = Vec::new();
-                
+
                 // 收集 frontmatter 内容，直到遇到 --- 或文件结束
                 for line in lines {
                     if line.trim() == "---" {
@@ -111,28 +109,42 @@ impl MarkdownParser {
                     if let Some(obj) = parsed.as_object() {
                         for (key, value) in obj {
                             match key.as_str() {
-                                "title" => if let Some(title) = value.as_str() {
-                                    frontmatter.title = Some(title.to_string());
-                                },
-                                "description" => if let Some(description) = value.as_str() {
-                                    frontmatter.description = Some(description.to_string());
-                                },
-                                "layout" => if let Some(layout) = value.as_str() {
-                                    frontmatter.layout = Some(layout.to_string());
-                                },
-                                "tags" => if let Some(tags) = value.as_array() {
-                                    frontmatter.tags = tags
-                                        .iter()
-                                        .filter_map(|tag| tag.as_str().map(|s| s.to_string()))
-                                        .collect();
-                                },
+                                "title" => {
+                                    if let Some(title) = value.as_str() {
+                                        frontmatter.title = Some(title.to_string());
+                                    }
+                                }
+                                "description" => {
+                                    if let Some(description) = value.as_str() {
+                                        frontmatter.description = Some(description.to_string());
+                                    }
+                                }
+                                "layout" => {
+                                    if let Some(layout) = value.as_str() {
+                                        frontmatter.layout = Some(layout.to_string());
+                                    }
+                                }
+                                "tags" => {
+                                    if let Some(tags) = value.as_array() {
+                                        frontmatter.tags =
+                                            tags.iter().filter_map(|tag| tag.as_str().map(|s| s.to_string())).collect();
+                                    }
+                                }
                                 _ => {
                                     if let Some(value_str) = value.as_str() {
-                                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value_str.to_string()));
-                                    } else if let Some(value_num) = value.as_f64() {
-                                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value_num.to_string()));
-                                    } else if let Some(value_bool) = value.as_bool() {
-                                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value_bool.to_string()));
+                                        frontmatter
+                                            .custom
+                                            .insert(key.to_string(), nargo_types::NargoValue::String(value_str.to_string()));
+                                    }
+                                    else if let Some(value_num) = value.as_f64() {
+                                        frontmatter
+                                            .custom
+                                            .insert(key.to_string(), nargo_types::NargoValue::String(value_num.to_string()));
+                                    }
+                                    else if let Some(value_bool) = value.as_bool() {
+                                        frontmatter
+                                            .custom
+                                            .insert(key.to_string(), nargo_types::NargoValue::String(value_bool.to_string()));
                                     }
                                 }
                             }

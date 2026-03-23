@@ -3,7 +3,7 @@
 
 use crate::types::Result;
 use lazy_static::lazy_static;
-use nargo_parser::{parse_document, FrontMatterParser};
+use nargo_parser::{FrontMatterParser, parse_document};
 use nargo_types::Document;
 use regex::Regex;
 
@@ -20,27 +20,21 @@ use regex::Regex;
 pub fn parse_markdown(source: &str, path: &str) -> Result<Document> {
     // 首先解析前置元数据
     let (frontmatter, content_start) = FrontMatterParser::parse(source)?;
-    
+
     // 提取内容部分
-    let content = if content_start < source.len() {
-        source[content_start..].to_string()
-    } else {
-        String::new()
-    };
-    
+    let content = if content_start < source.len() { source[content_start..].to_string() } else { String::new() };
+
     // 创建文档对象
-    let mut doc = Document::new()
-        .with_path(path.to_string())
-        .with_frontmatter(frontmatter)
-        .with_content(content);
-    
+    let mut doc = Document::new().with_path(path.to_string()).with_frontmatter(frontmatter).with_content(content);
+
     // 提取标题
     if doc.frontmatter.title.is_none() {
         doc.meta.title = extract_first_heading(&doc.content);
-    } else {
+    }
+    else {
         doc.meta.title = doc.frontmatter.title.clone();
     }
-    
+
     Ok(doc)
 }
 
@@ -84,7 +78,8 @@ pub fn parse_vue_component(source: &str, path: &str) -> Result<Document> {
     // 提取脚本内容（优先处理 setup 脚本）
     let script_content = if let Some(cap) = SCRIPT_SETUP_REGEX.captures(source) {
         cap.get(1).map(|m| m.as_str()).unwrap_or("")
-    } else {
+    }
+    else {
         SCRIPT_REGEX.captures(source).and_then(|cap| cap.get(1)).map(|m| m.as_str()).unwrap_or("")
     };
 
@@ -131,11 +126,9 @@ pub fn parse_html_file(source: &str, path: &str) -> Result<Document> {
     lazy_static! {
         static ref TITLE_REGEX: Regex = Regex::new(r#"<title>([\s\S]*?)</title>"#).unwrap();
     }
-    
-    let title = TITLE_REGEX.captures(source)
-        .and_then(|cap| cap.get(1))
-        .map(|m| m.as_str().trim().to_string());
-    
+
+    let title = TITLE_REGEX.captures(source).and_then(|cap| cap.get(1)).map(|m| m.as_str().trim().to_string());
+
     // 构建内容
     let html_content = format!(
         "# HTML File: {}
@@ -145,14 +138,16 @@ pub fn parse_html_file(source: &str, path: &str) -> Result<Document> {
 ```html
 {}
 ```",
-        path, title.as_deref().unwrap_or(""), source
+        path,
+        title.as_deref().unwrap_or(""),
+        source
     );
-    
+
     let mut doc = parse_markdown(&html_content, path)?;
     if title.is_some() {
         doc.meta.title = title;
     }
-    
+
     Ok(doc)
 }
 
@@ -169,7 +164,7 @@ pub fn parse_html_file(source: &str, path: &str) -> Result<Document> {
 pub fn parse_script_file(source: &str, path: &str) -> Result<Document> {
     // 提取脚本信息
     let extension = path.split('.').last().unwrap_or("js");
-    
+
     // 构建内容
     let script_content = format!(
         "# {} File: {}
@@ -178,9 +173,11 @@ pub fn parse_script_file(source: &str, path: &str) -> Result<Document> {
 {}
 ```",
         if extension == "ts" { "TypeScript" } else { "JavaScript" },
-        path, extension, source
+        path,
+        extension,
+        source
     );
-    
+
     parse_markdown(&script_content, path)
 }
 
@@ -197,17 +194,11 @@ pub fn parse_script_file(source: &str, path: &str) -> Result<Document> {
 pub fn parse_content_file(source: &str, path: &str) -> Result<Document> {
     match path.to_lowercase().as_str() {
         // Markdown 文件
-        path if path.ends_with(".md") || path.ends_with(".markdown") || path.ends_with(".mdx") => {
-            parse_markdown(source, path)
-        }
+        path if path.ends_with(".md") || path.ends_with(".markdown") || path.ends_with(".mdx") => parse_markdown(source, path),
         // Vue 组件文件
-        path if path.ends_with(".vue") => {
-            parse_vue_component(source, path)
-        }
+        path if path.ends_with(".vue") => parse_vue_component(source, path),
         // HTML 文件
-        path if path.ends_with(".html") || path.ends_with(".htm") => {
-            parse_html_file(source, path)
-        }
+        path if path.ends_with(".html") || path.ends_with(".htm") => parse_html_file(source, path),
         // JavaScript/TypeScript 文件
         path if path.ends_with(".js") || path.ends_with(".ts") || path.ends_with(".jsx") || path.ends_with(".tsx") => {
             parse_script_file(source, path)

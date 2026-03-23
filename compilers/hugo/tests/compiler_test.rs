@@ -6,7 +6,7 @@ use hugo::compiler::{Compiler, Parser, Renderer};
 fn test_compiler_creation() {
     // 创建编译器
     let compiler = Compiler::new();
-    
+
     // 验证编译器组件
     assert!(compiler.parser().is_some());
     assert!(compiler.renderer().is_some());
@@ -16,7 +16,7 @@ fn test_compiler_creation() {
 fn test_compiler_parse() {
     // 创建编译器
     let compiler = Compiler::new();
-    
+
     // 解析内容
     let content = r#"
 ---
@@ -35,9 +35,9 @@ tags:
 
 This is a test page.
 "#;
-    
+
     let parsed = compiler.parse(content).unwrap();
-    
+
     // 验证解析结果
     assert_eq!(parsed["title"], "Test Page");
     assert_eq!(parsed["date"], "2024-01-01T10:00:00Z");
@@ -51,7 +51,7 @@ This is a test page.
 fn test_compiler_render() {
     // 创建编译器
     let compiler = Compiler::new();
-    
+
     // 解析内容
     let content = r#"
 ---
@@ -64,12 +64,12 @@ draft: false
 
 This is a test page.
 "#;
-    
+
     let parsed = compiler.parse(content).unwrap();
-    
+
     // 渲染内容
     let rendered = compiler.render(&parsed).unwrap();
-    
+
     // 验证渲染结果
     assert!(rendered.contains("<h1>Test Page</h1>"));
     assert!(rendered.contains("<p>This is a test page.</p>"));
@@ -79,7 +79,7 @@ This is a test page.
 fn test_compiler_full_process() {
     // 创建编译器
     let compiler = Compiler::new();
-    
+
     // 完整编译过程
     let content = r#"
 ---
@@ -98,9 +98,9 @@ tags:
 
 This is a test page with **bold** text and *italic* text.
 "#;
-    
+
     let result = compiler.compile(content).unwrap();
-    
+
     // 验证编译结果
     assert!(result.contains("<h1>Test Page</h1>"));
     assert!(result.contains("<p>This is a test page with <strong>bold</strong> text and <em>italic</em> text.</p>"));

@@ -836,5 +836,3 @@ impl Default for TrailingSlash {
         TrailingSlash::Always
     }
 }
-
-

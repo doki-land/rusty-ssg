@@ -2,7 +2,10 @@
 //! 提供将 Markdown 文本渲染为 HTML 的功能
 
 use oak_core::{Builder, parser::session::ParseSession, source::SourceText};
-use oak_markdown::{MarkdownBuilder, MarkdownLanguage, ast::{Block, Heading, Paragraph, List, ListItem, CodeBlock, Blockquote, Table, TableCell}};
+use oak_markdown::{
+    MarkdownBuilder, MarkdownLanguage,
+    ast::{Block, Blockquote, CodeBlock, Heading, List, ListItem, Paragraph, Table, TableCell},
+};
 
 /// HTML 渲染器配置
 #[derive(Debug, Clone)]
@@ -219,7 +222,8 @@ impl HtmlRenderer {
     fn render_code_block(&self, code_block: &CodeBlock) -> String {
         let class = if let Some(lang) = &code_block.language {
             format!(" class=\"language-{}\"", self.escape_html(lang))
-        } else {
+        }
+        else {
             String::new()
         };
         let content = self.escape_html(&code_block.content);

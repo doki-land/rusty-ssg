@@ -146,17 +146,19 @@ impl DevServer {
 
     /// 启动 HTTP 服务器
     async fn start_http_server(&self) -> Result<()> {
+        use http_body_util::BodyExt;
         use hyper::{
+            Request, Response, StatusCode,
             body::{Bytes, Full, Incoming as IncomingBody},
             header::CONTENT_TYPE,
-            Request, Response, StatusCode,
         };
         use hyper_util::rt::tokio::TokioIo;
-        use http_body_util::BodyExt;
         use std::{fs::File, io::Read, net::SocketAddr};
 
         let output_dir = self.output_dir.clone();
-        let addr: SocketAddr = format!("{}:{}", self.addr, self.port).parse().map_err(|e: std::net::AddrParseError| crate::types::MkDocsError::ConfigParseError { message: e.to_string() })?;
+        let addr: SocketAddr = format!("{}:{}", self.addr, self.port)
+            .parse()
+            .map_err(|e: std::net::AddrParseError| crate::types::MkDocsError::ConfigParseError { message: e.to_string() })?;
 
         let listener = tokio::net::TcpListener::bind(addr).await?;
 
@@ -181,19 +183,18 @@ impl DevServer {
                             Ok(Response::builder()
                                 .status(StatusCode::OK)
                                 .header(CONTENT_TYPE, content_type.to_string())
-                                .body(http_body_util::BodyExt::boxed(Full::from(content))?)
+                                .body(http_body_util::BodyExt::boxed(Full::from(content))?))
                         }
                         else {
                             Ok(Response::builder()
                                 .status(StatusCode::NOT_FOUND)
-                                .body(http_body_util::BodyExt::boxed(Full::from("404 Not Found"))?)
+                                .body(http_body_util::BodyExt::boxed(Full::from("404 Not Found"))?))
                         }
                     }
                 });
 
                 let io = hyper_util::rt::tokio::TokioIo::new(socket);
-                let conn = hyper::server::conn::http1::Builder::new()
-                    .serve_connection(io, service);
+                let conn = hyper::server::conn::http1::Builder::new().serve_connection(io, service);
 
                 if let Err(e) = conn.await {
                     eprintln!("Server error: {}", e);

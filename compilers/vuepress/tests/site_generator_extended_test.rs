@@ -1,13 +1,13 @@
 //! 站点生成器扩展测试
 //! 测试 404 页面、robots.txt 文件等新功能
 
-use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
+use std::{collections::HashMap, fs, path::PathBuf};
 use tempfile::tempdir;
-use vuepress::Document;
-use vuepress::tools::{ConfigLoader, StaticSiteGenerator};
-use vuepress::types::VuePressConfig;
+use vuepress::{
+    Document,
+    tools::{ConfigLoader, StaticSiteGenerator},
+    types::VuePressConfig,
+};
 
 #[test]
 fn test_site_generator_404_page() {
@@ -17,7 +17,7 @@ fn test_site_generator_404_page() {
 
     // 创建测试文档
     let mut documents = HashMap::new();
-    
+
     let doc1 = Document {
         meta: nargo_types::document::DocumentMeta {
             path: "index.md".to_string(),
@@ -31,7 +31,7 @@ fn test_site_generator_404_page() {
         rendered_content: Some("<h1>Home Page</h1><p>This is the home page.</p>".to_string()),
         span: Default::default(),
     };
-    
+
     documents.insert("index.md".to_string(), doc1);
 
     // 创建配置
@@ -60,7 +60,7 @@ fn test_site_generator_robots_txt() {
 
     // 创建测试文档
     let mut documents = HashMap::new();
-    
+
     let doc1 = Document {
         meta: nargo_types::document::DocumentMeta {
             path: "index.md".to_string(),
@@ -74,7 +74,7 @@ fn test_site_generator_robots_txt() {
         rendered_content: Some("<h1>Home Page</h1><p>This is the home page.</p>".to_string()),
         span: Default::default(),
     };
-    
+
     documents.insert("index.md".to_string(), doc1);
 
     // 创建配置

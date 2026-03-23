@@ -1,11 +1,13 @@
 //! 编译器模块
 //! 提供 VitePress 文档编译器的核心功能
 
-use crate::types::{
-    Result, VitePressConfig,
-    ipc::{InvokePluginRequest, PluginContext},
+use crate::{
+    compiler::parser::MarkdownParser,
+    types::{
+        Result, VitePressConfig,
+        ipc::{InvokePluginRequest, PluginContext},
+    },
 };
-use crate::compiler::parser::MarkdownParser;
 use nargo_types::Document;
 use std::{
     collections::HashMap,
@@ -198,9 +200,11 @@ impl VitePressCompiler {
         let request = InvokePluginRequest::new(hook_name.to_string(), "*".to_string(), context);
 
         let timeout = Duration::from_secs(30);
-        let response = plugin_host
-            .invoke_plugin(request, timeout)
-            .map_err(|e| crate::types::VitePressError::ConfigError { message: format!("{}", e), path: None, suggestion: None })?;
+        let response = plugin_host.invoke_plugin(request, timeout).map_err(|e| crate::types::VitePressError::ConfigError {
+            message: format!("{}", e),
+            path: None,
+            suggestion: None,
+        })?;
 
         if response.success {
             Ok(response.content.unwrap_or_default())

@@ -22,10 +22,7 @@ pub struct LiquidFilter {
 
 impl std::fmt::Debug for LiquidFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LiquidFilter")
-            .field("name", &self.name)
-            .field("filter_fn", &"<closure>")
-            .finish()
+        f.debug_struct("LiquidFilter").field("name", &self.name).field("filter_fn", &"<closure>").finish()
     }
 }
 
@@ -173,10 +170,12 @@ impl LiquidEngine {
                     let length = n.as_u64().unwrap_or(50);
                     if s.len() > length as usize {
                         Value::String(s.chars().take(length as usize - 3).collect::<String>() + "...")
-                    } else {
+                    }
+                    else {
                         Value::String(s.clone())
                     }
-                } else {
+                }
+                else {
                     Value::Null
                 }
             }),
@@ -185,9 +184,12 @@ impl LiquidEngine {
         self.filters.insert(
             "replace".to_string(),
             LiquidFilter::new("replace", |args| {
-                if let (Some(Value::String(s)), Some(Value::String(from)), Some(Value::String(to))) = (args.first(), args.get(1), args.get(2)) {
+                if let (Some(Value::String(s)), Some(Value::String(from)), Some(Value::String(to))) =
+                    (args.first(), args.get(1), args.get(2))
+                {
                     Value::String(s.replace(from, to))
-                } else {
+                }
+                else {
                     Value::Null
                 }
             }),
@@ -200,7 +202,8 @@ impl LiquidEngine {
                 if let (Some(Value::Array(arr)), Some(Value::String(sep))) = (args.first(), args.get(1)) {
                     let items: Vec<String> = arr.iter().map(value_to_string).collect();
                     Value::String(items.join(sep))
-                } else {
+                }
+                else {
                     Value::Null
                 }
             }),
@@ -213,7 +216,8 @@ impl LiquidEngine {
                     let mut sorted = arr.clone();
                     sorted.sort_by(|a, b| value_to_string(a).cmp(&value_to_string(b)));
                     Value::Array(sorted)
-                } else {
+                }
+                else {
                     Value::Null
                 }
             }),
@@ -226,7 +230,8 @@ impl LiquidEngine {
                 if let (Some(Value::String(date_str)), Some(Value::String(format_str))) = (args.first(), args.get(1)) {
                     // 简单的日期格式化实现
                     Value::String(format!("{}", date_str))
-                } else {
+                }
+                else {
                     Value::Null
                 }
             }),
@@ -264,7 +269,7 @@ impl LiquidEngine {
                     let full_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("").to_string();
                     let stem_name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
                     let content = std::fs::read_to_string(path).map_err(LiquidError::from)?;
-                    
+
                     cache.insert(full_name, content.clone());
                     cache.insert(stem_name, content);
                 }
@@ -413,7 +418,7 @@ impl LiquidEngine {
             if let Some(full_match) = cap.get(0) {
                 if let Some(include_name) = cap.get(1) {
                     let include_name = include_name.as_str().trim_matches('"');
-                    
+
                     // 渲染包含文件
                     let include_result = self.render_include(include_name, context)?;
                     result = result.replace(full_match.as_str(), &include_result);
@@ -582,13 +587,14 @@ impl LiquidEngine {
             self.load_layouts()?;
         }
 
-        let layout_content = self.layouts.get(layout_name).ok_or_else(|| LiquidError::template_not_found(layout_name.to_string()))?.to_string();
+        let layout_content =
+            self.layouts.get(layout_name).ok_or_else(|| LiquidError::template_not_found(layout_name.to_string()))?.to_string();
 
         let mut full_context = context.clone();
 
         if let Value::Object(map) = &mut full_context {
             let mut content_map = serde_json::Map::new();
-            content_map.insert("" .to_string(), Value::String(content.to_string()));
+            content_map.insert("".to_string(), Value::String(content.to_string()));
             map.insert("content".to_string(), Value::Object(content_map));
         }
 
@@ -610,7 +616,11 @@ impl LiquidEngine {
             self.load_includes()?;
         }
 
-        let include_content = self.includes.get(include_name).ok_or_else(|| LiquidError::template_not_found(include_name.to_string()))?.to_string();
+        let include_content = self
+            .includes
+            .get(include_name)
+            .ok_or_else(|| LiquidError::template_not_found(include_name.to_string()))?
+            .to_string();
 
         self.render_template(&include_content, context)
     }

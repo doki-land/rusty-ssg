@@ -34,7 +34,12 @@ impl PrismPlugin {
     /// 创建新的 Prism 插件
     pub fn new() -> Self {
         Self {
-            meta: PluginMeta::new("prism".to_string(), "0.1.0".to_string(), "Code syntax highlighting with Prism".to_string(), PluginType::Markdown),
+            meta: PluginMeta::new(
+                "prism".to_string(),
+                "0.1.0".to_string(),
+                "Code syntax highlighting with Prism".to_string(),
+                PluginType::Markdown,
+            ),
             config: PrismPluginConfig::default(),
         }
     }
@@ -42,7 +47,12 @@ impl PrismPlugin {
     /// 创建带配置的 Prism 插件
     pub fn with_config(config: PrismPluginConfig) -> Self {
         Self {
-            meta: PluginMeta::new("prism".to_string(), "0.1.0".to_string(), "Code syntax highlighting with Prism".to_string(), PluginType::Markdown),
+            meta: PluginMeta::new(
+                "prism".to_string(),
+                "0.1.0".to_string(),
+                "Code syntax highlighting with Prism".to_string(),
+                PluginType::Markdown,
+            ),
             config,
         }
     }
@@ -110,6 +120,12 @@ impl VitePressPlugin for PrismPlugin {
             content = content.replace("</body>", &format!("{}</body>", js_scripts));
         }
 
-        PluginContext { content, frontmatter: context.frontmatter, path: context.path, config: context.config, site_data: context.site_data }
+        PluginContext {
+            content,
+            frontmatter: context.frontmatter,
+            path: context.path,
+            config: context.config,
+            site_data: context.site_data,
+        }
     }
 }

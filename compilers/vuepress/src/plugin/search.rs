@@ -1,5 +1,5 @@
 //! 搜索插件
-//! 
+//!
 //! 提供对文档的搜索功能
 
 use crate::plugin::{PluginContext, PluginMeta, VuePressPlugin};

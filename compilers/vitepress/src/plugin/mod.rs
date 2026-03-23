@@ -2,8 +2,7 @@
 //! 提供 VitePress 文档编译器的插件系统
 
 use nargo_types::NargoValue;
-use std::collections::HashMap;
-use std::hash::Hash;
+use std::{collections::HashMap, hash::Hash};
 
 pub mod katex;
 pub mod prism;
@@ -78,24 +77,12 @@ pub struct PluginContext {
 impl PluginContext {
     /// 创建新的插件上下文
     pub fn new(content: String, frontmatter: HashMap<String, NargoValue>, path: String) -> Self {
-        Self { 
-            content, 
-            frontmatter, 
-            path, 
-            config: None, 
-            site_data: None 
-        }
+        Self { content, frontmatter, path, config: None, site_data: None }
     }
 
     /// 从文档内容创建插件上下文
     pub fn from_content(content: String, path: String) -> Self {
-        Self { 
-            content, 
-            frontmatter: HashMap::new(), 
-            path, 
-            config: None, 
-            site_data: None 
-        }
+        Self { content, frontmatter: HashMap::new(), path, config: None, site_data: None }
     }
 
     /// 设置全局配置
@@ -177,10 +164,7 @@ pub struct PluginRegistry {
 impl PluginRegistry {
     /// 创建新的插件注册表
     pub fn new() -> Self {
-        Self {
-            plugins: Vec::new(),
-            plugins_by_type: HashMap::new(),
-        }
+        Self { plugins: Vec::new(), plugins_by_type: HashMap::new() }
     }
 
     /// 注册一个插件
@@ -188,12 +172,9 @@ impl PluginRegistry {
         let plugin_box = Box::new(plugin);
         let plugin_type = plugin_box.meta().plugin_type.clone();
         let index = self.plugins.len();
-        
+
         self.plugins.push(plugin_box);
-        self.plugins_by_type
-            .entry(plugin_type)
-            .or_insert_with(Vec::new)
-            .push(index);
+        self.plugins_by_type.entry(plugin_type).or_insert_with(Vec::new).push(index);
     }
 
     /// 初始化所有已注册的插件
@@ -247,7 +228,10 @@ impl PluginRegistry {
     }
 
     /// 对所有已注册的插件调用开发服务器启动前钩子
-    pub fn before_dev_server_all(&self, config: Option<HashMap<String, NargoValue>>) -> Result<(), crate::types::VitePressError> {
+    pub fn before_dev_server_all(
+        &self,
+        config: Option<HashMap<String, NargoValue>>,
+    ) -> Result<(), crate::types::VitePressError> {
         for plugin in &self.plugins {
             plugin.before_dev_server(config.clone())?;
         }
@@ -274,9 +258,9 @@ impl PluginRegistry {
 
     /// 按类型获取插件
     pub fn plugins_by_type(&self, plugin_type: PluginType) -> Option<Vec<&Box<dyn VitePressPlugin>>> {
-        self.plugins_by_type.get(&plugin_type).map(|indices| {
-            indices.iter().filter_map(|&index| self.plugins.get(index)).collect()
-        })
+        self.plugins_by_type
+            .get(&plugin_type)
+            .map(|indices| indices.iter().filter_map(|&index| self.plugins.get(index)).collect())
     }
 
     /// 检查是否注册了指定名称的插件

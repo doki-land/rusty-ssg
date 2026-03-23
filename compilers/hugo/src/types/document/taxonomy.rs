@@ -1,8 +1,8 @@
 //! 分类系统模块
 //! 提供分类和标签的处理功能
 
-use serde::{Deserialize, Serialize};
 use super::{HugoContentIndex, HugoPage};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 
 /// 分类项
@@ -122,20 +122,20 @@ impl TaxonomySystem {
     fn generate_taxonomy_index_page(&self, taxonomy_type: TaxonomyType, terms: &Vec<TaxonomyTerm>) -> HugoPage {
         let name_str: String;
         let path: PathBuf;
-        
+
         match taxonomy_type {
             TaxonomyType::Tags => {
                 name_str = "Tags".to_string();
                 path = PathBuf::from("tags/_index.md");
-            },
+            }
             TaxonomyType::Categories => {
                 name_str = "Categories".to_string();
                 path = PathBuf::from("categories/_index.md");
-            },
+            }
             TaxonomyType::Custom(custom) => {
                 name_str = custom.to_string();
                 path = PathBuf::from(format!("{}/_index.md", name_str));
-            },
+            }
         };
         let mut frontmatter = super::HugoFrontMatter::new();
         frontmatter.title = Some(name_str.clone());
@@ -154,17 +154,17 @@ impl TaxonomySystem {
     /// 生成分类项页面
     fn generate_taxonomy_term_page(&self, taxonomy_type: TaxonomyType, term: &TaxonomyTerm) -> HugoPage {
         let base_path_str: String;
-        
+
         match taxonomy_type {
             TaxonomyType::Tags => {
                 base_path_str = "tags".to_string();
-            },
+            }
             TaxonomyType::Categories => {
                 base_path_str = "categories".to_string();
-            },
+            }
             TaxonomyType::Custom(custom) => {
                 base_path_str = custom.to_string();
-            },
+            }
         };
         let path = PathBuf::from(format!("{}/{}/_index.md", base_path_str, term.slug));
 

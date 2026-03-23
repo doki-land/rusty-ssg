@@ -10,10 +10,10 @@ use crate::{
     config::{AstroConfig, ConfigManager},
     plugin::{PluginContext, PluginLifecycleEvent, PluginManager},
 };
+use hashbrown::HashMap;
 use rayon::prelude::*;
 use std::{fs, fs::File, io::Write, path::Path};
 use walkdir::WalkDir;
-use hashbrown::HashMap;
 
 /// 构建命令
 ///
@@ -129,10 +129,11 @@ fn process_files(project_path: &Path, cache_manager: &CacheManager) -> (Componen
             .collect();
 
         // 首先分析所有文件的依赖关系，构建完整的依赖图
-        let file_contents: Vec<_> = files.par_iter().filter_map(|path| {
-            std::fs::read_to_string(path).ok().map(|content| (path.clone(), content))
-        }).collect();
-        
+        let file_contents: Vec<_> = files
+            .par_iter()
+            .filter_map(|path| std::fs::read_to_string(path).ok().map(|content| (path.clone(), content)))
+            .collect();
+
         analyzer.analyze_files(&file_contents);
 
         // 找出需要更新的文件

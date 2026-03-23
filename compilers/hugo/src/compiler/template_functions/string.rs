@@ -1,9 +1,9 @@
 //! 字符串处理函数
 //! 提供 Hugo 兼容的字符串处理函数
 
-use serde_json::Value;
 use lazy_static::lazy_static;
 use regex::Regex;
+use serde_json::Value;
 
 lazy_static! {
     static ref WHITESPACE_RE: Regex = Regex::new(r"\s+").unwrap();
@@ -47,16 +47,14 @@ impl StringFunctions {
         }
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         let title = input
             .split_whitespace()
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => {
-                        first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase()
-                    }
+                    Some(first) => first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase(),
                 }
             })
             .collect::<Vec<_>>()
@@ -72,7 +70,7 @@ impl StringFunctions {
         }
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
-        
+
         // 转换为小写
         let slug = input.to_lowercase();
         // 替换非字母数字字符为空格
@@ -83,7 +81,7 @@ impl StringFunctions {
         let slug = slug.replace(' ', "-");
         // 去除首尾连字符
         let slug = slug.trim_matches('-');
-        
+
         Ok(Value::String(slug.to_string()))
     }
 
@@ -100,18 +98,10 @@ impl StringFunctions {
         }
 
         let length = args[0].as_i64().ok_or("First argument must be an integer")? as usize;
-        
-        let input = if args.len() > 1 {
-            args[1].as_str().unwrap_or("")
-        } else {
-            ""
-        };
-        
-        let suffix = if args.len() > 2 {
-            args[2].as_str().unwrap_or("...")
-        } else {
-            "..."
-        };
+
+        let input = if args.len() > 1 { args[1].as_str().unwrap_or("") } else { "" };
+
+        let suffix = if args.len() > 2 { args[2].as_str().unwrap_or("...") } else { "..." };
 
         if input.chars().count() <= length {
             return Ok(Value::String(input.to_string()));
@@ -119,7 +109,7 @@ impl StringFunctions {
 
         let mut result = String::new();
         let mut count = 0;
-        
+
         for c in input.chars() {
             if count >= length {
                 break;
@@ -127,9 +117,9 @@ impl StringFunctions {
             result.push(c);
             count += 1;
         }
-        
+
         result.push_str(suffix);
-        
+
         Ok(Value::String(result))
     }
 
@@ -169,9 +159,9 @@ impl StringFunctions {
 
         let chars: Vec<char> = input.chars().collect();
         let len = chars.len() as isize;
-        
+
         let start = if start < 0 { len + start } else { start };
-        
+
         if start < 0 || start >= len {
             return Ok(Value::String(String::new()));
         }
@@ -180,7 +170,8 @@ impl StringFunctions {
             let count = args[2].as_i64().ok_or("Third argument must be an integer")? as usize;
             let end = (start as usize).saturating_add(count).min(chars.len());
             chars[start as usize..end].iter().collect()
-        } else {
+        }
+        else {
             chars[start as usize..].iter().collect()
         };
 
@@ -201,10 +192,7 @@ impl StringFunctions {
         let input = args[0].as_str().ok_or("First argument must be a string")?;
         let sep = args[1].as_str().ok_or("Second argument must be a string")?;
 
-        let parts: Vec<Value> = input
-            .split(sep)
-            .map(|s| Value::String(s.to_string()))
-            .collect();
+        let parts: Vec<Value> = input.split(sep).map(|s| Value::String(s.to_string())).collect();
 
         Ok(Value::Array(parts))
     }
@@ -226,7 +214,8 @@ impl StringFunctions {
             let chars = args[1].as_str().unwrap_or(" ");
             let chars: Vec<char> = chars.chars().collect();
             input.trim_matches(chars.as_slice())
-        } else {
+        }
+        else {
             input.trim()
         };
 
@@ -247,11 +236,7 @@ impl StringFunctions {
         let input = args[0].as_str().ok_or("First argument must be a string")?;
         let suffix = args[1].as_str().ok_or("Second argument must be a string")?;
 
-        let result = if input.ends_with(suffix) {
-            &input[..input.len() - suffix.len()]
-        } else {
-            input
-        };
+        let result = if input.ends_with(suffix) { &input[..input.len() - suffix.len()] } else { input };
 
         Ok(Value::String(result.to_string()))
     }
@@ -270,11 +255,7 @@ impl StringFunctions {
         let input = args[0].as_str().ok_or("First argument must be a string")?;
         let prefix = args[1].as_str().ok_or("Second argument must be a string")?;
 
-        let result = if input.starts_with(prefix) {
-            &input[prefix.len()..]
-        } else {
-            input
-        };
+        let result = if input.starts_with(prefix) { &input[prefix.len()..] } else { input };
 
         Ok(Value::String(result.to_string()))
     }

@@ -26,12 +26,8 @@ impl ConditionFunctions {
         }
 
         let condition = args[0].as_bool().unwrap_or(false);
-        
-        Ok(if condition {
-            args[1].clone()
-        } else {
-            args[2].clone()
-        })
+
+        Ok(if condition { args[1].clone() } else { args[2].clone() })
     }
 
     /// default - 默认值
@@ -48,11 +44,7 @@ impl ConditionFunctions {
         let value = &args[0];
         let default_value = &args[1];
 
-        if Self::is_empty(value) {
-            Ok(default_value.clone())
-        } else {
-            Ok(value.clone())
-        }
+        if Self::is_empty(value) { Ok(default_value.clone()) } else { Ok(value.clone()) }
     }
 
     /// isset - 检查变量是否存在
@@ -66,7 +58,7 @@ impl ConditionFunctions {
         }
 
         let value = &args[0];
-        
+
         // 在 serde_json 中，null 表示不存在或未设置
         Ok(Value::Bool(!value.is_null()))
     }

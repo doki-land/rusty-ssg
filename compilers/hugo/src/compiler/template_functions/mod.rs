@@ -1,25 +1,25 @@
 //! Hugo 模板函数模块
 //! 提供与 Hugo 兼容的模板函数实现
 
-pub mod url;
-pub mod string;
 pub mod collection;
-pub mod date;
-pub mod math;
 pub mod condition;
 pub mod content;
+pub mod date;
+pub mod math;
 pub mod page;
 pub mod partial;
+pub mod string;
+pub mod url;
 
-pub use url::UrlFunctions;
-pub use string::StringFunctions;
 pub use collection::CollectionFunctions;
-pub use date::DateFunctions;
-pub use math::MathFunctions;
 pub use condition::ConditionFunctions;
 pub use content::ContentFunctions;
+pub use date::DateFunctions;
+pub use math::MathFunctions;
 pub use page::PageFunctions;
 pub use partial::PartialFunctions;
+pub use string::StringFunctions;
+pub use url::UrlFunctions;
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -33,14 +33,12 @@ pub struct TemplateFunctions {
 impl TemplateFunctions {
     /// 创建新的函数注册表
     pub fn new() -> Self {
-        let mut registry = Self {
-            functions: HashMap::new(),
-        };
-        
+        let mut registry = Self { functions: HashMap::new() };
+
         registry.register_all();
         registry
     }
-    
+
     /// 注册所有函数
     fn register_all(&mut self) {
         self.register_url_functions();
@@ -53,7 +51,7 @@ impl TemplateFunctions {
         self.register_page_functions();
         self.register_partial_functions();
     }
-    
+
     /// 注册 URL 处理函数
     fn register_url_functions(&mut self) {
         self.register("relURL", |args| UrlFunctions::new().rel_url(args));
@@ -62,7 +60,7 @@ impl TemplateFunctions {
         self.register("absLangURL", |args| UrlFunctions::new().abs_lang_url(args));
         self.register("relLangURL", |args| UrlFunctions::new().rel_lang_url(args));
     }
-    
+
     /// 注册字符串处理函数
     fn register_string_functions(&mut self) {
         self.register("lower", |args| StringFunctions::new().lower(args));
@@ -78,7 +76,7 @@ impl TemplateFunctions {
         self.register("trimSuffix", |args| StringFunctions::new().trim_suffix(args));
         self.register("trimPrefix", |args| StringFunctions::new().trim_prefix(args));
     }
-    
+
     /// 注册集合处理函数
     fn register_collection_functions(&mut self) {
         self.register("slice", |args| CollectionFunctions::new().slice(args));
@@ -96,7 +94,7 @@ impl TemplateFunctions {
         self.register("difference", |args| CollectionFunctions::new().difference(args));
         self.register("apply", |args| CollectionFunctions::new().apply(args));
     }
-    
+
     /// 注册日期处理函数
     fn register_date_functions(&mut self) {
         self.register("now", |args| DateFunctions::new().now(args));
@@ -104,7 +102,7 @@ impl TemplateFunctions {
         self.register("time", |args| DateFunctions::new().time(args));
         self.register("addDate", |args| DateFunctions::new().add_date(args));
     }
-    
+
     /// 注册数学函数
     fn register_math_functions(&mut self) {
         self.register("add", |args| MathFunctions::new().add(args));
@@ -116,7 +114,7 @@ impl TemplateFunctions {
         self.register("math.Min", |args| MathFunctions::new().min(args));
         self.register("math.Abs", |args| MathFunctions::new().abs(args));
     }
-    
+
     /// 注册条件函数
     fn register_condition_functions(&mut self) {
         self.register("cond", |args| ConditionFunctions::new().cond(args));
@@ -124,7 +122,7 @@ impl TemplateFunctions {
         self.register("isset", |args| ConditionFunctions::new().isset(args));
         self.register("empty", |args| ConditionFunctions::new().empty(args));
     }
-    
+
     /// 注册内容处理函数
     fn register_content_functions(&mut self) {
         self.register("markdownify", |args| ContentFunctions::new().markdownify(args));
@@ -132,7 +130,7 @@ impl TemplateFunctions {
         self.register("highlight", |args| ContentFunctions::new().highlight(args));
         self.register("emojify", |args| ContentFunctions::new().emojify(args));
     }
-    
+
     /// 注册页面处理函数
     fn register_page_functions(&mut self) {
         self.register("ref", |args| PageFunctions::new().ref_(args));
@@ -141,13 +139,13 @@ impl TemplateFunctions {
         self.register("pages", |args| PageFunctions::new().pages(args));
         self.register("site", |args| PageFunctions::new().site(args));
     }
-    
+
     /// 注册 Partial 模板函数
     fn register_partial_functions(&mut self) {
         self.register("partial", |args| PartialFunctions::new().partial(args));
         self.register("partialCached", |args| PartialFunctions::new().partial_cached(args));
     }
-    
+
     /// 注册单个函数
     pub fn register<F>(&mut self, name: &str, func: F)
     where
@@ -155,16 +153,14 @@ impl TemplateFunctions {
     {
         self.functions.insert(name.to_string(), Box::new(func));
     }
-    
+
     /// 调用函数
     pub fn call(&self, name: &str, args: &[Value]) -> Result<Value, String> {
-        let func = self.functions
-            .get(name)
-            .ok_or_else(|| format!("Function not found: {}", name))?;
-        
+        let func = self.functions.get(name).ok_or_else(|| format!("Function not found: {}", name))?;
+
         func(args)
     }
-    
+
     /// 获取所有已注册的函数名
     pub fn list_functions(&self) -> Vec<&String> {
         self.functions.keys().collect()

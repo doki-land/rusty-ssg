@@ -1,12 +1,12 @@
 //! 站点生成器测试
 
-use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
+use std::{collections::HashMap, fs, path::PathBuf};
 use tempfile::tempdir;
-use vuepress::Document;
-use vuepress::tools::{ConfigLoader, StaticSiteGenerator};
-use vuepress::types::VuePressConfig;
+use vuepress::{
+    Document,
+    tools::{ConfigLoader, StaticSiteGenerator},
+    types::VuePressConfig,
+};
 
 #[test]
 fn test_site_generator() {
@@ -16,7 +16,7 @@ fn test_site_generator() {
 
     // 创建测试文档
     let mut documents = HashMap::new();
-    
+
     let doc1 = Document {
         meta: nargo_types::document::DocumentMeta {
             path: "index.md".to_string(),
@@ -30,7 +30,7 @@ fn test_site_generator() {
         rendered_content: Some("<h1>Home Page</h1><p>This is the home page.</p>".to_string()),
         span: Default::default(),
     };
-    
+
     let doc2 = Document {
         meta: nargo_types::document::DocumentMeta {
             path: "guide/getting-started.md".to_string(),
@@ -44,7 +44,7 @@ fn test_site_generator() {
         rendered_content: Some("<h1>Getting Started</h1><p>This is the getting started guide.</p>".to_string()),
         span: Default::default(),
     };
-    
+
     documents.insert("index.md".to_string(), doc1);
     documents.insert("guide/getting-started.md".to_string(), doc2);
 
@@ -61,7 +61,7 @@ fn test_site_generator() {
     // 验证生成的文件
     let index_path = output_dir.join("zh-hans").join("index.html");
     assert!(index_path.exists());
-    
+
     let guide_path = output_dir.join("zh-hans").join("guide").join("getting-started.html");
     assert!(guide_path.exists());
 

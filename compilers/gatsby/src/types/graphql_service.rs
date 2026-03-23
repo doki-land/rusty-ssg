@@ -1,7 +1,10 @@
 //! GraphQL 服务模块
 //! 提供 Gatsby 兼容的 GraphQL 服务实现
 
-use super::{GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Node, NodeId, NodeStore, NodeType, Selection, SelectionSet, FieldSelection};
+use super::{
+    FieldSelection, GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Node, NodeId, NodeStore, NodeType,
+    Selection, SelectionSet,
+};
 use async_graphql_value::{ConstValue, Name};
 use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
@@ -188,61 +191,55 @@ impl GraphQLService {
                 let data = self.execute_selection_set(&selection_set);
                 GraphQLResponse::success(data)
             }
-            Err(e) => {
-                GraphQLResponse::error(vec![e])
-            }
+            Err(e) => GraphQLResponse::error(vec![e]),
         }
     }
-    
+
     /// 解析查询字符串
     fn parse_query(&self, query: &str) -> GraphQLResult<SelectionSet> {
         // 简单的查询解析实现
         // 实际实现需要使用 proper GraphQL 解析器
         // 这里我们只处理简单的查询
-        let selections = vec![
-            Selection::Field(FieldSelection {
-                alias: None,
-                name: "site".to_string(),
-                arguments: HashMap::new(),
-                directives: Vec::new(),
-                selection_set: Some(SelectionSet {
-                    selections: vec![
-                        Selection::Field(FieldSelection {
-                            alias: None,
-                            name: "siteMetadata".to_string(),
-                            arguments: HashMap::new(),
-                            directives: Vec::new(),
-                            selection_set: Some(SelectionSet {
-                                selections: vec![
-                                    Selection::Field(FieldSelection {
-                                        alias: None,
-                                        name: "title".to_string(),
-                                        arguments: HashMap::new(),
-                                        directives: Vec::new(),
-                                        selection_set: None,
-                                    }),
-                                    Selection::Field(FieldSelection {
-                                        alias: None,
-                                        name: "description".to_string(),
-                                        arguments: HashMap::new(),
-                                        directives: Vec::new(),
-                                        selection_set: None,
-                                    }),
-                                ],
+        let selections = vec![Selection::Field(FieldSelection {
+            alias: None,
+            name: "site".to_string(),
+            arguments: HashMap::new(),
+            directives: Vec::new(),
+            selection_set: Some(SelectionSet {
+                selections: vec![Selection::Field(FieldSelection {
+                    alias: None,
+                    name: "siteMetadata".to_string(),
+                    arguments: HashMap::new(),
+                    directives: Vec::new(),
+                    selection_set: Some(SelectionSet {
+                        selections: vec![
+                            Selection::Field(FieldSelection {
+                                alias: None,
+                                name: "title".to_string(),
+                                arguments: HashMap::new(),
+                                directives: Vec::new(),
+                                selection_set: None,
                             }),
-                        }),
-                    ],
-                }),
+                            Selection::Field(FieldSelection {
+                                alias: None,
+                                name: "description".to_string(),
+                                arguments: HashMap::new(),
+                                directives: Vec::new(),
+                                selection_set: None,
+                            }),
+                        ],
+                    }),
+                })],
             }),
-        ];
-        
+        })];
+
         Ok(SelectionSet { selections })
     }
-    
+
     /// 执行选择集
     fn execute_selection_set(&self, selection_set: &SelectionSet) -> ConstValue {
         let mut result = IndexMap::new();
-        
+
         for selection in &selection_set.selections {
             match selection {
                 Selection::Field(field) => {
@@ -255,45 +252,37 @@ impl GraphQLService {
                 }
             }
         }
-        
+
         ConstValue::Object(result)
     }
-    
+
     /// 执行字段
     fn execute_field(&self, field: &FieldSelection) -> ConstValue {
         match field.name.as_str() {
-            "site" => {
-                self.execute_site_field(field)
-            }
-            "siteMetadata" => {
-                self.execute_site_metadata_field(field)
-            }
-            "title" => {
-                ConstValue::String("Gatsby Site".to_string())
-            }
-            "description" => {
-                ConstValue::String("A Gatsby site built with Rust".to_string())
-            }
-            _ => {
-                ConstValue::Null
-            }
+            "site" => self.execute_site_field(field),
+            "siteMetadata" => self.execute_site_metadata_field(field),
+            "title" => ConstValue::String("Gatsby Site".to_string()),
+            "description" => ConstValue::String("A Gatsby site built with Rust".to_string()),
+            _ => ConstValue::Null,
         }
     }
-    
+
     /// 执行 site 字段
     fn execute_site_field(&self, field: &FieldSelection) -> ConstValue {
         if let Some(selection_set) = &field.selection_set {
             self.execute_selection_set(selection_set)
-        } else {
+        }
+        else {
             ConstValue::Null
         }
     }
-    
+
     /// 执行 siteMetadata 字段
     fn execute_site_metadata_field(&self, field: &FieldSelection) -> ConstValue {
         if let Some(selection_set) = &field.selection_set {
             self.execute_selection_set(selection_set)
-        } else {
+        }
+        else {
             ConstValue::Null
         }
     }

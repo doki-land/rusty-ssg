@@ -5,8 +5,8 @@
 //! 解析 Jekyll 文件中的 YAML Front Matter
 
 use crate::errors::{JekyllError, Result};
-use serde_yaml;
 use serde_json::Value;
+use serde_yaml;
 
 /// Front Matter 解析结果
 #[derive(Debug, Clone)]

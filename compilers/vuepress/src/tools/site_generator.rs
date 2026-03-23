@@ -3,11 +3,11 @@
 
 use crate::{
     Document,
+    config::types::{SiteLocaleData, Theme},
     tools::{
         Result,
         theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     },
-    config::types::{SiteLocaleData, Theme},
     types::VuePressConfig,
 };
 use std::{collections::HashMap, fs, path::PathBuf};
@@ -26,7 +26,8 @@ pub struct StaticSiteGenerator {
 impl StaticSiteGenerator {
     /// 创建新的静态站点生成器
     pub fn new(config: VuePressConfig) -> Result<Self> {
-        let theme: Box<dyn crate::tools::theme::Theme> = Box::new(DefaultTheme::new(config.clone())?) as Box<dyn crate::tools::theme::Theme>;
+        let theme: Box<dyn crate::tools::theme::Theme> =
+            Box::new(DefaultTheme::new(config.clone())?) as Box<dyn crate::tools::theme::Theme>;
 
         Ok(Self { config, theme })
     }
@@ -126,7 +127,12 @@ impl StaticSiteGenerator {
     }
 
     /// 生成路由配置文件
-    fn generate_routes_config(&self, output_dir: &PathBuf, lang_documents: &HashMap<String, Vec<(String, Document)>>, default_lang: &str) -> Result<()> {
+    fn generate_routes_config(
+        &self,
+        output_dir: &PathBuf,
+        lang_documents: &HashMap<String, Vec<(String, Document)>>,
+        default_lang: &str,
+    ) -> Result<()> {
         use serde_json::json;
 
         let mut routes = Vec::new();
@@ -137,7 +143,8 @@ impl StaticSiteGenerator {
                 let html_path = normalized_path.replace(".md", ".html");
                 let route_path = if lang == default_lang {
                     format!("/{}", html_path.replace(".html", ""))
-                } else {
+                }
+                else {
                     format!("/{}/{}", lang, html_path.replace(".html", ""))
                 };
 
@@ -204,16 +211,14 @@ impl StaticSiteGenerator {
 
     /// 生成站点地图
     fn generate_sitemap(&self, output_dir: &PathBuf, documents: &HashMap<String, Document>, default_lang: &str) -> Result<()> {
-        let mut sitemap = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
+        let mut sitemap = String::from(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">",
+        );
 
         for (path, doc) in documents {
             let (lang, normalized_path) = self.extract_language_from_path(path, default_lang);
             let html_path = normalized_path.replace(".md", ".html");
-            let url = if lang == default_lang {
-                format!("/{}", html_path)
-            } else {
-                format!("/{}/{}", lang, html_path)
-            };
+            let url = if lang == default_lang { format!("/{}", html_path) } else { format!("/{}/{}", lang, html_path) };
 
             sitemap.push_str(&format!(
                 "<url><loc>{}</loc><lastmod>{}</lastmod></url>",

@@ -82,21 +82,24 @@ impl Display for VitePressError {
             VitePressError::ParseError { message, span, path } => {
                 if let Some(path) = path {
                     write!(f, "Parse error in {} at {:?}: {}", path, span, message)
-                } else {
+                }
+                else {
                     write!(f, "Parse error at {:?}: {}", span, message)
                 }
             }
             VitePressError::DocumentNotFound { path, suggestion } => {
                 if let Some(suggestion) = suggestion {
                     write!(f, "Document not found: {}. {}", path, suggestion)
-                } else {
+                }
+                else {
                     write!(f, "Document not found: {}", path)
                 }
             }
             VitePressError::ConfigError { message, path, suggestion } => {
                 let mut msg = if let Some(path) = path {
                     format!("Config error in {}: {}", path, message)
-                } else {
+                }
+                else {
                     format!("Config error: {}", message)
                 };
                 if let Some(suggestion) = suggestion {
@@ -107,28 +110,32 @@ impl Display for VitePressError {
             VitePressError::IoError { message, path } => {
                 if let Some(path) = path {
                     write!(f, "IO error in {}: {}", path, message)
-                } else {
+                }
+                else {
                     write!(f, "IO error: {}", message)
                 }
             }
             VitePressError::PluginError { message, plugin, path } => {
                 if let Some(path) = path {
                     write!(f, "Plugin error in {} ({plugin}): {}", path, message)
-                } else {
+                }
+                else {
                     write!(f, "Plugin error ({plugin}): {}", message)
                 }
             }
             VitePressError::BuildError { message, path } => {
                 if let Some(path) = path {
                     write!(f, "Build error in {}: {}", path, message)
-                } else {
+                }
+                else {
                     write!(f, "Build error: {}", message)
                 }
             }
             VitePressError::External { message, span, path } => {
                 if let Some(path) = path {
                     write!(f, "External error in {} at {:?}: {}", path, span, message)
-                } else {
+                }
+                else {
                     write!(f, "External error at {:?}: {}", span, message)
                 }
             }
@@ -251,7 +258,9 @@ impl VitePressError {
 impl From<VitePressError> for NargoError {
     fn from(err: VitePressError) -> Self {
         match err {
-            VitePressError::External { message, span, .. } => NargoError::external_error("vitepress".to_string(), message, span),
+            VitePressError::External { message, span, .. } => {
+                NargoError::external_error("vitepress".to_string(), message, span)
+            }
             _ => NargoError::external_error("vitepress".to_string(), err.to_string(), err.span()),
         }
     }

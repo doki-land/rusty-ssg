@@ -1,4 +1,7 @@
-use vuepress::{plugin::{PluginContext, katex::KaTeXPlugin}, VuePressPlugin};
+use vuepress::{
+    VuePressPlugin,
+    plugin::{PluginContext, katex::KaTeXPlugin},
+};
 
 #[test]
 fn test_process_block_math() {

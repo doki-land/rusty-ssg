@@ -1,8 +1,8 @@
 //! 日期处理函数
 //! 提供 Hugo 兼容的日期处理函数
 
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use serde_json::Value;
-use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
 
 /// 日期处理函数集合
 #[derive(Clone)]
@@ -40,7 +40,8 @@ impl DateFunctions {
         let dt = if args.len() > 1 {
             let date_str = args[1].as_str().ok_or("Second argument must be a string")?;
             Self::parse_date(date_str)?
-        } else {
+        }
+        else {
             Utc::now()
         };
 
@@ -86,14 +87,12 @@ impl DateFunctions {
 
         // 先加减年和月
         if years != 0 || months != 0 {
-            dt = dt.checked_add_months(chrono::Months::new((years * 12 + months) as u32))
-                .ok_or("Date calculation overflow")?;
+            dt = dt.checked_add_months(chrono::Months::new((years * 12 + months) as u32)).ok_or("Date calculation overflow")?;
         }
 
         // 再加减天
         if days != 0 {
-            dt = dt.checked_add_days(chrono::Days::new(days.abs() as u64))
-                .ok_or("Date calculation overflow")?;
+            dt = dt.checked_add_days(chrono::Days::new(days.abs() as u64)).ok_or("Date calculation overflow")?;
         }
 
         Ok(Value::String(dt.to_rfc3339()))
@@ -105,14 +104,7 @@ impl DateFunctions {
             return Ok(dt.with_timezone(&Utc));
         }
 
-        let formats = [
-            "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%d %H:%M",
-            "%Y-%m-%d",
-            "%Y/%m/%d",
-            "%d/%m/%Y",
-            "%m/%d/%Y",
-        ];
+        let formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y"];
 
         for format in &formats {
             if let Ok(ndt) = NaiveDateTime::parse_from_str(date_str, format) {

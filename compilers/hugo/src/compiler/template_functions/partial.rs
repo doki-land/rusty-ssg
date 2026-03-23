@@ -1,11 +1,9 @@
 //! Partial 模板函数
 //! 提供 Hugo 兼容的 Partial 模板系统
 
+use crate::compiler::hugo_template::{HugoTemplateEngine, TemplateResolver};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::RwLock;
-use std::path::Path;
-use crate::compiler::hugo_template::{TemplateResolver, HugoTemplateEngine};
+use std::{collections::HashMap, path::Path, sync::RwLock};
 
 /// Partial 模板函数集合
 pub struct PartialFunctions {
@@ -20,11 +18,7 @@ pub struct PartialFunctions {
 impl PartialFunctions {
     /// 创建新的 Partial 函数集合
     pub fn new() -> Self {
-        Self {
-            cache: RwLock::new(HashMap::new()),
-            resolver: None,
-            engine: None,
-        }
+        Self { cache: RwLock::new(HashMap::new()), resolver: None, engine: None }
     }
 
     /// 设置模板解析器
@@ -59,11 +53,12 @@ impl PartialFunctions {
         }
 
         let template_name = args[0].as_str().ok_or("First argument must be a string")?;
-        
+
         // 构建 Partial 模板路径
         let partial_path = if template_name.starts_with("partials/") {
             template_name.to_string()
-        } else {
+        }
+        else {
             format!("partials/{}", template_name)
         };
 
@@ -93,20 +88,17 @@ impl PartialFunctions {
         }
 
         let template_name = args[0].as_str().ok_or("First argument must be a string")?;
-        
+
         // 构建 Partial 模板路径
         let partial_path = if template_name.starts_with("partials/") {
             template_name.to_string()
-        } else {
+        }
+        else {
             format!("partials/{}", template_name)
         };
 
         // 生成缓存键
-        let cache_key = if args.len() > 1 {
-            format!("{}:{}", partial_path, args[1])
-        } else {
-            partial_path.clone()
-        };
+        let cache_key = if args.len() > 1 { format!("{}:{}", partial_path, args[1]) } else { partial_path.clone() };
 
         // 检查缓存
         if let Ok(cache) = self.cache.read() {
@@ -147,11 +139,7 @@ impl PartialFunctions {
 
     /// 获取缓存大小
     pub fn cache_size(&self) -> usize {
-        if let Ok(cache) = self.cache.read() {
-            cache.len()
-        } else {
-            0
-        }
+        if let Ok(cache) = self.cache.read() { cache.len() } else { 0 }
     }
 }
 

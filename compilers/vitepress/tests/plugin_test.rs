@@ -1,9 +1,12 @@
 //! 插件系统测试
 //! 测试 VitePress 插件系统的功能
 
-use vitepress::{plugin::{PluginMeta, PluginContext, VitePressPlugin, PluginRegistry, PluginType}, types::VitePressError};
-use std::collections::HashMap;
 use nargo_types::NargoValue;
+use std::collections::HashMap;
+use vitepress::{
+    plugin::{PluginContext, PluginMeta, PluginRegistry, PluginType, VitePressPlugin},
+    types::VitePressError,
+};
 
 /// 测试插件
 struct TestPlugin {
@@ -21,12 +24,7 @@ struct TestPlugin {
 impl TestPlugin {
     fn new() -> Self {
         Self {
-            meta: PluginMeta::new(
-                "test-plugin".to_string(),
-                "1.0.0".to_string(),
-                "Test plugin".to_string(),
-                PluginType::Other,
-            ),
+            meta: PluginMeta::new("test-plugin".to_string(), "1.0.0".to_string(), "Test plugin".to_string(), PluginType::Other),
             setup_called: false,
             before_compile_called: false,
             before_parse_called: false,

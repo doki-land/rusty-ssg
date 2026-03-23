@@ -183,7 +183,11 @@ impl HugoTemplateEngine {
         // 检查是否需要使用 baseof 模板
         let template_to_render = self.resolve_template_with_baseof(template_name)?;
 
-        let context = HugoTemplateContext { site: self.site.clone(), page, env: crate::compiler::hugo_template::context::EnvironmentInfo::new() };
+        let context = HugoTemplateContext {
+            site: self.site.clone(),
+            page,
+            env: crate::compiler::hugo_template::context::EnvironmentInfo::new(),
+        };
         let json_value =
             serde_json::to_value(context).map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })?;
 

@@ -1,11 +1,13 @@
 //! 编译器模块
 //! 提供 VuePress 文档编译器的核心功能
 
-use crate::types::{
-    Result, VuePressConfig,
-    ipc::{InvokePluginRequest, PluginContext},
+use crate::{
+    tools::theme::Theme,
+    types::{
+        Result, VuePressConfig,
+        ipc::{InvokePluginRequest, PluginContext},
+    },
 };
-use crate::tools::theme::Theme;
 use nargo_parser::parse_document;
 use nargo_types::Document;
 use std::{
@@ -18,8 +20,10 @@ mod parser;
 pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
 pub use parser::*;
 
-use crate::plugin::{katex::KaTeXPlugin, mermaid::MermaidPlugin, prism::PrismPlugin, search::SearchPlugin, PluginRegistry};
-use crate::plugin_host::PluginHost;
+use crate::{
+    plugin::{PluginRegistry, katex::KaTeXPlugin, mermaid::MermaidPlugin, prism::PrismPlugin, search::SearchPlugin},
+    plugin_host::PluginHost,
+};
 
 /// VuePress 文档编译器
 ///
@@ -43,7 +47,13 @@ impl VuePressCompiler {
         let config = VuePressConfig::new();
         let mut plugin_registry = PluginRegistry::new();
         Self::register_default_plugins(&mut plugin_registry);
-        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None, plugin_registry }
+        Self {
+            config: config.clone(),
+            html_renderer: HtmlRenderer::new(config),
+            cache: HashMap::new(),
+            plugin_host: None,
+            plugin_registry,
+        }
     }
 
     /// 创建带配置的编译器（无插件支持，降级模式）
@@ -54,7 +64,13 @@ impl VuePressCompiler {
     pub fn with_config(config: VuePressConfig) -> Self {
         let mut plugin_registry = PluginRegistry::new();
         Self::register_default_plugins(&mut plugin_registry);
-        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None, plugin_registry }
+        Self {
+            config: config.clone(),
+            html_renderer: HtmlRenderer::new(config),
+            cache: HashMap::new(),
+            plugin_host: None,
+            plugin_registry,
+        }
     }
 
     /// 创建带 PluginHost 的编译器（支持 Node.js 混合执行模式）
@@ -176,10 +192,10 @@ impl VuePressCompiler {
     /// 应用模板后的完整 HTML
     fn apply_theme_template(&self, content: &str, title: &str) -> String {
         use crate::tools::theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink};
-        
+
         // 创建默认主题实例
         let theme = DefaultTheme::new(self.config.clone()).unwrap();
-        
+
         // 构建页面上下文
         let page_context = PageContext {
             page_title: title.to_string(),
@@ -218,13 +234,15 @@ impl VuePressCompiler {
             available_locales: vec![],
             root_path: "/".to_string(),
         };
-        
+
         // 渲染页面
         match theme.render_page(&page_context) {
             Ok(html) => {
                 // 添加 Vue 运行时
-                let html_with_vue = html.replace("</body>", &format!(
-                    r#"
+                let html_with_vue = html.replace(
+                    "</body>",
+                    &format!(
+                        r#"
     <!-- Vue 运行时 -->
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
     <script>
@@ -232,14 +250,15 @@ impl VuePressCompiler {
         createApp({{}}).mount('#app')
     </script>
 </body>"#
-                ));
-                
+                    ),
+                );
+
                 // 修复模板语法错误
                 let html_with_vue_fixed = html_with_vue
                     .replace("const {{ createApp }}", "const { createApp }")
                     .replace("createApp({{}})", "createApp({})");
                 html_with_vue_fixed
-            },
+            }
             Err(_) => {
                 // 回退到简单模板
                 format!(
@@ -310,7 +329,8 @@ impl VuePressCompiler {
         }
 
         // 创建插件上下文
-        let mut plugin_context = crate::plugin::PluginContext::new(content.clone(), plugin_frontmatter.clone(), path.to_string());
+        let mut plugin_context =
+            crate::plugin::PluginContext::new(content.clone(), plugin_frontmatter.clone(), path.to_string());
 
         // 调用插件的渲染前钩子
         plugin_context = self.plugin_registry.before_render_all(plugin_context);
@@ -326,7 +346,8 @@ impl VuePressCompiler {
         let mut final_html = rendered_html;
 
         // 创建渲染后的插件上下文
-        let mut post_render_context = crate::plugin::PluginContext::new(final_html.clone(), plugin_frontmatter.clone(), path.to_string());
+        let mut post_render_context =
+            crate::plugin::PluginContext::new(final_html.clone(), plugin_frontmatter.clone(), path.to_string());
 
         // 调用插件的渲染后钩子
         post_render_context = self.plugin_registry.after_render_all(post_render_context);

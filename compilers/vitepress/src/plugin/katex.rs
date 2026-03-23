@@ -95,6 +95,12 @@ impl VitePressPlugin for KaTeXPlugin {
     /// 处理后的插件上下文
     fn before_render(&self, context: PluginContext) -> PluginContext {
         let content = self.process_inline_math(&context.content);
-        PluginContext { content, frontmatter: context.frontmatter, path: context.path, config: context.config, site_data: context.site_data }
+        PluginContext {
+            content,
+            frontmatter: context.frontmatter,
+            path: context.path,
+            config: context.config,
+            site_data: context.site_data,
+        }
     }
 }

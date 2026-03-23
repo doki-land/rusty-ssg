@@ -2,8 +2,10 @@
 //!
 //! 测试 Jekyll 核心功能的集成测试
 
-use jekyll::{FrontMatterParser, JekyllConfigLoader, JekyllStructure, LiquidEngine, MarkdownConverter, PostManager, JekyllDirectory};
 use chrono::Datelike;
+use jekyll::{
+    FrontMatterParser, JekyllConfigLoader, JekyllDirectory, JekyllStructure, LiquidEngine, MarkdownConverter, PostManager,
+};
 use std::{fs, path::Path};
 use tempfile::tempdir;
 
