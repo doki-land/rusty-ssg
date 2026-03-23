@@ -203,7 +203,7 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                     }
                     _ => {
                         // 其他文件类型，直接复制
-                        if let Err(err) = fs::copy(path, html_path) {
+                        if let Err(err) = fs::copy(path, &html_path) {
                             eprintln!("Error copying file {}: {}", html_path.display(), err);
                         } else {
                             println!("Copied: {}", html_path.display());

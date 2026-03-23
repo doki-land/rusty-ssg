@@ -8,8 +8,11 @@ use std::collections::HashMap;
 
 /// Hugo 内容结构和文件系统处理模块
 pub mod hugo_content;
+/// Front Matter 增强模块
+pub mod front_matter_enhancer;
 
 pub use self::hugo_content::*;
+pub use self::front_matter_enhancer::*;
 /// VuTeX 文档
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct VutexDocument {

@@ -602,15 +602,15 @@ impl ConfigLoader {
     /// # Errors
     ///
     /// 返回错误如果文件读取、解析或验证失败
-    pub fn load_from_file(path: &PathBuf) -> Result<VutexConfig> {
-        Ok(VutexConfig::load_from_file(path)?)
+    pub fn load_from_file(path: &PathBuf) -> Result<crate::config::VitePressConfig> {
+        Ok(crate::config::VitePressConfig::load_from_file(path)?)
     }
 
     /// 从目录查找并加载配置
     ///
     /// 按以下顺序查找配置文件：
-    /// 1. vutex.config.toml
-    /// 2. vutex.config.json
+    /// 1. vitepress.config.toml
+    /// 2. vitepress.config.json
     ///
     /// # Arguments
     ///
@@ -619,7 +619,7 @@ impl ConfigLoader {
     /// # Errors
     ///
     /// 返回错误如果配置文件读取、解析或验证失败
-    pub fn load_from_dir(dir: &PathBuf) -> Result<VutexConfig> {
-        Ok(VutexConfig::load_from_dir(dir)?)
+    pub fn load_from_dir(dir: &PathBuf) -> Result<crate::config::VitePressConfig> {
+        Ok(crate::config::VitePressConfig::load_from_dir(dir)?)
     }
 }

@@ -127,15 +127,16 @@ impl LinkValidator {
 
     /// 验证导航链接
     pub fn validate_nav(&mut self) {
-        let nav_config = &self.config.validation().nav;
+        let nav_items = self.config.nav();
+        let nav_config = self.config.validation().nav;
         
-        for item in &self.config.nav() {
-            self.validate_nav_item(item, nav_config);
+        for item in nav_items {
+            self.validate_nav_item(item, nav_config.not_found);
         }
     }
 
     /// 验证导航项
-    fn validate_nav_item(&mut self, item: &crate::types::NavItem, config: &crate::types::NavValidationConfig) {
+    fn validate_nav_item(&mut self, item: &crate::types::NavItem, not_found_level: crate::types::ValidationLevel) {
         match item {
             crate::types::NavItem::String(_) => {
                 // 字符串类型的导航项不需要验证
@@ -144,11 +145,11 @@ impl LinkValidator {
                 for (_, value) in map {
                     match value {
                         crate::types::NavValue::String(path) => {
-                            self.validate_link(path, &config.not_found);
+                            self.validate_link(path, &not_found_level);
                         }
                         crate::types::NavValue::List(items) => {
                             for sub_item in items {
-                                self.validate_nav_item(sub_item, config);
+                                self.validate_nav_item(sub_item, not_found_level);
                             }
                         }
                     }
@@ -198,22 +199,21 @@ impl LinkValidator {
         self.validate_nav();
 
         // 验证文档中的链接
+        let link_config = self.config.validation().links;
         for (path, content) in documents {
-            self.validate_document_links(path, content);
+            self.validate_document_links(path, content, link_config.not_found);
         }
     }
 
     /// 验证文档中的链接
-    fn validate_document_links(&mut self, path: &str, content: &str) {
-        let link_config = &self.config.validation().links;
-        
+    fn validate_document_links(&mut self, _path: &str, content: &str, not_found_level: crate::types::ValidationLevel) {
         // 简单的链接提取正则
         let link_regex = regex::Regex::new(r#"!(.*?)(.*?)"#).unwrap();
         
         for capture in link_regex.captures_iter(content) {
             if let Some(link) = capture.get(2) {
                 let link_str = link.as_str();
-                self.validate_link(link_str, &link_config.not_found);
+                self.validate_link(link_str, &not_found_level);
             }
         }
     }

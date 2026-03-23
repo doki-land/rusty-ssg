@@ -1,342 +1,291 @@
-# Gatsby - Rust Reimplementation
+# Gatsby 静态站点生成器 (Rust 实现)
 
-## Overview
+这是一个用 Rust 语言实现的 Gatsby 静态站点生成器，旨在提供与原版 Gatsby 兼容的功能，同时利用 Rust 的性能优势。
 
-Gatsby is a powerful, fast static site generator, now reimplemented in Rust for even better performance and reliability. It's designed to help you build modern, feature-rich websites with React and GraphQL, combining the best of static site generation with dynamic capabilities.
+## 项目特点
 
-### 🎯 Key Features
-- 🚀 **Fast Builds**: Compile your site in seconds, not minutes
-- 🎨 **React-Based**: Use React for building components and pages
-- 📦 **Easy Deployment**: Generate static files that work anywhere
-- 🔧 **Extensible**: Customize with plugins and themes
-- 🛠 **Developer Friendly**: Great tooling and developer experience
-- 📊 **GraphQL Data Layer**: Query data from multiple sources
-- 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
-- 📱 **100% Compatible**: Full compatibility when using static features
+- ✅ 完全用 Rust 实现，性能优异
+- ✅ 与原版 Gatsby 配置文件兼容
+- ✅ 支持 Markdown 文档编译
+- ✅ 内置 GraphQL 服务
+- ✅ 插件系统支持
+- ✅ 静态站点生成，包括 404 页面、sitemap 和 robots.txt
+- ✅ 并行编译和生成，提高性能
 
-## Installation
+## 安装
 
-### From Crates.io
+### 从源码构建
 
-```bash
-cargo install gatsby
-```
-
-### From Source
+1. 确保你已经安装了 Rust 和 Cargo
+2. 克隆仓库：
 
 ```bash
-# Clone the repository
 git clone https://github.com/doki-land/rusty-ssg.git
-
-# Build and install
-cd rusty-ssg/compilers/gatsby
-git checkout dev
-cargo install --path .
+cd rusty-ssg
 ```
 
-## Usage
-
-### Create a New Site
+3. 构建 Gatsby 编译器：
 
 ```bash
-gatsby new my-site
-cd my-site
+cargo build --package gatsby
 ```
 
-### Develop Locally
+4. 安装到系统：
 
 ```bash
-gatsby develop
+cargo install --path compilers/gatsby
 ```
 
-This will start a local development server with hot reloading, so you can see your changes in real-time.
+## 基本使用
 
-### Build for Production
+### 初始化项目
+
+```bash
+gatsby init my-gatsby-site
+cd my-gatsby-site
+```
+
+### 配置文件
+
+Gatsby 支持多种格式的配置文件：
+- `gatsby-config.js`
+- `gatsby-config.json`
+- `gatsby-config.yaml`
+- `gatsby-config.yml`
+- `gatsby-config.toml`
+
+示例配置 (`gatsby-config.json`)：
+
+```json
+{
+  "siteMetadata": {
+    "title": "My Gatsby Site",
+    "description": "A static site generated with Gatsby",
+    "author": "Your Name",
+    "siteUrl": "https://example.com"
+  },
+  "plugins": [],
+  "pathPrefix": "/blog"
+}
+```
+
+### 编写内容
+
+在 `src/pages` 目录中创建 Markdown 文件：
+
+```markdown
+---
+title: "Hello World"
+description: "My first Gatsby post"
+date: "2024-01-01"
+author: "Your Name"
+---
+
+# Hello World
+
+Welcome to my Gatsby site!
+```
+
+### 构建站点
 
 ```bash
 gatsby build
 ```
 
-This will generate optimized static files in the `public` directory, ready for deployment.
+构建结果将生成在 `public` 目录中。
 
-## Architecture
+### 开发服务器
 
-Gatsby follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:
-
-```mermaid
-flowchart TD
-    A[CLI] --> B[Config Loader]
-    B --> C[Data Layer]
-    C --> D[GraphQL Engine]
-    D --> E[React Renderer]
-    E --> F[Output Generator]
-    G[Plugins] --> C
-    H[Themes] --> E
-    I[Source Plugins] --> C
-    J[nargo] --> E
-    K[oak] --> D
-    L[IPC] --> G
+```bash
+gatsby develop
 ```
 
-### Core Components
+这将启动一个本地开发服务器，你可以在浏览器中访问 `http://localhost:8000` 查看站点。
 
-- **CLI**: Command-line interface for interacting with the compiler
-- **Config Loader**: Reads and parses Gatsby configuration files
-- **Data Layer**: Collects and processes data from various sources
-- **GraphQL Engine**: Provides a GraphQL API for querying data
-- **React Renderer**: Renders React components to static HTML
-- **Output Generator**: Writes final static files
-- **Plugins**: Extend functionality with custom plugins (uses IPC mode)
-- **Themes**: Provide reusable templates and styles
-- **Source Plugins**: Fetch data from external sources
-- **nargo**: External library with analysis engines and bundlers
-- **oak**: External library for parsing
-- **IPC**: Inter-process communication for plugin system
+## 命令行工具
 
-## Configuration
+### `gatsby init [name]`
 
-Here's an example `gatsby-config.js` file:
+初始化一个新的 Gatsby 项目。
 
-```javascript
-// gatsby-config.js
-module.exports = {
-  siteMetadata: {
-    title: "My Awesome Gatsby Site",
-    description: "A description of my awesome Gatsby site",
-    author: "Your Name",
-    siteUrl: "https://example.com"
-  },
-  plugins: [
-    "gatsby-plugin-react-helmet",
-    "gatsby-plugin-sitemap",
-    {
-      resolve: "gatsby-source-filesystem",
-      options: {
-        name: "content",
-        path: `${__dirname}/content`
-      }
-    },
-    "gatsby-transformer-remark",
-    {
-      resolve: "gatsby-plugin-manifest",
-      options: {
-        name: "My Gatsby Site",
-        short_name: "Gatsby Site",
-        start_url: "/",
-        background_color: "#ffffff",
-        theme_color: "#4285f4",
-        display: "standalone"
-      }
-    }
-  ]
-};
-```
+### `gatsby build`
 
-## Examples
+构建静态站点。
 
-### Example React Component
+### `gatsby develop`
 
-Here's an example of a React component in Gatsby:
+启动开发服务器。
 
-```jsx
-// src/components/Header.js
-import React from "react";
-import { Link } from "gatsby";
+### `gatsby clean`
 
-const Header = ({ siteTitle }) => (
-  <header>
-    <div>
-      <h1>
-        <Link to="/">{siteTitle}</Link>
-      </h1>
-      <nav>
-        <Link to="/">Home</Link>
-        <Link to="/about">About</Link>
-        <Link to="/blog">Blog</Link>
-      </nav>
-    </div>
-  </header>
-);
+清除缓存和构建文件。
 
-export default Header;
-```
+### `gatsby check`
 
-### Example Blog Post Template
+检查项目配置和依赖。
 
-Here's an example of a blog post template in Gatsby:
+### `gatsby version`
 
-```jsx
-// src/templates/blog-post.js
-import React from "react";
-import { graphql } from "gatsby";
+显示 Gatsby 版本信息。
 
-export const query = graphql`
-  query($slug: String!) {
-    markdownRemark(fields: { slug: { eq: $slug } }) {
-      frontmatter {
-        title
-        date(formatString: "MMMM DD, YYYY")
-        author
-        categories
-        tags
-      }
-      html
+## GraphQL 支持
+
+Gatsby 内置了 GraphQL 服务，你可以使用 GraphQL 查询来获取数据。在开发模式下，你可以通过 `http://localhost:8000/___graphql` 访问 GraphQL  playground。
+
+### 示例查询
+
+```graphql
+query {
+  site {
+    siteMetadata {
+      title
+      description
+      author
+      siteUrl
     }
   }
-`;
-
-const BlogPost = ({ data }) => {
-  const post = data.markdownRemark;
-  
-  return (
-    <div>
-      <h1>{post.frontmatter.title}</h1>
-      <p>{post.frontmatter.date} by {post.frontmatter.author}</p>
-      <div dangerouslySetInnerHTML={{ __html: post.html }} />
-    </div>
-  );
-};
-
-export default BlogPost;
-```
-
-### Example Markdown Post
-
-Here's an example of a markdown post in Gatsby:
-
-```markdown
----
-title: "Getting Started with Gatsby"
-date: 2024-01-01
-author: "Your Name"
-categories: ["tutorial", "getting-started"]
-tags: ["gatsby", "static-site-generator", "react"]
----
-
-# Getting Started with Gatsby
-
-Welcome to Gatsby! This is your first blog post.
-
-## What is Gatsby?
-
-Gatsby is a fast, modern static site generator that uses React and GraphQL to build powerful websites.
-
-## Why Use Gatsby?
-
-- It's blazingly fast
-- It uses React for building components
-- It has a powerful GraphQL data layer
-- It has a rich ecosystem of plugins and themes
-- It's 100% compatible with static features
-
-## Next Steps
-
-1. Create more content
-2. Add more plugins
-3. Customize your theme
-4. Deploy your site
-
-Happy coding! 🎉
-```
-
-## Compatibility Note
-
-⚠️ **Important**: Gatsby provides 100% compatibility only when using static features. Dynamic features may have limited support or require additional configuration.
-
-## Plugins
-
-Gatsby supports a wide range of plugins to extend functionality (using IPC mode):
-
-- 📁 **gatsby-source-filesystem**: Source data from the filesystem
-- 📝 **gatsby-transformer-remark**: Transform Markdown to HTML
-- 📄 **gatsby-plugin-react-helmet**: Manage document head
-- 🗺️ **gatsby-plugin-sitemap**: Generate sitemap.xml
-- 📱 **gatsby-plugin-manifest**: Generate PWA manifest
-- 🖼️ **gatsby-plugin-sharp**: Image optimization
-- 🔄 **gatsby-transformer-sharp**: Transform images
-
-## Themes
-
-Choose from a variety of Gatsby themes or create your own:
-
-- 📝 **gatsby-theme-blog**: Blog-focused theme
-- 📚 **gatsby-theme-docs**: Documentation-focused theme
-- 🛍️ **gatsby-theme-ecommerce**: E-commerce theme
-- 🎨 **gatsby-theme-portfolio**: Portfolio theme
-
-## Deployment
-
-Gatsby generates static files that can be deployed anywhere:
-
-### Netlify
-
-```toml
-# netlify.toml
-[build]
-  command = "gatsby build"
-  publish = "public"
-```
-
-### Vercel
-
-```json
-// vercel.json
-{
-  "buildCommand": "gatsby build",
-  "outputDirectory": "public"
+  allMarkdownRemark {
+    edges {
+      node {
+        id
+        frontmatter {
+          title
+          date
+          author
+        }
+        html
+      }
+    }
+  }
 }
 ```
 
-### GitHub Pages
+## 插件系统
 
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
-on: [push]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - run: cargo install gatsby
-      - run: gatsby build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+Gatsby 支持插件系统，你可以通过配置文件添加插件：
+
+```json
+{
+  "plugins": [
+    "gatsby-plugin-sharp",
+    "gatsby-transformer-remark"
+  ]
+}
 ```
 
-## Contribution Guidelines
+### 插件生命周期钩子
 
-We welcome contributions to Gatsby! 🤝
+- `onPreBootstrap`
+- `onBootstrap`
+- `onPreBuild`
+- `onBuild`
+- `onPostBuild`
+- `onPreDeleteCache`
+- `onPostDeleteCache`
+- `onPreExtractQueries`
+- `onPostExtractQueries`
+- `onPreInit`
+- `onPostInit`
+- `onPreRenderHTML`
+- `onPostRenderHTML`
+- `onRouteUpdate`
+- `onRouteUpdateDelayed`
+- `onServiceWorkerUpdateFound`
 
-### Reporting Issues
+## 与原版 Gatsby 的兼容性
 
-If you find a bug or have a feature request, please [open an issue](https://github.com/doki-land/rusty-ssg/issues).
+### 兼容特性
 
-### Pull Requests
+- ✅ 配置文件格式（JSON、YAML、TOML、JavaScript）
+- ✅ Markdown 文档处理
+- ✅ GraphQL 查询
+- ✅ 静态站点生成
+- ✅ 命令行接口
+- ✅ 插件系统
 
-1. Fork the repository
-2. Create a new branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
+### 已知差异
 
-### Code Style
+- 部分高级插件可能不兼容
+- 某些 Gatsby 特有的 API 可能尚未实现
+- 性能优化策略不同（Rust 实现可能更快）
 
-Please follow the Rust style guide and use `cargo fmt` to format your code.
+## 性能优化
 
-## Acknowledgements
+1. **并行编译**：使用 Rayon 库并行处理文档编译
+2. **缓存机制**：避免重复编译未修改的文件
+3. **并行文件写入**：使用多线程加速站点生成
+4. **内存管理**：优化内存使用，减少内存分配
 
-Gatsby is inspired by the original Gatsby project and benefits from the Rust ecosystem, including the nargo and oak libraries.
+## 目录结构
 
-## License
+```
+my-gatsby-site/
+├── gatsby-config.json    # 配置文件
+├── src/
+│   ├── pages/            # 页面文件
+│   │   ├── index.md
+│   │   └── blog/
+│   │       └── first-post.md
+│   └── components/       # 组件（预留）
+├── public/              # 构建输出目录
+└── node_modules/        # 依赖（预留）
+```
 
-Gatsby is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.
+## 示例
 
+### 基本站点
+
+```bash
+gatsby init my-site
+cd my-site
+echo "---
+title: 'Home'
 ---
 
-Happy building with Gatsby! 🚀
+# Welcome to my site
+" > src/pages/index.md
+gatsby build
+```
+
+### 博客站点
+
+```bash
+gatsby init my-blog
+cd my-blog
+mkdir -p src/pages/blog
+
+echo "---
+title: 'My First Post'
+date: '2024-01-01'
+---
+
+# Hello World
+
+This is my first blog post.
+" > src/pages/blog/first-post.md
+
+echo "---
+title: 'About'
+---
+
+# About Me
+
+I'm a blogger.
+" > src/pages/about.md
+
+gatsby build
+```
+
+## 已知问题和限制
+
+- 部分 Gatsby 插件可能不兼容
+- 某些高级功能可能尚未实现
+- 错误处理和用户体验仍在改进中
+
+## 贡献
+
+欢迎贡献代码、报告问题或提出建议！请查看项目的 GitHub 仓库了解如何贡献。
+
+## 许可证
+
+本项目采用 AGPL-3.0 许可证。

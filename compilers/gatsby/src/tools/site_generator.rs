@@ -7,7 +7,7 @@ use crate::{
 };
 use nargo_types::Document;
 use rayon::prelude::*;
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{collections::HashMap, fs, path::PathBuf, sync::{Arc, Mutex}};
 
 /// 语言分组的文档映射
 pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
@@ -44,7 +44,9 @@ impl StaticSiteGenerator {
         }
 
         // 并行生成页面
-        let results: Vec<Result<()>> = all_docs_by_lang.par_iter().flat_map(|(lang, docs)| {
+        let results = Arc::new(Mutex::new(Vec::new()));
+        
+        all_docs_by_lang.par_iter().for_each(|(lang, docs)| {
             let nav_items = self.generate_nav_items(lang);
 
             let mut all_sidebar_links = Vec::new();
@@ -63,47 +65,55 @@ impl StaticSiteGenerator {
                 all_sidebar_links.push((title, html_path));
             }
 
-            docs.iter().map(|(path, doc)| {
-                let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
-                let html_path = normalized_path.replace(".md", ".html");
-                let full_html_path = format!("{}/{}", lang, html_path);
-                let output_path = output_dir.join(&full_html_path);
+            for (path, doc) in docs {
+                let results_clone = Arc::clone(&results);
+                
+                let result = (|| -> Result<()> {
+                    let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
+                    let html_path = normalized_path.replace(".md", ".html");
+                    let full_html_path = format!("{}/{}", lang, html_path);
+                    let output_path = output_dir.join(&full_html_path);
 
-                let depth = normalized_path.matches('/').count();
-                let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
+                    let depth = normalized_path.matches('/').count();
+                    let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
 
-                let mut sidebar_links = Vec::new();
-                for (title, link) in &all_sidebar_links {
-                    let relative_link = format!("{}{}", root_path, link);
-                    sidebar_links.push(SidebarLink { text: title.clone(), link: relative_link });
-                }
-
-                let sidebar_group = SidebarGroup { text: "文档".to_string(), items: sidebar_links };
-                let sidebar_groups = vec![sidebar_group];
-
-                // 创建父目录
-                if let Some(parent) = output_path.parent() {
-                    if !parent.exists() {
-                        fs::create_dir_all(parent)?;
+                    let mut sidebar_links = Vec::new();
+                    for (title, link) in &all_sidebar_links {
+                        let relative_link = format!("{}{}", root_path, link);
+                        sidebar_links.push(SidebarLink { text: title.clone(), link: relative_link });
                     }
-                }
 
-                // 渲染页面
-                let html_content = self.render_page_for_file(
-                    doc,
-                    lang,
-                    &nav_items,
-                    &sidebar_groups,
-                    normalized_path.clone(),
-                    html_path.clone(),
-                )?;
+                    let sidebar_group = SidebarGroup { text: "文档".to_string(), items: sidebar_links };
+                    let sidebar_groups = vec![sidebar_group];
 
-                // 写入文件
-                fs::write(output_path, html_content)?;
+                    // 创建父目录
+                    if let Some(parent) = output_path.parent() {
+                        if !parent.exists() {
+                            fs::create_dir_all(parent)?;
+                        }
+                    }
 
-                Ok(())
-            })
-        }).collect();
+                    // 渲染页面
+                    let html_content = self.render_page_for_file(
+                        doc,
+                        lang,
+                        &nav_items,
+                        &sidebar_groups,
+                        normalized_path.clone(),
+                        html_path.clone(),
+                    )?;
+
+                    // 写入文件
+                    fs::write(output_path, html_content)?;
+
+                    Ok(())
+                })();
+                
+                results_clone.lock().unwrap().push(result);
+            }
+        });
+        
+        let mut results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         // 检查是否有错误
         for result in results {

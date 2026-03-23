@@ -137,5 +137,13 @@ impl From<walkdir::Error> for MkDocsError {
     }
 }
 
+impl From<notify::Error> for MkDocsError {
+    fn from(source: notify::Error) -> Self {
+        use std::io::ErrorKind;
+        let io_error = std::io::Error::new(ErrorKind::Other, source);
+        MkDocsError::IoError { source: io_error }
+    }
+}
+
 /// MkDocs 编译器结果类型
 pub type Result<T> = std::result::Result<T, MkDocsError>;

@@ -5,7 +5,7 @@
 //! 提供 Markdown 文档的转换功能
 
 use crate::errors::{MarkdownError, Result};
-use oak_markdown;
+use pulldown_cmark::{html, Parser};
 
 /// Markdown 转换器
 /// 
@@ -69,10 +69,12 @@ impl MarkdownProcessor {
     /// 
     /// 处理后的 HTML
     pub fn process(&self, markdown: &str) -> Result<String> {
-        // 使用 oak_markdown 处理 Markdown
-        let html = oak_markdown::to_html(markdown);
+        // 使用 pulldown-cmark 处理 Markdown
+        let parser = Parser::new(markdown);
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, parser);
         
-        Ok(html)
+        Ok(html_output)
     }
 
     /// 获取处理器名称

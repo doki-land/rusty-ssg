@@ -36,16 +36,15 @@ impl Lexer {
         match current_char {
             // 处理 '{' 字符，需要区分插值开始和指令开始
             '{' => {
+                self.chars.next(); // 消费 '{' 字符
                 // 检查是否是指令开始: {%
                 if let Some(&'%') = self.chars.peek() {
-                    self.chars.next();
-                    self.chars.next();
+                    self.chars.next(); // 消费 '%' 字符
                     Token::DirectiveStart
                 }
                 else {
                     // 处理插值开始
                     let mut count = 1;
-                    self.chars.next();
                     while self.chars.peek() == Some(&'{') {
                         self.chars.next();
                         count += 1;

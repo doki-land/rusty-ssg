@@ -2,8 +2,9 @@
 
 use oak_toml as toml;
 use serde_json;
+use std::io::Write;
 use tempfile::NamedTempFile;
-use vutex::config::{ConfigParser, VuePressConfig};
+use vitepress::config::{ConfigParser, VitePressConfig};
 
 #[test]
 fn test_parse_json_config() {
@@ -73,7 +74,7 @@ name = "vite"
 
 #[test]
 fn test_default_config() {
-    let config = VuePressConfig::new();
+    let config = VitePressConfig::new();
     assert_eq!(config.base, "/");
     assert_eq!(config.lang, "en-US");
     assert_eq!(config.title, "");

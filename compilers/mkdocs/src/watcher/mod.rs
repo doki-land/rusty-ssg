@@ -14,9 +14,7 @@ pub struct FileWatcher {
     /// 忽略的模式
     ignore_patterns: Vec<String>,
     /// 通知接收器
-    rx: mpsc::Receiver<notify::Result<Event>>,
-    /// 通知发送器
-    tx: mpsc::Sender<notify::Result<Event>>,
+    rx: std::sync::Arc<std::sync::Mutex<mpsc::Receiver<notify::Result<Event>>>>,
     /// 监听器
     watcher: RecommendedWatcher,
 }
@@ -32,8 +30,7 @@ impl FileWatcher {
         Ok(Self {
             watch_dirs: Vec::new(),
             ignore_patterns: Vec::new(),
-            rx,
-            tx,
+            rx: std::sync::Arc::new(std::sync::Mutex::new(rx)),
             watcher,
         })
     }
@@ -67,8 +64,10 @@ impl FileWatcher {
     where
         F: FnMut(&PathBuf, EventKind) -> Result<()>,
     {
+        let rx = self.rx.clone();
         loop {
-            match self.rx.recv_timeout(Duration::from_secs(1)) {
+            let mut rx_guard = rx.lock().unwrap();
+            match rx_guard.recv_timeout(Duration::from_secs(1)) {
                 Ok(Ok(event)) => {
                     for path in event.paths {
                         if !self.should_ignore(&path) {
@@ -146,49 +145,47 @@ impl DevServer {
     /// 启动 HTTP 服务器
     async fn start_http_server(&self) -> Result<()>
     {
-        use hyper::service::{make_service_fn, service_fn};
-        use hyper::{Body, Request, Response, Server, StatusCode};
+        use hyper::service::service_fn;
+        use hyper::body::Body;
+        use hyper::{Request, Response, StatusCode};
+        use hyper::server::conn::AddrIncoming;
+        use hyper::server::Builder;
         use std::fs::File;
         use std::io::Read;
         
         let output_dir = self.output_dir.clone();
         let addr = format!("{}:{}", self.addr, self.port).parse()?;
         
-        let make_svc = make_service_fn(move |_conn| {
+        let incoming = AddrIncoming::bind(&addr)?;
+        let server = Builder::new(incoming).serve(hyper::service::service_fn(move |req| {
             let output_dir = output_dir.clone();
             async move {
-                Ok::<_, hyper::Error>(service_fn(move |req| {
-                    let output_dir = output_dir.clone();
-                    async move {
-                        let path = req.uri().path();
-                        let file_path = if path == "/" {
-                            output_dir.join("index.html")
-                        } else {
-                            output_dir.join(&path[1..])
-                        };
-                        
-                        if file_path.exists() && file_path.is_file() {
-                            let mut file = File::open(file_path)?;
-                            let mut content = Vec::new();
-                            file.read_to_end(&mut content)?;
-                            
-                            let content_type = mime_guess::from_path(&file_path).first_or_octet_stream();
-                            
-                            Ok(Response::builder()
-                                .status(StatusCode::OK)
-                                .header(hyper::header::CONTENT_TYPE, content_type.to_string())
-                                .body(Body::from(content))?)
-                        } else {
-                            Ok(Response::builder()
-                                .status(StatusCode::NOT_FOUND)
-                                .body(Body::from("404 Not Found"))?)
-                        }
-                    }
-                }))
+                let path = req.uri().path();
+                let file_path = if path == "/" {
+                    output_dir.join("index.html")
+                } else {
+                    output_dir.join(&path[1..])
+                };
+                
+                if file_path.exists() && file_path.is_file() {
+                    let mut file = File::open(file_path)?;
+                    let mut content = Vec::new();
+                    file.read_to_end(&mut content)?;
+                    
+                    let content_type = mime_guess::from_path(&file_path).first_or_octet_stream();
+                    
+                    Ok(Response::builder()
+                        .status(StatusCode::OK)
+                        .header(hyper::header::CONTENT_TYPE, content_type.to_string())
+                        .body(Body::from(content))?)
+                } else {
+                    Ok(Response::builder()
+                        .status(StatusCode::NOT_FOUND)
+                        .body(Body::from("404 Not Found"))?)
+                }
             }
-        });
+        }));
         
-        let server = Server::bind(&addr).serve(make_svc);
         server.await?;
         
         Ok(())

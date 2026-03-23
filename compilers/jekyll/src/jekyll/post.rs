@@ -153,7 +153,7 @@ impl Post {
     /// # Returns
     ///
     /// 返回分类列表
-    pub fn extract_categories(front_matter: &super::FrontMatter, path: &std::path::Path) -> Vec<String> {
+    pub fn extract_categories(front_matter: &FrontMatter, path: &std::path::Path) -> Vec<String> {
         let mut categories = Vec::new();
 
         if let Some(fm_categories) = front_matter.get("categories") {
@@ -194,7 +194,7 @@ impl Post {
     /// # Returns
     ///
     /// 返回标签列表
-    pub fn extract_tags(front_matter: &super::FrontMatter) -> Vec<String> {
+    pub fn extract_tags(front_matter: &FrontMatter) -> Vec<String> {
         let mut tags = Vec::new();
 
         if let Some(fm_tags) = front_matter.get("tags") {

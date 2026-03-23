@@ -70,13 +70,13 @@ impl VitePressPlugin for PrismPlugin {
     /// 在编译开始前调用，用于插件的初始化
     fn setup(&mut self, config: Option<HashMap<String, NargoValue>>) {
         if let Some(config) = config {
-            if let Some(NargoValue::Boolean(line_numbers)) = config.get("line_numbers") {
+            if let Some(NargoValue::Bool(line_numbers)) = config.get("line_numbers") {
                 self.config.line_numbers = *line_numbers;
             }
             if let Some(NargoValue::String(theme)) = config.get("theme") {
                 self.config.theme = theme.clone();
             }
-            if let Some(NargoValue::List(languages)) = config.get("additional_languages") {
+            if let Some(NargoValue::Array(languages)) = config.get("additional_languages") {
                 self.config.additional_languages = languages
                     .iter()
                     .filter_map(|v| if let NargoValue::String(s) = v { Some(s.clone()) } else { None })

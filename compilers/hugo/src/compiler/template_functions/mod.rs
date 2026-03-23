@@ -9,6 +9,7 @@ pub mod math;
 pub mod condition;
 pub mod content;
 pub mod page;
+pub mod partial;
 
 pub use url::UrlFunctions;
 pub use string::StringFunctions;
@@ -18,6 +19,7 @@ pub use math::MathFunctions;
 pub use condition::ConditionFunctions;
 pub use content::ContentFunctions;
 pub use page::PageFunctions;
+pub use partial::PartialFunctions;
 
 use serde_json::Value;
 use std::collections::HashMap;
@@ -49,6 +51,7 @@ impl TemplateFunctions {
         self.register_condition_functions();
         self.register_content_functions();
         self.register_page_functions();
+        self.register_partial_functions();
     }
     
     /// 注册 URL 处理函数
@@ -153,6 +156,14 @@ impl TemplateFunctions {
         self.register("getPage", Box::new(move |args| funcs.get_page(args)));
         self.register("pages", Box::new(move |args| funcs.pages(args)));
         self.register("site", Box::new(move |args| funcs.site(args)));
+    }
+    
+    /// 注册 Partial 模板函数
+    fn register_partial_functions(&mut self) {
+        let funcs = PartialFunctions::new();
+        
+        self.register("partial", Box::new(move |args| funcs.partial(args)));
+        self.register("partialCached", Box::new(move |args| funcs.partial_cached(args)));
     }
     
     /// 注册单个函数

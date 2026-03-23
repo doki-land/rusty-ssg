@@ -133,7 +133,7 @@ impl StaticSiteGenerator {
     }
 
     /// 按语言分组文档
-    fn group_documents_by_language(&self, documents: &HashMap<String, Document>) -> LanguageDocuments {
+    fn group_documents_by_language(&self, documents: &HashMap<String, String>) -> LanguageDocuments {
         let mut result = LanguageDocuments::new();
         let default_lang = self.get_default_language();
 
@@ -247,47 +247,24 @@ impl StaticSiteGenerator {
     }
 
     /// 生成侧边栏组
-    fn generate_sidebar_groups(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups(&self, documents: &HashMap<String, String>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
 
-        let sidebar_source = if let Some(locale_config) = self.config.locales.get(lang) {
-            if let Some(ref sidebar) = locale_config.sidebar { sidebar } else { &self.config.theme.sidebar }
-        }
-        else {
-            &self.config.theme.sidebar
-        };
+        let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
-        if let Some(sidebar_config) = sidebar_source.get("/") {
-            for item in sidebar_config {
-                let mut group = SidebarGroup { text: item.text.clone(), items: Vec::new() };
-
-                if let Some(items) = &item.items {
-                    for sub_item in items {
-                        if let Some(link) = &sub_item.link {
-                            let normalized_link =
-                                if link.starts_with('/') { format!("{}{}", lang, link) } else { format!("{}/{}", lang, link) }
-                                    .replace(".md", ".html");
-
-                            group.items.push(SidebarLink { text: sub_item.text.clone(), link: normalized_link });
-                        }
-                    }
-                }
-
-                groups.push(group);
-            }
+        for (path, _doc) in documents {
+            let title = path
+                .split('/')
+                .last()
+                .unwrap_or(path)
+                .strip_suffix(".md")
+                .unwrap_or_else(|| path.split('/').last().unwrap_or(path))
+                .to_string();
+            let full_path = format!("{}/{}", lang, path).replace(".md", ".html");
+            default_group.items.push(SidebarLink { text: title, link: full_path });
         }
 
-        if groups.is_empty() {
-            let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
-
-            for (path, doc) in documents {
-                let title = doc.title().unwrap_or(path).to_string();
-                let full_path = format!("{}/{}", lang, path).replace(".md", ".html");
-                default_group.items.push(SidebarLink { text: title, link: full_path });
-            }
-
-            groups.push(default_group);
-        }
+        groups.push(default_group);
 
         groups
     }
@@ -304,12 +281,18 @@ impl StaticSiteGenerator {
     }
 
     /// 简单版本的侧边栏生成
-    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, String>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
         let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
-        for (path, doc) in documents {
-            let title = doc.title().unwrap_or(path).to_string();
+        for (path, _doc) in documents {
+            let title = path
+                .split('/')
+                .last()
+                .unwrap_or(path)
+                .strip_suffix(".md")
+                .unwrap_or_else(|| path.split('/').last().unwrap_or(path))
+                .to_string();
             let link = format!("{}/{}", lang, path).replace(".md", ".html");
             default_group.items.push(SidebarLink { text: title, link });
         }
@@ -386,15 +369,15 @@ impl ConfigLoader {
     /// # Errors
     ///
     /// 返回错误如果文件读取、解析或验证失败
-    pub fn load_from_file(path: &PathBuf) -> Result<VutexConfig> {
-        Ok(VutexConfig::load_from_file(path)?)
+    pub fn load_from_file(path: &PathBuf) -> Result<crate::jekyll::JekyllConfig> {
+        Ok(crate::jekyll::JekyllConfig::from_file(path)?)
     }
 
     /// 从目录查找并加载配置
     ///
     /// 按以下顺序查找配置文件：
-    /// 1. vutex.config.toml
-    /// 2. vutex.config.json
+    /// 1. _config.yml
+    /// 2. _config.local.yml
     ///
     /// # Arguments
     ///
@@ -403,7 +386,7 @@ impl ConfigLoader {
     /// # Errors
     ///
     /// 返回错误如果配置文件读取、解析或验证失败
-    pub fn load_from_dir(dir: &PathBuf) -> Result<VutexConfig> {
-        Ok(VutexConfig::load_from_dir(dir)?)
+    pub fn load_from_dir(dir: &PathBuf) -> Result<crate::jekyll::JekyllConfig> {
+        Ok(crate::jekyll::JekyllConfigLoader::load_from_dir(dir)?)
     }
 }

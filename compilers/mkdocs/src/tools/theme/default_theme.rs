@@ -203,13 +203,13 @@ impl DefaultTheme {
 
         // 首先尝试从自定义目录加载模板
         if let Some(ref dir) = custom_dir {
-            if let Err(e) = Self::load_templates_from_custom_dir(&mut template_manager, engine_type, dir) {
+            if let Err(e) = Self::load_templates_from_custom_dir(&mut template_manager, &engine_type, dir) {
                 eprintln!("Warning: Failed to load templates from custom directory: {}", e);
             }
         }
 
         // 如果自定义目录加载失败，使用内置模板
-        Self::load_builtin_templates(&mut template_manager, engine_type, &theme_type)?;
+        Self::load_builtin_templates(&mut template_manager, &engine_type, &theme_type)?;
 
         Ok(Self { config, theme_type, engine_type, template_manager, custom_dir })
     }
@@ -224,18 +224,28 @@ impl DefaultTheme {
         }
     }
 
+    /// 转换模板引擎类型
+    fn to_template_engine(engine_type: &TemplateEngineType) -> TemplateEngine {
+        match engine_type {
+            TemplateEngineType::DejaVu => TemplateEngine::DejaVu,
+            TemplateEngineType::Handlebars => TemplateEngine::Handlebars,
+            TemplateEngineType::Jinja2 => TemplateEngine::Jinja2,
+        }
+    }
+
     /// 从自定义目录加载模板
-    fn load_templates_from_custom_dir(template_manager: &mut UnifiedTemplateManager, engine_type: TemplateEngineType, dir: &str) -> std::io::Result<()> {
+    fn load_templates_from_custom_dir(template_manager: &mut UnifiedTemplateManager, engine_type: &TemplateEngineType, dir: &str) -> std::io::Result<()> {
         use std::path::Path;
         let template_dir = Path::new(dir).join("templates");
         if template_dir.exists() {
-            template_manager.register_templates_from_dir(engine_type, &template_dir)?;
+            let engine = Self::to_template_engine(engine_type);
+            template_manager.register_templates_from_dir(engine, &template_dir)?;
         }
         Ok(())
     }
 
     /// 加载内置模板
-    fn load_builtin_templates(template_manager: &mut UnifiedTemplateManager, engine_type: TemplateEngineType, theme_type: &ThemeType) -> std::io::Result<()> {
+    fn load_builtin_templates(template_manager: &mut UnifiedTemplateManager, engine_type: &TemplateEngineType, theme_type: &ThemeType) -> std::io::Result<()> {
         let template_content = match theme_type {
             ThemeType::Default => include_str!("../templates/page.dejavu"),
             ThemeType::Dark => include_str!("../templates/page.dejavu"), // 后续添加暗黑主题模板
@@ -243,7 +253,8 @@ impl DefaultTheme {
             ThemeType::Custom(_) => include_str!("../templates/page.dejavu"), // 自定义主题回退到默认模板
         };
 
-        template_manager.register_template(engine_type, "page", template_content)?;
+        let engine = Self::to_template_engine(engine_type);
+        template_manager.register_template(engine, "page", template_content)?;
         Ok(())
     }
 

@@ -79,6 +79,7 @@ async-graphql-value = "7.2.1"
 uuid = { version = "1.22.0", features = ["v4"] }
 sha2 = "0.10.8"
 rand = "0.8.5"
+thiserror = "1.0.61"
 
 # Hexo internal dependencies
 hexo = { path = "compilers/hexo" }

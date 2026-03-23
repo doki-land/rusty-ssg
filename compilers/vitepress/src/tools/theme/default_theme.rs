@@ -182,7 +182,7 @@ impl DefaultTheme {
     /// # Returns
     ///
     /// 站点配置的不可变引用
-    pub fn config(&self) -> &VutexConfig {
+    pub fn config(&self) -> &crate::config::VitePressConfig {
         &self.config
     }
 }

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::{fs, path::Path};
 
 /// Astro 配置结构
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct AstroConfig {
     /// 站点基本 URL
     #[serde(default = "default_base_url")]
@@ -32,7 +32,7 @@ pub struct AstroConfig {
 }
 
 /// 构建配置
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct BuildConfig {
     /// 构建格式
     #[serde(default = "default_build_format")]
@@ -48,7 +48,7 @@ pub struct BuildConfig {
 }
 
 /// 开发服务器配置
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct DevConfig {
     /// 开发服务器端口
     #[serde(default = "default_dev_port")]
@@ -60,7 +60,7 @@ pub struct DevConfig {
 }
 
 /// 页面配置
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct PagesConfig {
     /// 页面目录
     #[serde(default = "default_pages_dir")]

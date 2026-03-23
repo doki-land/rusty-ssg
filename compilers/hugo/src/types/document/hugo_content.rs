@@ -625,6 +625,19 @@ impl HugoContentLoader {
         let content = std::fs::read_to_string(path)?;
         let (frontmatter, body_content, _) = FrontMatterParser::parse(&content)?;
 
+        // 增强 Front Matter
+        let mut enhanced_frontmatter = FrontMatterEnhancer::enhance(frontmatter, path)?;
+        
+        // 生成摘要
+        if enhanced_frontmatter.summary.is_none() {
+            if let Some(summary) = Self::generate_summary(&body_content) {
+                enhanced_frontmatter.summary = Some(summary);
+            }
+        }
+        
+        // 验证 Front Matter
+        FrontMatterEnhancer::validate(&enhanced_frontmatter)?;
+
         let relative_path = path
             .strip_prefix(content_dir)
             .map_err(|_| HugoContentError::invalid_path("Cannot get relative path".to_string()))?;
@@ -649,10 +662,75 @@ impl HugoContentLoader {
 
         let mut page = HugoPage::new(path.to_path_buf(), relative_path.to_path_buf());
         page.content_type = content_type;
-        page.frontmatter = frontmatter;
+        page.frontmatter = enhanced_frontmatter;
         page.content = body_content;
         page.section = section;
 
         Ok(page)
+    }
+    
+    /// 生成内容摘要
+    ///
+    /// 1. 首先检查是否有 <!--more--> 分隔符
+    /// 2. 如果没有，提取前 70 个单词作为摘要
+    pub fn generate_summary(content: &str) -> Option<String> {
+        // 检查是否有 <!--more--> 分隔符
+        if let Some(more_index) = content.find("<!--more-->") {
+            let summary = content[..more_index].trim();
+            if !summary.is_empty() {
+                return Some(summary.to_string());
+            }
+        }
+        
+        // 提取前 70 个单词作为摘要
+        let words: Vec<&str> = content
+            .split_whitespace()
+            .take(70)
+            .collect();
+        
+        if !words.is_empty() {
+            let summary = words.join(" ");
+            Some(summary)
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_generate_summary_with_more_separator() {
+        let content = "This is the summary<!--more-->This is the rest of the content";
+        let summary = HugoContentLoader::generate_summary(content);
+        assert_eq!(summary, Some("This is the summary".to_string()));
+    }
+
+    #[test]
+    fn test_generate_summary_without_more_separator() {
+        let content = "This is a test content with multiple words to test the automatic summary generation. "
+            .repeat(10);
+        let summary = HugoContentLoader::generate_summary(&content);
+        assert!(summary.is_some());
+        let summary_str = summary.unwrap();
+        let words: Vec<&str> = summary_str.split_whitespace().collect();
+        assert!(words.len() <= 70);
+    }
+
+    #[test]
+    fn test_generate_summary_empty_content() {
+        let content = "";
+        let summary = HugoContentLoader::generate_summary(content);
+        assert_eq!(summary, None);
+    }
+
+    #[test]
+    fn test_generate_summary_short_content() {
+        let content = "Short content";
+        let summary = HugoContentLoader::generate_summary(content);
+        assert_eq!(summary, Some("Short content".to_string()));
     }
 }
