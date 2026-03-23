@@ -406,7 +406,6 @@ pub struct PluginOptions {
     pub options: HashMap<String, serde_json::Value>,
 }
 
-
 impl MkDocsConfig {
     /// 创建默认配置
     pub fn new() -> Self {
@@ -464,10 +463,7 @@ impl MkDocsConfig {
     }
 
     /// 解析配置继承
-    fn resolve_inheritance(
-        mut self,
-        config_path: &std::path::PathBuf,
-    ) -> Result<Self, crate::types::errors::MkDocsError> {
+    fn resolve_inheritance(mut self, config_path: &std::path::PathBuf) -> Result<Self, crate::types::errors::MkDocsError> {
         if let Some(inherit_path) = &self.inherit {
             let parent_path = config_path
                 .parent()

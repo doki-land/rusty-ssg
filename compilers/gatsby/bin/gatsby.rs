@@ -4,7 +4,10 @@
 use clap::Parser;
 use gatsby::{
     GatsbyCli, GatsbyCommands,
-    tools::cmd::{BuildCommand, CheckCommand, CleanCommand, InitCommand, InfoCommand, NewCommand, PluginCommand, TelemetryCommand, VersionCommand},
+    tools::cmd::{
+        BuildCommand, CheckCommand, CleanCommand, InfoCommand, InitCommand, NewCommand, PluginCommand, TelemetryCommand,
+        VersionCommand,
+    },
     types::Result,
 };
 

@@ -37,12 +37,7 @@ impl VuePressCompiler {
     /// 创建新的编译器（无插件支持，降级模式）
     pub fn new() -> Self {
         let config = VuePressConfig::new();
-        Self {
-            config: config.clone(),
-            html_renderer: HtmlRenderer::new(config),
-            cache: HashMap::new(),
-            plugin_host: None,
-        }
+        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None }
     }
 
     /// 创建带配置的编译器（无插件支持，降级模式）
@@ -76,7 +71,12 @@ impl VuePressCompiler {
     /// * `config` - 编译器配置
     /// * `plugin_host` - 插件宿主实例
     pub fn with_config_and_plugin_host(config: VuePressConfig, plugin_host: PluginHost) -> Self {
-        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: Some(plugin_host) }
+        Self {
+            config: config.clone(),
+            html_renderer: HtmlRenderer::new(config),
+            cache: HashMap::new(),
+            plugin_host: Some(plugin_host),
+        }
     }
 
     /// 获取编译器配置
@@ -145,9 +145,75 @@ impl VuePressCompiler {
     ///
     /// 应用模板后的完整 HTML
     fn apply_theme_template(&self, content: &str, title: &str) -> String {
-        // 简单的主题模板
-        format!(
-            r#"<!DOCTYPE html>
+        use crate::tools::theme::{DefaultTheme, NavItem, PageContext, SidebarGroup, SidebarLink};
+        
+        // 创建默认主题实例
+        let theme = DefaultTheme::new(self.config.clone()).unwrap();
+        
+        // 构建页面上下文
+        let page_context = PageContext {
+            page_title: title.to_string(),
+            site_title: theme.site_title().to_string(),
+            content: content.to_string(),
+            nav_items: vec![
+                NavItem { text: "Home".to_string(), link: "/".to_string() },
+                NavItem { text: "Guide".to_string(), link: "/guide/".to_string() },
+                NavItem { text: "API".to_string(), link: "/api/".to_string() },
+            ],
+            sidebar_groups: vec![
+                SidebarGroup {
+                    text: "Getting Started".to_string(),
+                    items: vec![
+                        SidebarLink { text: "Introduction".to_string(), link: "/guide/introduction/".to_string() },
+                        SidebarLink { text: "Installation".to_string(), link: "/guide/installation/".to_string() },
+                        SidebarLink { text: "Quick Start".to_string(), link: "/guide/quick-start/".to_string() },
+                    ],
+                },
+                SidebarGroup {
+                    text: "Advanced".to_string(),
+                    items: vec![
+                        SidebarLink { text: "Configuration".to_string(), link: "/guide/configuration/".to_string() },
+                        SidebarLink { text: "Themes".to_string(), link: "/guide/themes/".to_string() },
+                        SidebarLink { text: "Plugins".to_string(), link: "/guide/plugins/".to_string() },
+                    ],
+                },
+            ],
+            current_path: "/".to_string(),
+            has_footer: true,
+            has_footer_message: true,
+            footer_message: "Powered by VuePress".to_string(),
+            has_footer_copyright: true,
+            footer_copyright: "© 2024 VuePress".to_string(),
+            current_lang: "en-US".to_string(),
+            available_locales: vec![],
+            root_path: "/".to_string(),
+        };
+        
+        // 渲染页面
+        match theme.render_page(&page_context) {
+            Ok(html) => {
+                // 添加 Vue 运行时
+                let html_with_vue = html.replace("</body>", &format!(
+                    r#"
+    <!-- Vue 运行时 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script>
+        const {{ createApp }} = Vue
+        createApp({{}}).mount('#app')
+    </script>
+</body>"#
+                ));
+                
+                // 修复模板语法错误
+                let html_with_vue_fixed = html_with_vue
+                    .replace("const {{ createApp }}", "const { createApp }")
+                    .replace("createApp({{}})", "createApp({})");
+                html_with_vue_fixed
+            },
+            Err(_) => {
+                // 回退到简单模板
+                format!(
+                    r#"<!DOCTYPE html>
 <html lang="{lang}">
 <head>
     <meta charset="UTF-8">
@@ -156,23 +222,33 @@ impl VuePressCompiler {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vuepress/theme-default@latest/style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>{title}</h1>
-        </header>
-        <main class="content">
-            {content}
-        </main>
-        <footer class="footer">
-            <p>Powered by VuePress</p>
-        </footer>
+    <div id="app">
+        <div class="container">
+            <header class="header">
+                <h1>{title}</h1>
+            </header>
+            <main class="content">
+                {content}
+            </main>
+            <footer class="footer">
+                <p>Powered by VuePress</p>
+            </footer>
+        </div>
     </div>
+    <!-- Vue 运行时 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script>
+        const { createApp } = Vue
+        createApp({}).mount('#app')
+    </script>
 </body>
 </html>"#,
-            lang = "en-US",
-            title = title,
-            content = content
-        )
+                    lang = "en-US",
+                    title = title,
+                    content = content
+                )
+            }
+        }
     }
 
     /// 编译单个文档

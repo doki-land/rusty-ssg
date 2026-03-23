@@ -2,10 +2,12 @@
 //! 提供链接验证功能，确保站点中的链接都能正常工作
 
 use crate::types::{MkDocsConfig, ValidationConfig, ValidationLevel};
-use std::collections::HashSet;
-use std::path::{Path, PathBuf};
-use std::result::Result;
 use regex;
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+    result::Result,
+};
 
 /// 链接验证错误
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,11 +36,7 @@ pub struct ValidationResult {
 impl ValidationResult {
     /// 创建新的验证结果
     pub fn new() -> Self {
-        Self {
-            errors: Vec::new(),
-            warnings: Vec::new(),
-            info: Vec::new(),
-        }
+        Self { errors: Vec::new(), warnings: Vec::new(), info: Vec::new() }
     }
 
     /// 添加错误
@@ -113,11 +111,7 @@ pub struct LinkValidator {
 impl LinkValidator {
     /// 创建新的链接验证器
     pub fn new(config: MkDocsConfig) -> Self {
-        Self {
-            config,
-            files: HashSet::new(),
-            result: ValidationResult::new(),
-        }
+        Self { config, files: HashSet::new(), result: ValidationResult::new() }
     }
 
     /// 添加文件
@@ -129,7 +123,7 @@ impl LinkValidator {
     pub fn validate_nav(&mut self) {
         let nav_items = self.config.nav().to_vec();
         let not_found_level = self.config.validation().nav.not_found.clone();
-        
+
         for item in nav_items {
             self.validate_nav_item(&item, &not_found_level);
         }
@@ -171,9 +165,11 @@ impl LinkValidator {
                     self.result.add_warning(LinkError::AbsoluteLinkError(link.to_string()));
                 }
             }
-        } else if link.starts_with("#") {
+        }
+        else if link.starts_with("#") {
             // 锚点链接，暂时不处理
-        } else if link.ends_with(".md") || link.ends_with(".html") {
+        }
+        else if link.ends_with(".md") || link.ends_with(".html") {
             // 本地文件链接
             let md_path = link.replace(".html", ".md");
             if !self.files.contains(&md_path) {
@@ -187,7 +183,8 @@ impl LinkValidator {
                     }
                 }
             }
-        } else {
+        }
+        else {
             // 未识别的链接
             self.result.add_info(LinkError::UnrecognizedLink(link.to_string()));
         }
@@ -209,7 +206,7 @@ impl LinkValidator {
     fn validate_document_links(&mut self, _path: &str, content: &str, not_found_level: &crate::types::ValidationLevel) {
         // 简单的链接提取正则
         let link_regex = regex::Regex::new(r#"!(.*?)(.*?)"#).unwrap();
-        
+
         for capture in link_regex.captures_iter(content) {
             if let Some(link) = capture.get(2) {
                 let link_str = link.as_str();

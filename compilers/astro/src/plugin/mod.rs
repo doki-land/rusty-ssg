@@ -16,6 +16,16 @@ pub enum PluginError {
     LifecycleError(String),
 }
 
+impl std::fmt::Display for PluginError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PluginError::LoadError(msg) => write!(f, "LoadError: {}", msg),
+            PluginError::ExecuteError(msg) => write!(f, "ExecuteError: {}", msg),
+            PluginError::LifecycleError(msg) => write!(f, "LifecycleError: {}", msg),
+        }
+    }
+}
+
 /// 插件配置
 #[derive(Debug, Default)]
 pub struct PluginConfig {
@@ -107,10 +117,7 @@ pub struct DefaultPlugin {
 impl DefaultPlugin {
     /// 创建新的默认插件
     pub fn new(name: &str, config: Option<PluginConfig>) -> Self {
-        Self {
-            name: name.to_string(),
-            config,
-        }
+        Self { name: name.to_string(), config }
     }
 }
 

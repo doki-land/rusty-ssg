@@ -1,5 +1,5 @@
-use std::fmt;
 use notify::Error as NotifyError;
+use std::fmt;
 
 /// 通用结果类型
 pub type Result<T> = std::result::Result<T, JekyllError>;
@@ -39,6 +39,9 @@ pub enum JekyllError {
 
     /// 永久链接生成错误
     PermalinkError(String),
+
+    /// Liquid 模板引擎错误
+    LiquidError(Box<LiquidError>),
 }
 
 impl JekyllError {
@@ -56,6 +59,7 @@ impl JekyllError {
             JekyllError::InvalidPostFilename(_) => "jekyll.error.invalid_post_filename",
             JekyllError::DateParseError(_) => "jekyll.error.date_parse",
             JekyllError::PermalinkError(_) => "jekyll.error.permalink",
+            JekyllError::LiquidError(_) => "jekyll.error.liquid",
         }
     }
 }
@@ -74,6 +78,7 @@ impl fmt::Display for JekyllError {
             JekyllError::InvalidPostFilename(error) => write!(f, "Invalid post filename format: {}", error),
             JekyllError::DateParseError(error) => write!(f, "Failed to parse date: {}", error),
             JekyllError::PermalinkError(error) => write!(f, "Failed to generate permalink: {}", error),
+            JekyllError::LiquidError(error) => write!(f, "Liquid error: {}", error),
         }
     }
 }
@@ -148,7 +153,7 @@ pub enum LiquidError {
     TemplateNotFound(String),
 
     /// Jekyll 相关错误
-    JekyllError(JekyllError),
+    JekyllError(Box<JekyllError>),
 
     /// 文件系统错误
     FileSystemError(std::io::Error),
@@ -161,7 +166,7 @@ impl LiquidError {
             LiquidError::ParseError(_) => "jekyll.error.liquid.parse",
             LiquidError::RenderError(_) => "jekyll.error.liquid.render",
             LiquidError::TemplateNotFound(_) => "jekyll.error.liquid.template_not_found",
-            LiquidError::JekyllError(error) => error.i18n_key(),
+            LiquidError::JekyllError(error) => error.as_ref().i18n_key(),
             LiquidError::FileSystemError(_) => "jekyll.error.liquid.filesystem",
         }
     }
@@ -188,7 +193,7 @@ impl fmt::Display for LiquidError {
             LiquidError::ParseError(error) => write!(f, "Liquid parse error: {}", error),
             LiquidError::RenderError(error) => write!(f, "Liquid render error: {}", error),
             LiquidError::TemplateNotFound(template) => write!(f, "Template not found: {}", template),
-            LiquidError::JekyllError(error) => write!(f, "Jekyll error: {}", error),
+            LiquidError::JekyllError(error) => write!(f, "Jekyll error: {}", error.as_ref()),
             LiquidError::FileSystemError(error) => write!(f, "File system error: {}", error),
         }
     }
@@ -196,7 +201,7 @@ impl fmt::Display for LiquidError {
 
 impl From<JekyllError> for LiquidError {
     fn from(error: JekyllError) -> Self {
-        LiquidError::JekyllError(error)
+        LiquidError::JekyllError(Box::new(error))
     }
 }
 
@@ -398,7 +403,7 @@ impl PostError {
     /// 获取错误的 i18n 键
     pub fn i18n_key(&self) -> &'static str {
         match self {
-            PostError::InvalidFilename(_) => "jekyll.post.error.invalid_filename",
+            PostError::InvalidPostFilename(_) => "jekyll.post.error.invalid_filename",
             PostError::DateParseError(_) => "jekyll.post.error.date_parse",
             PostError::PermalinkError(_) => "jekyll.post.error.permalink",
             PostError::JekyllError(error) => error.i18n_key(),
@@ -410,7 +415,7 @@ impl PostError {
 impl fmt::Display for PostError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PostError::InvalidFilename(filename) => write!(f, "Invalid post filename: {}", filename),
+            PostError::InvalidPostFilename(filename) => write!(f, "Invalid post filename: {}", filename),
             PostError::DateParseError(error) => write!(f, "Failed to parse date: {}", error),
             PostError::PermalinkError(error) => write!(f, "Failed to generate permalink: {}", error),
             PostError::JekyllError(error) => write!(f, "Jekyll error: {}", error),
@@ -434,7 +439,7 @@ impl From<std::io::Error> for PostError {
 impl From<PostError> for JekyllError {
     fn from(error: PostError) -> Self {
         match error {
-            PostError::InvalidFilename(filename) => JekyllError::InvalidPostFilename(filename),
+            PostError::InvalidPostFilename(filename) => JekyllError::InvalidPostFilename(filename),
             PostError::DateParseError(error) => JekyllError::DateParseError(error),
             PostError::PermalinkError(error) => JekyllError::PermalinkError(error),
             PostError::JekyllError(error) => error,
@@ -446,5 +451,11 @@ impl From<PostError> for JekyllError {
 impl From<NotifyError> for JekyllError {
     fn from(error: NotifyError) -> Self {
         JekyllError::FileSystemError(std::io::Error::new(std::io::ErrorKind::Other, error.to_string()))
+    }
+}
+
+impl From<LiquidError> for JekyllError {
+    fn from(error: LiquidError) -> Self {
+        JekyllError::LiquidError(Box::new(error))
     }
 }

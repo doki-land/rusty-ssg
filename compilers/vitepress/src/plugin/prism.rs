@@ -18,11 +18,7 @@ pub struct PrismPluginConfig {
 
 impl Default for PrismPluginConfig {
     fn default() -> Self {
-        Self {
-            line_numbers: true,
-            theme: "prism-tomorrow".to_string(),
-            additional_languages: Vec::new(),
-        }
+        Self { line_numbers: true, theme: "prism-tomorrow".to_string(), additional_languages: Vec::new() }
     }
 }
 
@@ -38,11 +34,7 @@ impl PrismPlugin {
     /// 创建新的 Prism 插件
     pub fn new() -> Self {
         Self {
-            meta: PluginMeta::new(
-                "prism".to_string(),
-                "0.1.0".to_string(),
-                "Code syntax highlighting with Prism".to_string(),
-            ),
+            meta: PluginMeta::new("prism".to_string(), "0.1.0".to_string(), "Code syntax highlighting with Prism".to_string()),
             config: PrismPluginConfig::default(),
         }
     }
@@ -50,11 +42,7 @@ impl PrismPlugin {
     /// 创建带配置的 Prism 插件
     pub fn with_config(config: PrismPluginConfig) -> Self {
         Self {
-            meta: PluginMeta::new(
-                "prism".to_string(),
-                "0.1.0".to_string(),
-                "Code syntax highlighting with Prism".to_string(),
-            ),
+            meta: PluginMeta::new("prism".to_string(), "0.1.0".to_string(), "Code syntax highlighting with Prism".to_string()),
             config,
         }
     }
@@ -100,7 +88,8 @@ impl VitePressPlugin for PrismPlugin {
             content = content.replace("<head>", &format!("<head>{}", css_link));
 
             // 添加 Prism JS
-            let mut js_scripts = "<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js\"></script>".to_string();
+            let mut js_scripts =
+                "<script src=\"https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js\"></script>".to_string();
 
             // 添加额外的语言支持
             for lang in &self.config.additional_languages {
@@ -121,10 +110,6 @@ impl VitePressPlugin for PrismPlugin {
             content = content.replace("</body>", &format!("{}</body>", js_scripts));
         }
 
-        PluginContext {
-            content,
-            frontmatter: context.frontmatter,
-            path: context.path,
-        }
+        PluginContext { content, frontmatter: context.frontmatter, path: context.path }
     }
 }

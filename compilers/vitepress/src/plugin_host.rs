@@ -2,21 +2,30 @@
 //! 用于管理和调用插件
 
 use crate::types::{Result, VitePressError};
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 
 /// 插件宿主错误
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub enum PluginHostError {
     /// IPC 错误
-    #[error("IPC error: {0}")]
     IpcError(String),
     /// 插件错误
-    #[error("Plugin error: {0}")]
     PluginError(String),
     /// 超时错误
-    #[error("Timeout error")]
     TimeoutError,
 }
+
+impl fmt::Display for PluginHostError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PluginHostError::IpcError(msg) => write!(f, "IPC error: {}", msg),
+            PluginHostError::PluginError(msg) => write!(f, "Plugin error: {}", msg),
+            PluginHostError::TimeoutError => write!(f, "Timeout error"),
+        }
+    }
+}
+
+impl std::error::Error for PluginHostError {}
 
 /// 插件宿主
 /// 负责管理和调用插件

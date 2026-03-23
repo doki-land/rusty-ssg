@@ -365,6 +365,10 @@ pub struct HugoPage {
     pub date: Option<String>,
     /// 页面最后修改日期
     pub last_modified: Option<String>,
+    /// 发布日期
+    pub publish_date: Option<String>,
+    /// 过期日期
+    pub expiry_date: Option<String>,
     /// 是否为草稿
     pub draft: Option<bool>,
     /// 页面权重
@@ -385,6 +389,10 @@ pub struct HugoPage {
     pub next: Option<Box<HugoPage>>,
     /// 上一个页面
     pub prev: Option<Box<HugoPage>>,
+    /// 页面别名
+    pub aliases: Vec<String>,
+    /// 页面菜单
+    pub menus: HashMap<String, Vec<MenuItem>>,
 }
 
 impl HugoPage {
@@ -622,6 +630,47 @@ impl HugoPage {
         self.prev = Some(Box::new(prev));
         self
     }
+
+    /// 设置发布日期
+    ///
+    /// # Arguments
+    ///
+    /// * `publish_date` - 发布日期字符串
+    pub fn with_publish_date(mut self, publish_date: String) -> Self {
+        self.publish_date = Some(publish_date);
+        self
+    }
+
+    /// 设置过期日期
+    ///
+    /// # Arguments
+    ///
+    /// * `expiry_date` - 过期日期字符串
+    pub fn with_expiry_date(mut self, expiry_date: String) -> Self {
+        self.expiry_date = Some(expiry_date);
+        self
+    }
+
+    /// 添加别名
+    ///
+    /// # Arguments
+    ///
+    /// * `alias` - 页面别名
+    pub fn add_alias(mut self, alias: String) -> Self {
+        self.aliases.push(alias);
+        self
+    }
+
+    /// 添加菜单项
+    ///
+    /// # Arguments
+    ///
+    /// * `menu_name` - 菜单名称
+    /// * `item` - 菜单项
+    pub fn add_menu_item(mut self, menu_name: String, item: MenuItem) -> Self {
+        self.menus.entry(menu_name).or_default().push(item);
+        self
+    }
 }
 
 /// Hugo 模板上下文
@@ -633,6 +682,33 @@ pub struct HugoTemplateContext {
     pub site: HugoSite,
     /// 页面信息
     pub page: HugoPage,
+    /// 环境信息
+    pub env: EnvironmentInfo,
+}
+
+/// 环境信息
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct EnvironmentInfo {
+    /// 是否为开发环境
+    pub is_dev: bool,
+    /// 是否为生产环境
+    pub is_production: bool,
+    /// 构建日期
+    pub build_date: String,
+    /// Hugo 版本
+    pub hugo_version: String,
+}
+
+impl EnvironmentInfo {
+    /// 创建新的环境信息
+    pub fn new() -> Self {
+        Self {
+            is_dev: true,
+            is_production: false,
+            build_date: chrono::Utc::now().to_rfc3339(),
+            hugo_version: "0.135.0".to_string(),
+        }
+    }
 }
 
 impl HugoTemplateContext {
@@ -643,6 +719,6 @@ impl HugoTemplateContext {
     /// * `site` - 站点信息
     /// * `page` - 页面信息
     pub fn new(site: HugoSite, page: HugoPage) -> Self {
-        Self { site, page }
+        Self { site, page, env: EnvironmentInfo::new() }
     }
 }

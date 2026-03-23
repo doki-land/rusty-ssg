@@ -198,7 +198,12 @@ impl DefaultTheme {
     /// # Returns
     ///
     /// 新的默认主题实例
-    pub fn with_theme(config: MkDocsConfig, theme_type: ThemeType, engine_type: TemplateEngineType, custom_dir: Option<String>) -> Result<Self> {
+    pub fn with_theme(
+        config: MkDocsConfig,
+        theme_type: ThemeType,
+        engine_type: TemplateEngineType,
+        custom_dir: Option<String>,
+    ) -> Result<Self> {
         let mut template_manager = UnifiedTemplateManager::new();
 
         // 首先尝试从自定义目录加载模板
@@ -234,7 +239,11 @@ impl DefaultTheme {
     }
 
     /// 从自定义目录加载模板
-    fn load_templates_from_custom_dir(template_manager: &mut UnifiedTemplateManager, engine_type: &TemplateEngineType, dir: &str) -> std::io::Result<()> {
+    fn load_templates_from_custom_dir(
+        template_manager: &mut UnifiedTemplateManager,
+        engine_type: &TemplateEngineType,
+        dir: &str,
+    ) -> std::io::Result<()> {
         use std::path::Path;
         let template_dir = Path::new(dir).join("templates");
         if template_dir.exists() {
@@ -245,7 +254,11 @@ impl DefaultTheme {
     }
 
     /// 加载内置模板
-    fn load_builtin_templates(template_manager: &mut UnifiedTemplateManager, engine_type: &TemplateEngineType, theme_type: &ThemeType) -> std::io::Result<()> {
+    fn load_builtin_templates(
+        template_manager: &mut UnifiedTemplateManager,
+        engine_type: &TemplateEngineType,
+        theme_type: &ThemeType,
+    ) -> std::io::Result<()> {
         let template_content = match theme_type {
             ThemeType::Default => include_str!("../templates/page.dejavu"),
             ThemeType::Dark => include_str!("../templates/page.dejavu"), // 后续添加暗黑主题模板
@@ -278,7 +291,7 @@ impl DefaultTheme {
                         Ok(self.render_fallback_page(context))
                     }
                 }
-            },
+            }
             TemplateEngineType::Handlebars => self
                 .template_manager
                 .render(TemplateEngine::Handlebars, "page", context)
@@ -300,7 +313,8 @@ impl DefaultTheme {
     ///
     /// 简单的 HTML 页面字符串
     fn render_fallback_page(&self, context: &PageContext) -> String {
-        format!(r#"
+        format!(
+            r#"
 <!DOCTYPE html>
 <html lang="{}">
 <head>
@@ -376,7 +390,7 @@ impl DefaultTheme {
     </footer>
 </body>
 </html>
-"#, 
+"#,
             context.current_lang,
             context.page_title,
             context.site_title,
@@ -389,17 +403,15 @@ impl DefaultTheme {
 
     /// 渲染导航栏项目
     fn render_nav_items(&self, nav_items: &[ThemeNavItem]) -> String {
-        nav_items.iter()
-            .map(|item| self.render_nav_item(item))
-            .collect::<Vec<_>>()
-            .join("")
+        nav_items.iter().map(|item| self.render_nav_item(item)).collect::<Vec<_>>().join("")
     }
 
     /// 渲染单个导航栏项目
     fn render_nav_item(&self, item: &ThemeNavItem) -> String {
         if item.children.is_empty() {
             format!("<li><a href='{}'>{}</a></li>", item.link, item.text)
-        } else {
+        }
+        else {
             let children = self.render_nav_items(&item.children);
             format!(
                 r#"<li>
@@ -413,9 +425,12 @@ impl DefaultTheme {
 
     /// 渲染侧边栏
     fn render_sidebar(&self, sidebar_groups: &[ThemeSidebarGroup]) -> String {
-        sidebar_groups.iter()
+        sidebar_groups
+            .iter()
             .map(|group| {
-                let items = group.items.iter()
+                let items = group
+                    .items
+                    .iter()
                     .map(|item| format!("<li><a href='{}'>{}</a></li>", item.link, item.text))
                     .collect::<Vec<_>>()
                     .join("");
@@ -436,7 +451,8 @@ impl DefaultTheme {
                 footer.push_str(&format!("<p>{}</p>", context.footer_copyright));
             }
             footer
-        } else {
+        }
+        else {
             "<p>&copy; 2026 MkDocs</p>".to_string()
         }
     }

@@ -1,5 +1,5 @@
 //! Prism 代码高亮插件
-//! 
+//!
 //! 提供对 Markdown 中代码块的语法高亮支持
 
 use crate::plugin::{PluginContext, PluginMeta, VuePressPlugin};
@@ -43,15 +43,22 @@ impl PrismPlugin {
             .replace_all(content, |caps: &regex::Captures| {
                 let language = &caps[1];
                 let code = &caps[2];
-                
+
                 if language.is_empty() {
-                    format!("```
+                    format!(
+                        "```
 {}
-```", code)
-                } else {
-                    format!("``` {}
+```",
+                        code
+                    )
+                }
+                else {
+                    format!(
+                        "``` {}
 {}
-```", language, code)
+```",
+                        language, code
+                    )
                 }
             })
             .to_string()
@@ -81,7 +88,7 @@ impl VuePressPlugin for PrismPlugin {
     /// 处理后的插件上下文
     fn before_render(&self, context: PluginContext) -> PluginContext {
         let content = self.process_code_blocks(&context.content);
-        
+
         PluginContext { content, frontmatter: context.frontmatter, path: context.path }
     }
 
@@ -96,7 +103,7 @@ impl VuePressPlugin for PrismPlugin {
     /// 处理后的插件上下文
     fn after_render(&self, context: PluginContext) -> PluginContext {
         let mut content = context.content;
-        
+
         // 添加 Prism 脚本和样式
         let prism_scripts = r#"
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
@@ -110,12 +117,12 @@ impl VuePressPlugin for PrismPlugin {
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
 "#;
-        
+
         // 在 </body> 标签前添加 Prism 脚本
         if let Some(body_end) = content.find("</body>") {
             content.insert_str(body_end, prism_scripts);
         }
-        
+
         PluginContext { content, frontmatter: context.frontmatter, path: context.path }
     }
 }

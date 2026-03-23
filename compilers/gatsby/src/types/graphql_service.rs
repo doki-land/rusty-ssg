@@ -29,86 +29,137 @@ impl GraphQLService {
         // 创建 File 类型
         let file_type = GraphQLObjectType::new("File".to_string())
             .with_description("A file in the Gatsby site".to_string())
-            .with_field(GraphQLField::new("id".to_string(), GraphQLFieldType::ID)
-                .with_description("The ID of the file".to_string()))
-            .with_field(GraphQLField::new("name".to_string(), GraphQLFieldType::String)
-                .with_description("The name of the file".to_string()))
-            .with_field(GraphQLField::new("relativePath".to_string(), GraphQLFieldType::String)
-                .with_description("The relative path to the file".to_string()))
-            .with_field(GraphQLField::new("absolutePath".to_string(), GraphQLFieldType::String)
-                .with_description("The absolute path to the file".to_string()))
-            .with_field(GraphQLField::new("extension".to_string(), GraphQLFieldType::String)
-                .with_description("The file extension".to_string()))
-            .with_field(GraphQLField::new("size".to_string(), GraphQLFieldType::Int)
-                .with_description("The file size in bytes".to_string()))
-            .with_field(GraphQLField::new("modifiedTime".to_string(), GraphQLFieldType::DateTime)
-                .with_description("The last modified time".to_string()));
+            .with_field(
+                GraphQLField::new("id".to_string(), GraphQLFieldType::ID).with_description("The ID of the file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("name".to_string(), GraphQLFieldType::String)
+                    .with_description("The name of the file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("relativePath".to_string(), GraphQLFieldType::String)
+                    .with_description("The relative path to the file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("absolutePath".to_string(), GraphQLFieldType::String)
+                    .with_description("The absolute path to the file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("extension".to_string(), GraphQLFieldType::String)
+                    .with_description("The file extension".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("size".to_string(), GraphQLFieldType::Int)
+                    .with_description("The file size in bytes".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("modifiedTime".to_string(), GraphQLFieldType::DateTime)
+                    .with_description("The last modified time".to_string()),
+            );
 
         // 创建 MarkdownRemark 类型
         let markdown_remark_type = GraphQLObjectType::new("MarkdownRemark".to_string())
             .with_description("A Markdown file processed by Remark".to_string())
-            .with_field(GraphQLField::new("id".to_string(), GraphQLFieldType::ID)
-                .with_description("The ID of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("frontmatter".to_string(), GraphQLFieldType::Custom("Frontmatter".to_string()))
-                .with_description("The frontmatter of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("html".to_string(), GraphQLFieldType::String)
-                .with_description("The HTML rendered from the Markdown".to_string()))
-            .with_field(GraphQLField::new("excerpt".to_string(), GraphQLFieldType::String)
-                .with_description("A short excerpt of the Markdown content".to_string()))
-            .with_field(GraphQLField::new("file".to_string(), GraphQLFieldType::Custom("File".to_string()))
-                .with_description("The file node associated with this Markdown".to_string()));
+            .with_field(
+                GraphQLField::new("id".to_string(), GraphQLFieldType::ID)
+                    .with_description("The ID of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("frontmatter".to_string(), GraphQLFieldType::Custom("Frontmatter".to_string()))
+                    .with_description("The frontmatter of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("html".to_string(), GraphQLFieldType::String)
+                    .with_description("The HTML rendered from the Markdown".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("excerpt".to_string(), GraphQLFieldType::String)
+                    .with_description("A short excerpt of the Markdown content".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("file".to_string(), GraphQLFieldType::Custom("File".to_string()))
+                    .with_description("The file node associated with this Markdown".to_string()),
+            );
 
         // 创建 Frontmatter 类型
         let frontmatter_type = GraphQLObjectType::new("Frontmatter".to_string())
             .with_description("The frontmatter of a Markdown file".to_string())
-            .with_field(GraphQLField::new("title".to_string(), GraphQLFieldType::String)
-                .with_description("The title of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("description".to_string(), GraphQLFieldType::String)
-                .with_description("The description of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("date".to_string(), GraphQLFieldType::Date)
-                .with_description("The date of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("author".to_string(), GraphQLFieldType::String)
-                .with_description("The author of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("tags".to_string(), GraphQLFieldType::List(Box::new(GraphQLFieldType::String)))
-                .with_description("The tags of the Markdown file".to_string()))
-            .with_field(GraphQLField::new("categories".to_string(), GraphQLFieldType::List(Box::new(GraphQLFieldType::String)))
-                .with_description("The categories of the Markdown file".to_string()));
+            .with_field(
+                GraphQLField::new("title".to_string(), GraphQLFieldType::String)
+                    .with_description("The title of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("description".to_string(), GraphQLFieldType::String)
+                    .with_description("The description of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("date".to_string(), GraphQLFieldType::Date)
+                    .with_description("The date of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("author".to_string(), GraphQLFieldType::String)
+                    .with_description("The author of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("tags".to_string(), GraphQLFieldType::List(Box::new(GraphQLFieldType::String)))
+                    .with_description("The tags of the Markdown file".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("categories".to_string(), GraphQLFieldType::List(Box::new(GraphQLFieldType::String)))
+                    .with_description("The categories of the Markdown file".to_string()),
+            );
 
         // 创建 Site 类型
-        let site_type = GraphQLObjectType::new("Site".to_string())
-            .with_description("The site configuration".to_string())
-            .with_field(GraphQLField::new("siteMetadata".to_string(), GraphQLFieldType::Custom("SiteMetadata".to_string()))
-                .with_description("The site metadata".to_string()));
+        let site_type =
+            GraphQLObjectType::new("Site".to_string()).with_description("The site configuration".to_string()).with_field(
+                GraphQLField::new("siteMetadata".to_string(), GraphQLFieldType::Custom("SiteMetadata".to_string()))
+                    .with_description("The site metadata".to_string()),
+            );
 
         // 创建 SiteMetadata 类型
         let site_metadata_type = GraphQLObjectType::new("SiteMetadata".to_string())
             .with_description("The site metadata".to_string())
-            .with_field(GraphQLField::new("title".to_string(), GraphQLFieldType::String)
-                .with_description("The site title".to_string()))
-            .with_field(GraphQLField::new("description".to_string(), GraphQLFieldType::String)
-                .with_description("The site description".to_string()))
-            .with_field(GraphQLField::new("author".to_string(), GraphQLFieldType::String)
-                .with_description("The site author".to_string()))
-            .with_field(GraphQLField::new("siteUrl".to_string(), GraphQLFieldType::String)
-                .with_description("The site URL".to_string()))
-            .with_field(GraphQLField::new("social".to_string(), GraphQLFieldType::Custom("Social".to_string()))
-                .with_description("Social media links".to_string()));
+            .with_field(
+                GraphQLField::new("title".to_string(), GraphQLFieldType::String).with_description("The site title".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("description".to_string(), GraphQLFieldType::String)
+                    .with_description("The site description".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("author".to_string(), GraphQLFieldType::String)
+                    .with_description("The site author".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("siteUrl".to_string(), GraphQLFieldType::String).with_description("The site URL".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("social".to_string(), GraphQLFieldType::Custom("Social".to_string()))
+                    .with_description("Social media links".to_string()),
+            );
 
         // 创建 Social 类型
         let social_type = GraphQLObjectType::new("Social".to_string())
             .with_description("Social media links".to_string())
-            .with_field(GraphQLField::new("twitter".to_string(), GraphQLFieldType::String)
-                .with_description("Twitter handle".to_string()))
-            .with_field(GraphQLField::new("github".to_string(), GraphQLFieldType::String)
-                .with_description("GitHub username".to_string()))
-            .with_field(GraphQLField::new("linkedin".to_string(), GraphQLFieldType::String)
-                .with_description("LinkedIn profile".to_string()));
+            .with_field(
+                GraphQLField::new("twitter".to_string(), GraphQLFieldType::String)
+                    .with_description("Twitter handle".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("github".to_string(), GraphQLFieldType::String)
+                    .with_description("GitHub username".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("linkedin".to_string(), GraphQLFieldType::String)
+                    .with_description("LinkedIn profile".to_string()),
+            );
 
         // 创建 Query 类型
-        let query_type = GraphQLObjectType::new("Query".to_string())
-            .with_description("The root query type".to_string())
-            .with_field(GraphQLField::new("site".to_string(), GraphQLFieldType::Custom("Site".to_string()))
-                .with_description("The site configuration".to_string()));
+        let query_type =
+            GraphQLObjectType::new("Query".to_string()).with_description("The root query type".to_string()).with_field(
+                GraphQLField::new("site".to_string(), GraphQLFieldType::Custom("Site".to_string()))
+                    .with_description("The site configuration".to_string()),
+            );
 
         // 创建 Schema
         let schema = GraphQLSchema::new("Query".to_string())

@@ -9,8 +9,8 @@ pub mod errors;
 
 // 重新导出常用类型
 pub use config::{
-    AlternatePalette, ExtraJavaScript, ExtraJavaScriptConfig, FontConfig, IconConfig, LinksValidationConfig,
-    MarkdownExtension, MkDocsConfig, NavItem, NavValue, NavValidationConfig, PaletteConfig, PluginConfig, PluginOptions,
-    ThemeConfig, ToggleConfig, ValidationConfig, ValidationLevel,
+    AlternatePalette, ExtraJavaScript, ExtraJavaScriptConfig, FontConfig, IconConfig, LinksValidationConfig, MarkdownExtension,
+    MkDocsConfig, NavItem, NavValidationConfig, NavValue, PaletteConfig, PluginConfig, PluginOptions, ThemeConfig,
+    ToggleConfig, ValidationConfig, ValidationLevel,
 };
 pub use errors::{MkDocsError, Result};

@@ -14,7 +14,8 @@ pub use nargo_types::{
     CodeWriter, CompileMode, CompileOptions, Cursor, Error as NargoError, ErrorKind, NargoValue, Position, Span,
 };
 
-pub use types::{BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
+pub use types::{
+    BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem, PluginConfig, SidebarItem,
     SocialLink, ThemeConfig, VitePressConfig,
 };
 

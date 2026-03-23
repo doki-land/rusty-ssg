@@ -6,8 +6,7 @@
 
 use std::path::{Path, PathBuf};
 
-use serde_json::Value;
-use serde_json;
+use serde_json::{self, Value};
 
 use crate::errors::{JekyllError, Result};
 
@@ -145,14 +144,7 @@ impl JekyllConfig {
                         if let Value::Array(arr) = val {
                             config.exclude = Some(
                                 arr.iter()
-                                    .filter_map(|v| {
-                                        if let Value::String(s) = v {
-                                            Some(s.clone())
-                                        }
-                                        else {
-                                            None
-                                        }
-                                    })
+                                    .filter_map(|v| if let Value::String(s) = v { Some(s.clone()) } else { None })
                                     .collect(),
                             );
                         }
@@ -161,14 +153,7 @@ impl JekyllConfig {
                         if let Value::Array(arr) = val {
                             config.include = Some(
                                 arr.iter()
-                                    .filter_map(|v| {
-                                        if let Value::String(s) = v {
-                                            Some(s.clone())
-                                        }
-                                        else {
-                                            None
-                                        }
-                                    })
+                                    .filter_map(|v| if let Value::String(s) = v { Some(s.clone()) } else { None })
                                     .collect(),
                             );
                         }
@@ -182,14 +167,7 @@ impl JekyllConfig {
                         if let Value::Array(arr) = val {
                             config.plugins = Some(
                                 arr.iter()
-                                    .filter_map(|v| {
-                                        if let Value::String(s) = v {
-                                            Some(s.clone())
-                                        }
-                                        else {
-                                            None
-                                        }
-                                    })
+                                    .filter_map(|v| if let Value::String(s) = v { Some(s.clone()) } else { None })
                                     .collect(),
                             );
                         }
@@ -370,12 +348,7 @@ impl JekyllConfigLoader {
         let config_path = dir.join("_config.yml");
         let local_config_path = dir.join("_config.local.yml");
 
-        let mut config = if config_path.exists() {
-            JekyllConfig::from_file(&config_path)?
-        }
-        else {
-            JekyllConfig::new()
-        };
+        let mut config = if config_path.exists() { JekyllConfig::from_file(&config_path)? } else { JekyllConfig::new() };
 
         if local_config_path.exists() {
             let local_config = JekyllConfig::from_file(&local_config_path)?;
@@ -455,14 +428,11 @@ plugins:
 
     #[test]
     fn test_config_merge() {
-        let mut config1 = JekyllConfig::new()
-            .with_title("Original Title".to_string())
-            .with_description("Original Description".to_string());
+        let mut config1 =
+            JekyllConfig::new().with_title("Original Title".to_string()).with_description("Original Description".to_string());
         config1.exclude = Some(vec!["file1.txt".to_string()]);
 
-        let mut config2 = JekyllConfig::new()
-            .with_title("New Title".to_string())
-            .with_author("New Author".to_string());
+        let mut config2 = JekyllConfig::new().with_title("New Title".to_string()).with_author("New Author".to_string());
         config2.exclude = Some(vec!["file2.txt".to_string()]);
 
         let merged = config1.merge(&config2);

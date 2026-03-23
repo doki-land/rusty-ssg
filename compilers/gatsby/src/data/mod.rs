@@ -124,7 +124,7 @@ impl SiteMetadataDataSource {
         // 创建 siteMetadata 对象
         use async_graphql_value::Name;
         use indexmap::IndexMap;
-        
+
         let mut site_metadata = IndexMap::new();
 
         if let Some(title) = title {
@@ -169,13 +169,7 @@ impl FileDataSource {
     /// # Returns
     ///
     /// 创建的节点
-    pub fn create_file_node(
-        &self,
-        absolute_path: &str,
-        name: &str,
-        extension: &str,
-        size: u64,
-    ) -> Result<Node, String> {
+    pub fn create_file_node(&self, absolute_path: &str, name: &str, extension: &str, size: u64) -> Result<Node, String> {
         let id = NodeId::new(absolute_path.to_string());
         let content_digest = ContentDigest::generate(&format!("{}{}{}{}", absolute_path, name, extension, size));
         let mut node = Node::new(id, NodeType::new("File".to_string()), content_digest);

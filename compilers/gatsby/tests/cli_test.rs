@@ -1,5 +1,8 @@
-use gatsby::tools::{GatsbyCli, GatsbyCommands, CleanArgs, InfoCommand, PluginArgs, TelemetryArgs, PluginSubCommand, TelemetrySubCommand, InstallArgs, UninstallArgs};
 use clap::Parser;
+use gatsby::tools::{
+    CleanArgs, GatsbyCli, GatsbyCommands, InstallArgs, PluginArgs, PluginSubCommand, TelemetryArgs, TelemetrySubCommand,
+    UninstallArgs, cmd::InfoCommand,
+};
 
 #[test]
 fn test_cli_parser() {
@@ -43,30 +46,27 @@ fn test_cli_parser() {
 #[test]
 fn test_plugin_command_parser() {
     // 测试plugin install命令解析
-    let cli = GatsbyCli::try_parse_from(["gatsby", "plugin", "install", "gatsby-plugin-sharp", "gatsby-transformer-remark"]).unwrap();
+    let cli =
+        GatsbyCli::try_parse_from(["gatsby", "plugin", "install", "gatsby-plugin-sharp", "gatsby-transformer-remark"]).unwrap();
     match cli.command {
-        GatsbyCommands::Plugin(args) => {
-            match args.subcommand {
-                PluginSubCommand::Install(install_args) => {
-                    assert_eq!(install_args.plugins, ["gatsby-plugin-sharp", "gatsby-transformer-remark"]);
-                }
-                _ => panic!("Expected Install subcommand"),
+        GatsbyCommands::Plugin(args) => match args.subcommand {
+            PluginSubCommand::Install(install_args) => {
+                assert_eq!(install_args.plugins, ["gatsby-plugin-sharp", "gatsby-transformer-remark"]);
             }
-        }
+            _ => panic!("Expected Install subcommand"),
+        },
         _ => panic!("Expected Plugin command"),
     }
 
     // 测试plugin uninstall命令解析
     let cli = GatsbyCli::try_parse_from(["gatsby", "plugin", "uninstall", "gatsby-plugin-sharp"]).unwrap();
     match cli.command {
-        GatsbyCommands::Plugin(args) => {
-            match args.subcommand {
-                PluginSubCommand::Uninstall(uninstall_args) => {
-                    assert_eq!(uninstall_args.plugins, ["gatsby-plugin-sharp"]);
-                }
-                _ => panic!("Expected Uninstall subcommand"),
+        GatsbyCommands::Plugin(args) => match args.subcommand {
+            PluginSubCommand::Uninstall(uninstall_args) => {
+                assert_eq!(uninstall_args.plugins, ["gatsby-plugin-sharp"]);
             }
-        }
+            _ => panic!("Expected Uninstall subcommand"),
+        },
         _ => panic!("Expected Plugin command"),
     }
 

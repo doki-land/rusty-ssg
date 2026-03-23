@@ -2,8 +2,7 @@
 //! 提供插件系统和常用插件实现
 
 use crate::types::PluginOptions;
-use std::collections::HashMap;
-use std::result::Result;
+use std::{collections::HashMap, result::Result};
 
 /// 插件错误类型
 #[derive(Debug)]
@@ -37,10 +36,7 @@ pub struct PluginManager {
 impl PluginManager {
     /// 创建新的插件管理器
     pub fn new() -> Self {
-        Self {
-            plugins: HashMap::new(),
-            enabled_plugins: Vec::new(),
-        }
+        Self { plugins: HashMap::new(), enabled_plugins: Vec::new() }
     }
 
     /// 注册插件
@@ -125,9 +121,7 @@ impl Plugin for PrismPlugin {
 
     fn execute(&self, content: &str) -> Result<String, PluginError> {
         // 简单的代码高亮处理
-        let result = content
-            .replace("```", "<pre><code>")
-            .replace("```", "</code></pre>");
+        let result = content.replace("```", "<pre><code>").replace("```", "</code></pre>");
         Ok(result)
     }
 }
@@ -155,9 +149,7 @@ impl Plugin for KatexPlugin {
 
     fn execute(&self, content: &str) -> Result<String, PluginError> {
         // 简单的数学公式处理
-        let result = content
-            .replace("$$", "<span class='math'>")
-            .replace("$$", "</span>");
+        let result = content.replace("$$", "<span class='math'>").replace("$$", "</span>");
         Ok(result)
     }
 }
@@ -185,9 +177,7 @@ impl Plugin for MermaidPlugin {
 
     fn execute(&self, content: &str) -> Result<String, PluginError> {
         // 简单的图表渲染处理
-        let result = content
-            .replace("```mermaid", "<div class='mermaid'>")
-            .replace("```", "</div>");
+        let result = content.replace("```mermaid", "<div class='mermaid'>").replace("```", "</div>");
         Ok(result)
     }
 }

@@ -312,5 +312,9 @@ impl BuildStats {
     }
 }
 
-pub use graphql::{Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType, GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType, Selection, SelectionSet};
+pub use graphql::{
+    Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType,
+    GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType,
+    Selection, SelectionSet,
+};
 pub use graphql_service::GraphQLService;

@@ -2,7 +2,7 @@
 //!
 //! 提供对 Markdown 中 LaTeX 数学公式的支持，包括行内公式 `$...$` 和块级公式 `$$...$$`
 
-use crate::plugin::{PluginContext, PluginMeta, JekyllPlugin};
+use crate::plugin::{JekyllPlugin, PluginContext, PluginMeta};
 use lazy_static::lazy_static;
 use regex::Regex;
 

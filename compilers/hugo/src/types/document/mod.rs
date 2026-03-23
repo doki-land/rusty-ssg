@@ -6,22 +6,18 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 
-/// Hugo 内容结构和文件系统处理模块
-pub mod hugo_content;
 /// Front Matter 增强模块
 pub mod front_matter_enhancer;
-/// 分类系统模块
-pub mod taxonomy;
-/// 相关内容推荐模块
-pub mod related_content;
+/// Hugo 内容结构和文件系统处理模块
+pub mod hugo_content;
 /// 国际化翻译模块
 pub mod i18n;
+/// 相关内容推荐模块
+pub mod related_content;
+/// 分类系统模块
+pub mod taxonomy;
 
-pub use self::hugo_content::*;
-pub use self::front_matter_enhancer::*;
-pub use self::taxonomy::*;
-pub use self::related_content::*;
-pub use self::i18n::*;
+pub use self::{front_matter_enhancer::*, hugo_content::*, i18n::*, related_content::*, taxonomy::*};
 /// VuTeX 文档
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct VutexDocument {

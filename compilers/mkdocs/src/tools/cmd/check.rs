@@ -1,10 +1,12 @@
 //! Check 命令实现 - 检查文档
 
-use crate::{CheckArgs, tools::{ConfigLoader, link_validator::LinkValidator}, types::Result};
+use crate::{
+    CheckArgs,
+    tools::{ConfigLoader, link_validator::LinkValidator},
+    types::Result,
+};
 use console::style;
-use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
+use std::{collections::HashMap, fs, path::PathBuf};
 use walkdir::WalkDir;
 
 /// Check 命令

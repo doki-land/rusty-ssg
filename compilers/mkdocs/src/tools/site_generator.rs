@@ -81,10 +81,12 @@ impl StaticSiteGenerator {
             if path.ends_with(".md") {
                 let base_path = path.strip_suffix(".md").unwrap_or(path);
                 format!("{}/index.html", base_path)
-            } else {
+            }
+            else {
                 path.to_string()
             }
-        } else {
+        }
+        else {
             // 不使用目录 URL: page.md -> page.html
             path.replace(".md", ".html")
         }
@@ -127,19 +129,11 @@ impl StaticSiteGenerator {
                         match value {
                             crate::types::NavValue::String(s) => {
                                 let link = Self::generate_nav_link(s, config.use_directory_urls());
-                                nav_items.push(ThemeNavItem {
-                                    text: key.clone(),
-                                    link,
-                                    children: Vec::new(),
-                                });
+                                nav_items.push(ThemeNavItem { text: key.clone(), link, children: Vec::new() });
                             }
                             crate::types::NavValue::List(items) => {
                                 let children = Self::generate_sub_nav_items(items, config.use_directory_urls());
-                                nav_items.push(ThemeNavItem {
-                                    text: key.clone(),
-                                    link: "#".to_string(),
-                                    children,
-                                });
+                                nav_items.push(ThemeNavItem { text: key.clone(), link: "#".to_string(), children });
                             }
                         }
                     }
@@ -164,19 +158,11 @@ impl StaticSiteGenerator {
                         match value {
                             crate::types::NavValue::String(s) => {
                                 let link = Self::generate_nav_link(s, use_directory_urls);
-                                sub_items.push(ThemeNavItem {
-                                    text: key.clone(),
-                                    link,
-                                    children: Vec::new(),
-                                });
+                                sub_items.push(ThemeNavItem { text: key.clone(), link, children: Vec::new() });
                             }
                             crate::types::NavValue::List(grandchildren) => {
                                 let children = Self::generate_sub_nav_items(grandchildren, use_directory_urls);
-                                sub_items.push(ThemeNavItem {
-                                    text: key.clone(),
-                                    link: "#".to_string(),
-                                    children,
-                                });
+                                sub_items.push(ThemeNavItem { text: key.clone(), link: "#".to_string(), children });
                             }
                         }
                     }
@@ -192,10 +178,12 @@ impl StaticSiteGenerator {
         if use_directory_urls && path.ends_with(".md") {
             // 使用目录 URL: page.md -> page/
             path.strip_suffix(".md").unwrap_or(path).to_string() + "/"
-        } else if path.ends_with(".md") {
+        }
+        else if path.ends_with(".md") {
             // 不使用目录 URL: page.md -> page.html
             path.replace(".md", ".html")
-        } else {
+        }
+        else {
             path.to_string()
         }
     }

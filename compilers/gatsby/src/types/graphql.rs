@@ -5,43 +5,58 @@ use std::collections::{HashMap, HashSet};
 
 use async_graphql_value::ConstValue;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+
 use uuid::Uuid;
 
 /// GraphQL 错误类型
-#[derive(Error, Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GraphQLError {
     /// 节点未找到错误
-    #[error("Node not found: {0}")]
     NodeNotFound(String),
 
     /// 类型未找到错误
-    #[error("Type not found: {0}")]
     TypeNotFound(String),
 
     /// 字段未找到错误
-    #[error("Field not found: {0}")]
     FieldNotFound(String),
 
     /// 查询解析错误
-    #[error("Query parse error: {0}")]
     QueryParseError(String),
 
     /// 执行错误
-    #[error("Execution error: {0}")]
     ExecutionError(String),
 
     /// 验证错误
-    #[error("Validation error: {0}")]
     ValidationError(String),
 
     /// 重复节点错误
-    #[error("Duplicate node with ID: {0}")]
     DuplicateNode(String),
 
     /// 类型冲突错误
-    #[error("Type conflict for node {0}: expected {1}, got {2}")]
     TypeConflict(String, String, String),
+}
+
+impl std::fmt::Display for GraphQLError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GraphQLError::NodeNotFound(id) => write!(f, "Node not found: {}", id),
+            GraphQLError::TypeNotFound(name) => write!(f, "Type not found: {}", name),
+            GraphQLError::FieldNotFound(name) => write!(f, "Field not found: {}", name),
+            GraphQLError::QueryParseError(message) => write!(f, "Query parse error: {}", message),
+            GraphQLError::ExecutionError(message) => write!(f, "Execution error: {}", message),
+            GraphQLError::ValidationError(message) => write!(f, "Validation error: {}", message),
+            GraphQLError::DuplicateNode(id) => write!(f, "Duplicate node with ID: {}", id),
+            GraphQLError::TypeConflict(node_id, expected, got) => {
+                write!(f, "Type conflict for node {}: expected {}, got {}", node_id, expected, got)
+            }
+        }
+    }
+}
+
+impl std::error::Error for GraphQLError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
 }
 
 /// GraphQL 结果类型

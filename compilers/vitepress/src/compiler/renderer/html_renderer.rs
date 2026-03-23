@@ -149,7 +149,9 @@ impl HtmlRenderer {
     /// 渲染后的 HTML 字符串
     fn render_heading(&self, heading: &Heading) -> String {
         let tag = format!("h{}", heading.level);
-        let escaped_content = self.escape_html(&heading.content);
+        // 从内容中提取标题文本，移除开头的 # 标记和空格
+        let title_text = heading.content.trim_start_matches('#').trim();
+        let escaped_content = self.escape_html(title_text);
         format!("<{}>{}</{}>\n", tag, escaped_content, tag)
     }
 
@@ -163,8 +165,35 @@ impl HtmlRenderer {
     ///
     /// 渲染后的 HTML 字符串
     fn render_paragraph(&self, paragraph: &Paragraph) -> String {
-        let escaped_content = self.escape_html(&paragraph.content);
-        format!("<p>{}</p>\n", escaped_content)
+        let content = self.render_inline_elements(&paragraph.content);
+        format!("<p>{}</p>\n", content)
+    }
+
+    /// 渲染内联元素
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - 包含内联元素的文本
+    ///
+    /// # Returns
+    ///
+    /// 渲染后的 HTML 字符串
+    fn render_inline_elements(&self, text: &str) -> String {
+        let mut result = text.to_string();
+        
+        // 替换粗体 **text** 为 <strong>text</strong>
+        result = result.replace("**", "<strong>")
+                     .replace("**", "</strong>");
+        
+        // 替换斜体 *text* 为 <em>text</em>
+        result = result.replace("*", "<em>")
+                     .replace("*", "</em>");
+        
+        // 替换行内代码 `text` 为 <code>text</code>
+        result = result.replace("`", "<code>")
+                     .replace("`", "</code>");
+        
+        result
     }
 
     /// 渲染代码块

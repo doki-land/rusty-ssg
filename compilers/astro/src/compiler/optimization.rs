@@ -1,7 +1,6 @@
 //! 优化模块
 
-use std::path::Path;
-use std::fs;
+use std::{fs, path::Path};
 use walkdir::WalkDir;
 
 /// 优化器
@@ -17,11 +16,7 @@ pub struct Optimizer {
 impl Optimizer {
     /// 创建新的优化器
     pub fn new(compress: bool, code_splitting: bool, preload: bool) -> Self {
-        Self {
-            compress,
-            code_splitting,
-            preload,
-        }
+        Self { compress, code_splitting, preload }
     }
 
     /// 优化构建输出
@@ -76,20 +71,13 @@ impl Optimizer {
     /// 压缩 HTML 文件
     fn compress_html(&self, path: &Path) -> Result<(), String> {
         // 读取文件内容
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read HTML file: {}", e))?;
+        let content = fs::read_to_string(path).map_err(|e| format!("Failed to read HTML file: {}", e))?;
 
         // 简单的 HTML 压缩：去除多余的空白字符
-        let compressed = content
-            .replace("\n", "")
-            .replace("\r", "")
-            .replace("  ", " ")
-            .trim()
-            .to_string();
+        let compressed = content.replace("\n", "").replace("\r", "").replace("  ", " ").trim().to_string();
 
         // 写回压缩后的内容
-        fs::write(path, compressed)
-            .map_err(|e| format!("Failed to write compressed HTML file: {}", e))?;
+        fs::write(path, compressed).map_err(|e| format!("Failed to write compressed HTML file: {}", e))?;
 
         println!("Compressed: {}", path.display());
         Ok(())
@@ -98,21 +86,14 @@ impl Optimizer {
     /// 压缩 CSS 文件
     fn compress_css(&self, path: &Path) -> Result<(), String> {
         // 读取文件内容
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read CSS file: {}", e))?;
+        let content = fs::read_to_string(path).map_err(|e| format!("Failed to read CSS file: {}", e))?;
 
         // 简单的 CSS 压缩：去除多余的空白字符和注释
-        let compressed = content
-            .replace("\n", "")
-            .replace("\r", "")
-            .replace("  ", " ")
-            .replace("/*.*?*/", "")
-            .trim()
-            .to_string();
+        let compressed =
+            content.replace("\n", "").replace("\r", "").replace("  ", " ").replace("/*.*?*/", "").trim().to_string();
 
         // 写回压缩后的内容
-        fs::write(path, compressed)
-            .map_err(|e| format!("Failed to write compressed CSS file: {}", e))?;
+        fs::write(path, compressed).map_err(|e| format!("Failed to write compressed CSS file: {}", e))?;
 
         println!("Compressed: {}", path.display());
         Ok(())
@@ -121,21 +102,14 @@ impl Optimizer {
     /// 压缩 JavaScript 文件
     fn compress_js(&self, path: &Path) -> Result<(), String> {
         // 读取文件内容
-        let content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read JavaScript file: {}", e))?;
+        let content = fs::read_to_string(path).map_err(|e| format!("Failed to read JavaScript file: {}", e))?;
 
         // 简单的 JavaScript 压缩：去除多余的空白字符和注释
-        let compressed = content
-            .replace("\n", "")
-            .replace("\r", "")
-            .replace("  ", " ")
-            .replace("/*.*?*/", "")
-            .trim()
-            .to_string();
+        let compressed =
+            content.replace("\n", "").replace("\r", "").replace("  ", " ").replace("/*.*?*/", "").trim().to_string();
 
         // 写回压缩后的内容
-        fs::write(path, compressed)
-            .map_err(|e| format!("Failed to write compressed JavaScript file: {}", e))?;
+        fs::write(path, compressed).map_err(|e| format!("Failed to write compressed JavaScript file: {}", e))?;
 
         println!("Compressed: {}", path.display());
         Ok(())
@@ -169,8 +143,7 @@ impl Optimizer {
     /// 为 HTML 文件添加预加载提示
     fn add_preload_to_html(&self, path: &Path) -> Result<(), String> {
         // 读取文件内容
-        let mut content = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read HTML file: {}", e))?;
+        let mut content = fs::read_to_string(path).map_err(|e| format!("Failed to read HTML file: {}", e))?;
 
         // 在 head 标签中添加预加载提示
         if let Some(head_end) = content.find("</head>") {
@@ -181,8 +154,7 @@ impl Optimizer {
             content.insert_str(head_end, preload_hints);
 
             // 写回修改后的内容
-            fs::write(path, content)
-                .map_err(|e| format!("Failed to write HTML file with preload hints: {}", e))?;
+            fs::write(path, content).map_err(|e| format!("Failed to write HTML file with preload hints: {}", e))?;
 
             println!("Added preload hints to: {}", path.display());
         }
@@ -193,10 +165,6 @@ impl Optimizer {
 
 impl Default for Optimizer {
     fn default() -> Self {
-        Self {
-            compress: true,
-            code_splitting: true,
-            preload: true,
-        }
+        Self { compress: true, code_splitting: true, preload: true }
     }
 }

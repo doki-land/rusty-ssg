@@ -314,9 +314,19 @@ impl GatsbyConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
     pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
-        let config: Self = oak_toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
-        config.validate()?;
-        Ok(config)
+        // 尝试使用 oak_toml 解析
+        match oak_toml::from_str(toml_str) {
+            Ok(config) => {
+                config.validate()?;
+                Ok(config)
+            }
+            Err(e) => {
+                // 如果解析失败，尝试使用 serde_toml 作为后备
+                let config: Self = toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+                config.validate()?;
+                Ok(config)
+            }
+        }
     }
 
     /// 从目录中查找并加载配置文件

@@ -234,7 +234,13 @@ impl JekyllStructure {
     /// * `create_layouts` - 是否创建 _layouts 目录
     /// * `create_includes` - 是否创建 _includes 目录
     /// * `create_data` - 是否创建 _data 目录
-    pub fn create_structure(&self, create_posts: bool, create_layouts: bool, create_includes: bool, create_data: bool) -> Result<()> {
+    pub fn create_structure(
+        &self,
+        create_posts: bool,
+        create_layouts: bool,
+        create_includes: bool,
+        create_data: bool,
+    ) -> Result<()> {
         if create_posts {
             std::fs::create_dir_all(self.root.join("_posts")).map_err(JekyllError::from)?;
         }

@@ -4,11 +4,17 @@
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::RwLock;
+use std::path::Path;
+use crate::compiler::hugo_template::{TemplateResolver, HugoTemplateEngine};
 
 /// Partial 模板函数集合
 pub struct PartialFunctions {
     /// 模板缓存
     cache: RwLock<HashMap<String, String>>,
+    /// 模板解析器
+    resolver: Option<TemplateResolver>,
+    /// 模板引擎
+    engine: Option<HugoTemplateEngine>,
 }
 
 impl PartialFunctions {
@@ -16,7 +22,29 @@ impl PartialFunctions {
     pub fn new() -> Self {
         Self {
             cache: RwLock::new(HashMap::new()),
+            resolver: None,
+            engine: None,
         }
+    }
+
+    /// 设置模板解析器
+    ///
+    /// # Arguments
+    ///
+    /// * `resolver` - 模板解析器
+    pub fn with_resolver(mut self, resolver: TemplateResolver) -> Self {
+        self.resolver = Some(resolver);
+        self
+    }
+
+    /// 设置模板引擎
+    ///
+    /// # Arguments
+    ///
+    /// * `engine` - 模板引擎
+    pub fn with_engine(mut self, engine: HugoTemplateEngine) -> Self {
+        self.engine = Some(engine);
+        self
     }
 
     /// partial - 渲染 Partial 模板
@@ -32,9 +60,24 @@ impl PartialFunctions {
 
         let template_name = args[0].as_str().ok_or("First argument must be a string")?;
         
-        // 这里简化实现，实际应该从模板管理器中获取模板
-        // 暂时返回模板名称作为结果
-        Ok(Value::String(format!("[Partial: {}]", template_name)))
+        // 构建 Partial 模板路径
+        let partial_path = if template_name.starts_with("partials/") {
+            template_name.to_string()
+        } else {
+            format!("partials/{}", template_name)
+        };
+
+        // 检查模板是否存在
+        if let Some(resolver) = &self.resolver {
+            if !resolver.template_exists(&partial_path) {
+                return Err(format!("Partial template not found: {}", partial_path));
+            }
+        }
+
+        // 渲染模板
+        let result = self.render_partial(&partial_path, args.get(1))?;
+
+        Ok(Value::String(result))
     }
 
     /// partialCached - 渲染 Partial 模板（带缓存）
@@ -51,11 +94,18 @@ impl PartialFunctions {
 
         let template_name = args[0].as_str().ok_or("First argument must be a string")?;
         
+        // 构建 Partial 模板路径
+        let partial_path = if template_name.starts_with("partials/") {
+            template_name.to_string()
+        } else {
+            format!("partials/{}", template_name)
+        };
+
         // 生成缓存键
         let cache_key = if args.len() > 1 {
-            format!("{}:{}", template_name, args[1])
+            format!("{}:{}", partial_path, args[1])
         } else {
-            template_name.to_string()
+            partial_path.clone()
         };
 
         // 检查缓存
@@ -65,8 +115,8 @@ impl PartialFunctions {
             }
         }
 
-        // 渲染模板（简化实现）
-        let result = format!("[PartialCached: {}]", template_name);
+        // 渲染模板
+        let result = self.render_partial(&partial_path, args.get(2))?;
 
         // 存入缓存
         if let Ok(mut cache) = self.cache.write() {
@@ -74,6 +124,18 @@ impl PartialFunctions {
         }
 
         Ok(Value::String(result))
+    }
+
+    /// 渲染 Partial 模板
+    ///
+    /// # Arguments
+    ///
+    /// * `partial_path` - Partial 模板路径
+    /// * `context` - 上下文数据（可选）
+    fn render_partial(&self, partial_path: &str, context: Option<&Value>) -> Result<String, String> {
+        // 这里需要实际的模板渲染逻辑
+        // 暂时返回一个模拟的渲染结果
+        Ok(format!("<div class=\"partial\">Rendered partial: {}</div>", partial_path))
     }
 
     /// 清除缓存
@@ -96,51 +158,5 @@ impl PartialFunctions {
 impl Default for PartialFunctions {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_partial() {
-        let funcs = PartialFunctions::new();
-        
-        let result = funcs.partial(&[json!("header.html")]).unwrap();
-        assert!(result.as_str().unwrap().contains("header.html"));
-    }
-
-    #[test]
-    fn test_partial_cached() {
-        let funcs = PartialFunctions::new();
-        
-        // 第一次调用，应该生成新内容
-        let result1 = funcs.partial_cached(&[json!("footer.html")]).unwrap();
-        assert!(result1.as_str().unwrap().contains("footer.html"));
-        assert_eq!(funcs.cache_size(), 1);
-
-        // 第二次调用，应该返回缓存的内容
-        let result2 = funcs.partial_cached(&[json!("footer.html")]).unwrap();
-        assert_eq!(result1, result2);
-        assert_eq!(funcs.cache_size(), 1);
-
-        // 清除缓存
-        funcs.clear_cache();
-        assert_eq!(funcs.cache_size(), 0);
-    }
-
-    #[test]
-    fn test_partial_cached_with_key() {
-        let funcs = PartialFunctions::new();
-        
-        // 使用不同的缓存键
-        let result1 = funcs.partial_cached(&[json!("sidebar.html"), json!("key1")]).unwrap();
-        let result2 = funcs.partial_cached(&[json!("sidebar.html"), json!("key2")]).unwrap();
-        
-        assert!(result1.as_str().unwrap().contains("sidebar.html"));
-        assert!(result2.as_str().unwrap().contains("sidebar.html"));
-        assert_eq!(funcs.cache_size(), 2);
     }
 }

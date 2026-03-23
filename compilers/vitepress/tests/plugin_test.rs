@@ -1,9 +1,9 @@
 //! 插件测试
 //! 测试 VitePress 插件系统的功能
 
-use vitepress::plugin::{prism::PrismPlugin, PluginContext, PluginRegistry, VitePressPlugin};
 use nargo_types::NargoValue;
 use std::collections::HashMap;
+use vitepress::plugin::{PluginContext, PluginRegistry, VitePressPlugin, prism::PrismPlugin};
 
 #[test]
 fn test_prism_plugin() {

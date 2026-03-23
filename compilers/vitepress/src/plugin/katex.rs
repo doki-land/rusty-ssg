@@ -9,8 +9,8 @@ use regex::Regex;
 lazy_static! {
     /// 匹配块级公式 `$$...$$` 的正则表达式
     static ref BLOCK_MATH_RE: Regex = Regex::new(r"\$\$([\s\S]*?)\$\$").unwrap();
-    /// 匹配行内公式 `$...$` 的正则表达式，排除行内公式被块级公式包含的情况
-    static ref INLINE_MATH_RE: Regex = Regex::new(r"(?<!\$)\$(?!\$)([^$\n]+?)(?<!\$)\$(?!\$)").unwrap();
+    /// 匹配行内公式 `$...$` 的正则表达式
+    static ref INLINE_MATH_RE: Regex = Regex::new(r"\$([^$\n]+?)\$").unwrap();
 }
 
 /// KaTeX 数学公式渲染插件
@@ -59,8 +59,11 @@ impl KaTeXPlugin {
     ///
     /// 替换后的文本内容
     fn process_inline_math(&self, content: &str) -> String {
+        // 先处理块级公式，将其替换为临时标记
+        let block_processed = self.process_block_math(content);
+        // 再处理行内公式
         INLINE_MATH_RE
-            .replace_all(content, |caps: &regex::Captures| {
+            .replace_all(&block_processed, |caps: &regex::Captures| {
                 let math = &caps[1];
                 format!("<span class=\"katex-inline\">{}</span>", math)
             })
@@ -90,11 +93,7 @@ impl VitePressPlugin for KaTeXPlugin {
     ///
     /// 处理后的插件上下文
     fn before_render(&self, context: PluginContext) -> PluginContext {
-        let mut content = context.content;
-
-        content = self.process_block_math(&content);
-        content = self.process_inline_math(&content);
-
+        let content = self.process_inline_math(&context.content);
         PluginContext { content, frontmatter: context.frontmatter, path: context.path }
     }
 }

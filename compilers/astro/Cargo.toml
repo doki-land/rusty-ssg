@@ -20,6 +20,8 @@ oak-core.workspace = true
 oak-markdown.workspace = true
 walkdir.workspace = true
 chrono.workspace = true
+rayon = "1.10.0"
+hashbrown = "0.14.3"
 
 [dev-dependencies]
 tokio-test = "0.4.4"

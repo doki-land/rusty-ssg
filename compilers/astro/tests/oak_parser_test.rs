@@ -12,16 +12,16 @@ const { title } = Astro.props;
 <h1>{title}</h1>
 <SomeComponent />
 "#;
-    
+
     let language = AstroLanguage::default();
     let lexer = AstroLexer;
     let parser = AstroParser;
     let source = SourceText::new(input.to_string());
     let mut session = ParseSession::default();
-    
+
     let tokens = lexer.lex(&source, &[], &mut session.lexer_cache).into_result().unwrap();
     assert!(!tokens.is_empty());
-    
+
     let result = parser.parse(&source, &[], &mut session);
     assert!(result.result.is_ok());
 }
@@ -36,16 +36,16 @@ const { name } = Astro.props;
     <p>Unescaped: {{{name}}}</p>
 </div>
 "#;
-    
+
     let language = AstroLanguage::default();
     let lexer = AstroLexer;
     let parser = AstroParser;
     let source = SourceText::new(input.to_string());
     let mut session = ParseSession::default();
-    
+
     let tokens = lexer.lex(&source, &[], &mut session.lexer_cache).into_result().unwrap();
     assert!(!tokens.is_empty());
-    
+
     let result = parser.parse(&source, &[], &mut session);
     assert!(result.result.is_ok());
 }
@@ -61,16 +61,16 @@ const items = [1, 2, 3];
     {% endfor %}
 </ul>
 "#;
-    
+
     let language = AstroLanguage::default();
     let lexer = AstroLexer;
     let parser = AstroParser;
     let source = SourceText::new(input.to_string());
     let mut session = ParseSession::default();
-    
+
     let tokens = lexer.lex(&source, &[], &mut session.lexer_cache).into_result().unwrap();
     assert!(!tokens.is_empty());
-    
+
     let result = parser.parse(&source, &[], &mut session);
     assert!(result.result.is_ok());
 }
@@ -84,16 +84,16 @@ fn test_astro_component_with_slots() {
     <slot name="footer" />
 </div>
 "#;
-    
+
     let language = AstroLanguage::default();
     let lexer = AstroLexer;
     let parser = AstroParser;
     let source = SourceText::new(input.to_string());
     let mut session = ParseSession::default();
-    
+
     let tokens = lexer.lex(&source, &[], &mut session.lexer_cache).into_result().unwrap();
     assert!(!tokens.is_empty());
-    
+
     let result = parser.parse(&source, &[], &mut session);
     assert!(result.result.is_ok());
 }

@@ -2,11 +2,7 @@
 //!
 //! 提供 Jekyll 站点检查功能，验证配置文件、内容文件和目录结构的有效性。
 
-use crate::{
-    CheckArgs,
-    tools::site_generator::ConfigLoader,
-    types::Result,
-};
+use crate::{CheckArgs, tools::site_generator::ConfigLoader, types::Result};
 use console::style;
 use std::{fs, path::PathBuf};
 

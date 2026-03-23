@@ -309,40 +309,34 @@ impl PluginRegistry {
     /// 加载结果
     pub fn load_from_config(&mut self, plugins_config: &[crate::config::PluginConfig]) -> Result<()> {
         println!("🔌 Loading plugins...");
-        
+
         for plugin_config in plugins_config {
             let plugin_name = plugin_config.name();
             println!("📦 Loading plugin: {}", plugin_name);
-            
+
             // 这里应该实现插件加载逻辑
             // 目前只是模拟加载
-            let plugin = Self::create_mock_plugin(plugin_name);
+            let plugin = Self::create_mock_plugin(plugin_name.to_string());
             self.register(plugin);
             println!("✅ Plugin {} loaded successfully", plugin_name);
         }
-        
+
         Ok(())
     }
 
     /// 创建模拟插件（用于测试）
-    fn create_mock_plugin(name: &str) -> impl Plugin {
+    fn create_mock_plugin(name: String) -> impl Plugin {
         struct MockPlugin {
             meta: PluginMeta,
         }
-        
+
         impl Plugin for MockPlugin {
             fn meta(&self) -> &PluginMeta {
                 &self.meta
             }
         }
-        
-        MockPlugin {
-            meta: PluginMeta::new(
-                name.to_string(),
-                "1.0.0".to_string(),
-                "Mock plugin for testing".to_string(),
-            ),
-        }
+
+        MockPlugin { meta: PluginMeta::new(name, "1.0.0".to_string(), "Mock plugin for testing".to_string()) }
     }
 
     /// 调用所有插件的 on_pre_bootstrap 钩子

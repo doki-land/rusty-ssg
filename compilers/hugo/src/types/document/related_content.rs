@@ -2,8 +2,7 @@
 //! 提供基于标签、分类和内容相似度的相关内容推荐功能
 
 use super::{HugoContentIndex, HugoPage};
-use std::collections::HashMap;
-use std::f64;
+use std::{collections::HashMap, f64};
 
 /// 相关内容推荐器
 pub struct RelatedContentRecommender {
@@ -14,9 +13,7 @@ pub struct RelatedContentRecommender {
 impl RelatedContentRecommender {
     /// 创建新的相关内容推荐器
     pub fn new(content_index: &'static HugoContentIndex) -> Self {
-        Self {
-            content_index,
-        }
+        Self { content_index }
     }
 
     /// 获取与指定页面相关的内容
@@ -40,7 +37,7 @@ impl RelatedContentRecommender {
 
             // 计算相关度分数
             let score = self.calculate_relevance_score(page, other_page);
-            
+
             // 只添加分数大于 0 的页面
             if score > 0.0 {
                 scores.push((other_page, score));
@@ -80,10 +77,7 @@ impl RelatedContentRecommender {
         }
 
         // 计算共同标签数量
-        let common_tags = page_tags
-            .iter()
-            .filter(|tag| other_tags.contains(tag))
-            .count();
+        let common_tags = page_tags.iter().filter(|tag| other_tags.contains(tag)).count();
 
         // 计算相似度分数（使用 Jaccard 相似度）
         let total_tags = page_tags.len() + other_tags.len() - common_tags;
@@ -100,10 +94,7 @@ impl RelatedContentRecommender {
         }
 
         // 计算共同分类数量
-        let common_categories = page_categories
-            .iter()
-            .filter(|category| other_categories.contains(category))
-            .count();
+        let common_categories = page_categories.iter().filter(|category| other_categories.contains(category)).count();
 
         // 计算相似度分数（使用 Jaccard 相似度）
         let total_categories = page_categories.len() + other_categories.len() - common_categories;
@@ -116,10 +107,6 @@ impl RelatedContentRecommender {
             return 0.0;
         }
 
-        if page.section == other_page.section {
-            1.0
-        } else {
-            0.0
-        }
+        if page.section == other_page.section { 1.0 } else { 0.0 }
     }
 }

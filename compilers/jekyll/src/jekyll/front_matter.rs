@@ -148,19 +148,13 @@ impl FrontMatterParser {
         }
 
         let yaml_content = lines[1..yaml_end].join("\n");
-        let document_content = if yaml_end + 1 < lines.len() {
-            lines[yaml_end + 1..].join("\n")
-        }
-        else {
-            String::new()
-        };
+        let document_content = if yaml_end + 1 < lines.len() { lines[yaml_end + 1..].join("\n") } else { String::new() };
 
         let variables = if yaml_content.trim().is_empty() {
             Value::Object(serde_json::Map::new())
         }
         else {
-            oak_yaml::from_str::<serde_json::Value>(&yaml_content)
-                .map_err(|e| JekyllError::YamlParseError(e.to_string()))?
+            oak_yaml::from_str::<serde_json::Value>(&yaml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?
         };
 
         Ok(FrontMatter::new(yaml_content, variables, document_content))

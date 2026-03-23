@@ -1,10 +1,12 @@
 //! Jekyll 文档渲染器模块
-//! 
+//!
 //! 负责将解析后的文档渲染为 HTML
 
-use crate::jekyll::{JekyllConfig, MarkdownConverter};
-use crate::types::Result;
 use super::parser::ParsedDocument;
+use crate::{
+    jekyll::{JekyllConfig, MarkdownConverter},
+    types::Result,
+};
 
 /// Jekyll 文档渲染器
 pub struct JekyllRenderer {
@@ -15,28 +17,26 @@ pub struct JekyllRenderer {
 impl JekyllRenderer {
     /// 创建新的渲染器
     pub fn new() -> Self {
-        Self {
-            markdown_converter: MarkdownConverter::new(),
-        }
+        Self { markdown_converter: MarkdownConverter::new() }
     }
 
     /// 渲染文档
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `document` - 解析后的文档
     /// * `config` - Jekyll 配置
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 渲染后的 HTML
     pub fn render(&self, document: &ParsedDocument, config: &JekyllConfig) -> Result<String> {
         // 转换 Markdown 为 HTML
         let html_content = self.markdown_converter.convert(&document.content)?;
-        
+
         // 构建完整的 HTML 页面
         let html = self.build_html_page(document, &html_content, config);
-        
+
         Ok(html)
     }
 
@@ -44,8 +44,9 @@ impl JekyllRenderer {
     fn build_html_page(&self, document: &ParsedDocument, content: &str, config: &JekyllConfig) -> String {
         let title = document.title.as_deref().unwrap_or("Untitled");
         let site_title = config.title.as_deref().unwrap_or("Jekyll Site");
-        
-        format!(r#"
+
+        format!(
+            r#"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,7 +69,8 @@ impl JekyllRenderer {
     </footer>
 </body>
 </html>
-"#)
+"#
+        )
     }
 }
 

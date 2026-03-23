@@ -195,17 +195,12 @@ impl StaticSiteGenerator {
 
         let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
-        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) = (
-            false, false, String::new(), false, String::new()
-        );
+        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
+            (false, false, String::new(), false, String::new());
 
         let locale_infos: Vec<LocaleInfo> = locales
             .iter()
-            .map(|(code, label)| LocaleInfo {
-                code: code.to_string(),
-                label: label.clone(),
-                is_current: code == current_lang,
-            })
+            .map(|(code, label)| LocaleInfo { code: code.to_string(), label: label.clone(), is_current: code == current_lang })
             .collect();
 
         let depth = current_path.matches('/').count();
@@ -313,17 +308,12 @@ impl StaticSiteGenerator {
 
         let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
-        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) = (
-            false, false, String::new(), false, String::new()
-        );
+        let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
+            (false, false, String::new(), false, String::new());
 
         let locale_infos: Vec<LocaleInfo> = locales
             .iter()
-            .map(|(code, label)| LocaleInfo {
-                code: code.to_string(),
-                label: label.clone(),
-                is_current: code == current_lang,
-            })
+            .map(|(code, label)| LocaleInfo { code: code.to_string(), label: label.clone(), is_current: code == current_lang })
             .collect();
 
         let context = PageContext {

@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::errors::{JekyllError, PostError, Result};
 
-use super::{front_matter::FrontMatter, FrontMatterParser, JekyllConfig, JekyllStructure};
+use super::{FrontMatterParser, JekyllConfig, JekyllStructure, front_matter::FrontMatter};
 
 /// Jekyll 博客帖子
 #[derive(Debug, Clone)]
@@ -60,10 +60,7 @@ impl Post {
 
         let (title_from_filename, date_from_filename) = Self::parse_filename(path)?;
 
-        let title = front_matter
-            .get_str("title")
-            .map(|s| s.to_string())
-            .unwrap_or(title_from_filename);
+        let title = front_matter.get_str("title").map(|s| s.to_string()).unwrap_or(title_from_filename);
 
         let date_str = front_matter.get_str("date").unwrap_or("");
         let date = if !date_str.is_empty() {
@@ -111,29 +108,24 @@ impl Post {
     /// 返回 (标题, 日期) 或错误
     pub fn parse_filename<P: AsRef<std::path::Path>>(path: P) -> Result<(String, NaiveDate)> {
         let path = path.as_ref();
-        let filename = path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| {
-            PostError::InvalidFilename(path.display().to_string())
-        })?;
+        let filename = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| PostError::InvalidPostFilename(path.display().to_string()))?;
 
         let parts: Vec<&str> = filename.splitn(4, '-').collect();
 
         if parts.len() < 4 {
-            return Err(PostError::InvalidFilename(format!(
+            return Err(PostError::InvalidPostFilename(format!(
                 "Post filename must be in format YYYY-MM-DD-title.md, got: {}",
                 filename
             ))
             .into());
         }
 
-        let year: i32 = parts[0]
-            .parse()
-            .map_err(|_| PostError::DateParseError(format!("Invalid year: {}", parts[0])))?;
-        let month: u32 = parts[1]
-            .parse()
-            .map_err(|_| PostError::DateParseError(format!("Invalid month: {}", parts[1])))?;
-        let day: u32 = parts[2]
-            .parse()
-            .map_err(|_| PostError::DateParseError(format!("Invalid day: {}", parts[2])))?;
+        let year: i32 = parts[0].parse().map_err(|_| PostError::DateParseError(format!("Invalid year: {}", parts[0])))?;
+        let month: u32 = parts[1].parse().map_err(|_| PostError::DateParseError(format!("Invalid month: {}", parts[1])))?;
+        let day: u32 = parts[2].parse().map_err(|_| PostError::DateParseError(format!("Invalid day: {}", parts[2])))?;
 
         let date = NaiveDate::from_ymd_opt(year, month, day)
             .ok_or_else(|| PostError::DateParseError(format!("Invalid date: {}-{}-{}", year, month, day)))?;
@@ -242,20 +234,10 @@ impl Post {
         permalink = permalink.replace(":month", &date.format("%m").to_string());
         permalink = permalink.replace(":day", &date.format("%d").to_string());
 
-        let categories_path = if categories.is_empty() {
-            String::new()
-        }
-        else {
-            categories.join("/")
-        };
+        let categories_path = if categories.is_empty() { String::new() } else { categories.join("/") };
         permalink = permalink.replace(":categories", &categories_path);
 
-        if permalink.starts_with('/') {
-            Ok(permalink)
-        }
-        else {
-            Ok(format!("/{}", permalink))
-        }
+        if permalink.starts_with('/') { Ok(permalink) } else { Ok(format!("/{}", permalink)) }
     }
 
     /// 将标题转换为 slug
@@ -340,15 +322,19 @@ impl PostManager {
     pub fn load_posts(&mut self) -> Result<usize> {
         let mut count = 0;
 
-        if let Some(posts_dir) = self.structure.posts_dir() {
-            let posts_dir = posts_dir;
-            count += self.load_posts_from_dir(&posts_dir, false)?;
+        {
+            if let Some(posts_dir) = self.structure.posts_dir() {
+                let posts_dir = posts_dir.to_path_buf();
+                count += self.load_posts_from_dir(&posts_dir, false)?;
+            }
         }
 
         if self.include_drafts {
-            if let Some(drafts_dir) = self.structure.drafts_dir() {
-                let drafts_dir = drafts_dir;
-                count += self.load_posts_from_dir(&drafts_dir, true)?;
+            {
+                if let Some(drafts_dir) = self.structure.drafts_dir() {
+                    let drafts_dir = drafts_dir.to_path_buf();
+                    count += self.load_posts_from_dir(&drafts_dir, true)?;
+                }
             }
         }
 
@@ -366,11 +352,7 @@ impl PostManager {
             return Ok(0);
         }
 
-        for entry in walkdir::WalkDir::new(dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
-        {
+        for entry in walkdir::WalkDir::new(dir).into_iter().filter_map(|e| e.ok()).filter(|e| e.file_type().is_file()) {
             let path = entry.path();
 
             if let Some(ext) = path.extension() {

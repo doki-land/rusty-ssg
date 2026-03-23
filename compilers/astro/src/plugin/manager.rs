@@ -1,8 +1,8 @@
 //! 插件管理器
 
-use super::{Plugin, PluginConfig, PluginContext, PluginError, PluginLifecycleEvent, PluginFactory};
+use super::{Plugin, PluginConfig, PluginContext, PluginError, PluginFactory, PluginLifecycleEvent};
 use crate::config::AstroConfig;
-use std::{collections::HashMap, sync::Arc, path::Path};
+use std::{collections::HashMap, path::Path, sync::Arc};
 
 /// 插件管理器
 ///
@@ -36,10 +36,7 @@ impl PluginManager {
         for integration in &config.integrations {
             if let Some(name) = integration.get("name").and_then(|v| v.as_str()) {
                 let options = integration.get("options").unwrap_or(&serde_json::Value::Null).clone();
-                let plugin_config = PluginConfig {
-                    name: name.to_string(),
-                    options,
-                };
+                let plugin_config = PluginConfig { name: name.to_string(), options };
                 self.load_plugin(&plugin_config, project_path)?;
             }
         }

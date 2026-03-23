@@ -95,11 +95,7 @@ impl CollectionItem {
 
         let front_matter = FrontMatterParser::parse(&content).map_err(CollectionError::from)?;
 
-        let name = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| "unnamed".to_string());
+        let name = path.file_stem().and_then(|s| s.to_str()).map(|s| s.to_string()).unwrap_or_else(|| "unnamed".to_string());
 
         let slug = super::Post::slugify(&name);
 
@@ -163,10 +159,8 @@ impl Collection {
             return Ok(0);
         }
 
-        for entry in walkdir::WalkDir::new(&self.directory)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
+        for entry in
+            walkdir::WalkDir::new(&self.directory).into_iter().filter_map(|e| e.ok()).filter(|e| e.file_type().is_file())
         {
             let path = entry.path();
 

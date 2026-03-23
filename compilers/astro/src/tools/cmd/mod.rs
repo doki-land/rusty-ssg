@@ -1,14 +1,16 @@
 //! 命令行工具模块
 
-use crate::compiler::{
-    component::ComponentParser,
-    DependencyAnalyzer,
-    Optimizer,
-    renderer::{HtmlRenderer, MarkdownRenderer},
-    renderer::html_renderer::Context,
+use crate::{
+    cache::CacheManager,
+    compiler::{
+        DependencyAnalyzer, Optimizer,
+        component::ComponentParser,
+        renderer::{HtmlRenderer, MarkdownRenderer, html_renderer::Context},
+    },
+    config::{AstroConfig, ConfigManager},
+    plugin::{PluginContext, PluginLifecycleEvent, PluginManager},
 };
-use crate::config::{ConfigManager, AstroConfig};
-use crate::plugin::{PluginManager, PluginContext, PluginLifecycleEvent};
+use rayon::prelude::*;
 use std::{fs, fs::File, io::Write, path::Path};
 use walkdir::WalkDir;
 
@@ -40,7 +42,7 @@ pub fn build(path: &str, outdir: &str) {
     // 2. 初始化插件系统
     println!("🔌 Initializing plugin system...");
     let mut plugin_manager = PluginManager::new();
-    
+
     // 创建插件上下文
     let plugin_context = PluginContext {
         config: serde_json::to_value(&config).unwrap_or_default(),
@@ -49,7 +51,7 @@ pub fn build(path: &str, outdir: &str) {
             "mode": "production",
             "outdir": outdir
         }),
-        shared_data: serde_json::Value::Object(serde_json::Map::new())
+        shared_data: serde_json::Value::Object(serde_json::Map::new()),
     };
     plugin_manager.set_context(plugin_context);
 
@@ -68,18 +70,25 @@ pub fn build(path: &str, outdir: &str) {
         eprintln!("Warning: Failed to trigger BuildStart event: {}", err);
     }
 
-    // 3. 处理文件
-    println!("🔍 Finding and processing files...");
-    let (component_parser, dependency_analyzer) = process_files(project_path);
+    // 3. 初始化缓存管理器
+    let cache_manager = CacheManager::new();
 
-    // 4. 生成静态文件
+    // 4. 处理文件
+    println!("🔍 Finding and processing files...");
+    let (component_parser, dependency_analyzer) = process_files(project_path, &cache_manager);
+
+    // 5. 生成静态文件
     println!("✨ Generating static files...");
-    let actual_outdir = if !outdir.is_empty() {
-        outdir
-    } else {
-        &config.out_dir
-    };
-    generate_static_files(&component_parser, &dependency_analyzer, project_path, actual_outdir, &config, &plugin_manager);
+    let actual_outdir = if !outdir.is_empty() { outdir } else { &config.out_dir };
+    generate_static_files(
+        &component_parser,
+        &dependency_analyzer,
+        project_path,
+        actual_outdir,
+        &config,
+        &plugin_manager,
+        &cache_manager,
+    );
 
     // 触发构建结束事件
     if let Err(err) = plugin_manager.trigger_event(&PluginLifecycleEvent::BuildEnd) {
@@ -94,42 +103,84 @@ pub fn build(path: &str, outdir: &str) {
 }
 
 /// 处理项目文件
-fn process_files(project_path: &Path) -> (ComponentParser, DependencyAnalyzer) {
-    let mut parser = ComponentParser::new();
-    let mut analyzer = DependencyAnalyzer::new();
+fn process_files(project_path: &Path, cache_manager: &CacheManager) -> (ComponentParser, DependencyAnalyzer) {
+    let parser = ComponentParser::new();
+    let analyzer = DependencyAnalyzer::new();
 
     // 查找所有组件文件和页面文件
     let src_dir = project_path.join("src");
     if src_dir.exists() {
-        for entry in WalkDir::new(&src_dir).into_iter().filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.is_file() {
-                if let Some(ext) = path.extension() {
+        // 收集所有文件路径
+        let files: Vec<_> = WalkDir::new(&src_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().is_file())
+            .filter(|e| {
+                if let Some(ext) = e.path().extension() {
                     let ext_str = ext.to_string_lossy().to_lowercase();
-                    // 支持的文件类型
-                    if ["astro", "jsx", "tsx", "vue", "svelte", "md", "mdx", "js", "ts"].contains(&ext_str.as_str()) {
-                        // 解析并注册组件
-                        if let Err(err) = parser.parse_and_register_from_path(path) {
-                            eprintln!("Error processing file {}: {}", path.display(), err);
-                        }
-                        
-                        // 分析依赖关系
-                        if let Ok(content) = std::fs::read_to_string(path) {
-                            if let Err(err) = analyzer.analyze_file(path, &content) {
-                                eprintln!("Error analyzing dependencies for file {}: {}", path.display(), err);
-                            }
-                        }
+                    ["astro", "jsx", "tsx", "vue", "svelte", "md", "mdx", "js", "ts"].contains(&ext_str.as_str())
+                }
+                else {
+                    false
+                }
+            })
+            .map(|e| e.path().to_path_buf())
+            .collect();
+
+        // 首先分析所有文件的依赖关系，构建完整的依赖图
+        let file_contents: Vec<_> = files.par_iter().filter_map(|path| {
+            std::fs::read_to_string(path).ok().map(|content| (path.clone(), content))
+        }).collect();
+        
+        analyzer.analyze_files(&file_contents);
+
+        // 找出需要更新的文件
+        let mut updated_files = Vec::new();
+        for path in &files {
+            if cache_manager.needs_update(path) {
+                updated_files.push(path.clone());
+            }
+        }
+
+        // 找出依赖于更新文件的其他文件
+        let mut files_to_process = updated_files.clone();
+        for path in &updated_files {
+            if let Some(reverse_deps) = analyzer.graph().get_reverse_dependencies(path) {
+                for dep in reverse_deps {
+                    if !files_to_process.contains(&dep) {
+                        files_to_process.push(dep);
                     }
                 }
             }
         }
+
+        // 并行处理需要更新的文件
+        files_to_process.par_iter().for_each(|path| {
+            // 解析并注册组件
+            if let Err(err) = parser.parse_and_register_from_path(path) {
+                eprintln!("Error processing file {}: {}", path.display(), err);
+            }
+
+            // 重新缓存文件内容
+            if let Ok(content) = std::fs::read_to_string(path) {
+                cache_manager.set_file(path, content.clone());
+            }
+        });
     }
 
     (parser, analyzer)
 }
 
 /// 生成静态文件
-fn generate_static_files(parser: &ComponentParser, analyzer: &DependencyAnalyzer, project_path: &Path, outdir: &str, config: &AstroConfig, plugin_manager: &PluginManager) {
+fn generate_static_files(
+    parser: &ComponentParser,
+    analyzer: &DependencyAnalyzer,
+    project_path: &Path,
+    outdir: &str,
+    config: &AstroConfig,
+    plugin_manager: &PluginManager,
+    cache_manager: &CacheManager,
+) {
     // 创建输出目录
     let out_path = Path::new(outdir);
     if !out_path.exists() {
@@ -145,7 +196,7 @@ fn generate_static_files(parser: &ComponentParser, analyzer: &DependencyAnalyzer
     let context = Context::new();
 
     // 处理页面文件
-    process_pages(project_path, out_path, &renderer, &markdown_renderer, &context, plugin_manager);
+    process_pages(project_path, out_path, &renderer, &markdown_renderer, &context, plugin_manager, cache_manager);
 
     // 复制静态资源
     let public_dir = project_path.join("public");
@@ -182,20 +233,28 @@ fn generate_static_files(parser: &ComponentParser, analyzer: &DependencyAnalyzer
 /// 优化构建输出
 fn optimize_build(output_dir: &Path, config: &AstroConfig) {
     println!("Optimizing build output...");
-    
+
     let optimizer = Optimizer::new(
         config.compress_html,
         true, // 启用代码分割
-        true  // 启用预加载
+        true, // 启用预加载
     );
-    
+
     if let Err(err) = optimizer.optimize(output_dir) {
         eprintln!("Error optimizing build output: {}", err);
     }
 }
 
 /// 处理页面文件
-fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, markdown_renderer: &MarkdownRenderer, context: &Context, plugin_manager: &PluginManager) {
+fn process_pages(
+    project_path: &Path,
+    out_path: &Path,
+    renderer: &HtmlRenderer,
+    markdown_renderer: &MarkdownRenderer,
+    context: &Context,
+    plugin_manager: &PluginManager,
+    cache_manager: &CacheManager,
+) {
     // 处理 src/pages 目录
     let pages_dir = project_path.join("src").join("pages");
     if pages_dir.exists() {
@@ -203,19 +262,38 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
             let path = entry.path();
             if path.is_file() {
                 let ext = path.extension().unwrap_or_default().to_string_lossy().to_lowercase();
-                
+
                 // 生成相对路径
                 let relative_path = path.strip_prefix(&pages_dir).unwrap();
                 let html_path = out_path.join(relative_path).with_extension("html");
-                
+
                 // 创建输出目录
                 if let Err(err) = fs::create_dir_all(html_path.parent().unwrap()) {
                     eprintln!("Error creating directory: {}", err);
                     continue;
                 }
-                
+
+                // 生成缓存键
+                let cache_key = format!("page:{}", path.display());
+
                 match ext.as_str() {
                     "astro" => {
+                        // 检查缓存是否有效
+                        if !cache_manager.render_needs_update(&cache_key) {
+                            // 使用缓存的渲染结果
+                            if let Some(cache_item) = cache_manager.get_render(&cache_key) {
+                                if let Ok(mut file) = File::create(&html_path) {
+                                    if let Err(err) = file.write_all(cache_item.result.as_bytes()) {
+                                        eprintln!("Error writing file {}: {}", html_path.display(), err);
+                                    }
+                                    else {
+                                        println!("Generated from cache: {}", html_path.display());
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+
                         // 处理 Astro 页面
                         if let Ok(content) = fs::read_to_string(path) {
                             // 执行插件处理内容
@@ -226,9 +304,9 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                                     content
                                 }
                             };
-                            
+
                             let rendered = renderer.render_astro(&processed_content, context);
-                            
+
                             // 对渲染结果再次执行插件
                             let final_content = match plugin_manager.execute_all(&rendered) {
                                 Ok(processed) => processed,
@@ -237,17 +315,43 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                                     rendered
                                 }
                             };
-                            
+
+                            // 缓存渲染结果
+                            let mut dependencies = std::collections::HashMap::new();
+                            if let Ok(metadata) = path.metadata() {
+                                if let Ok(modified_time) = metadata.modified() {
+                                    dependencies.insert(path.to_path_buf(), modified_time);
+                                }
+                            }
+                            cache_manager.set_render(&cache_key, final_content.clone(), dependencies);
+
                             if let Ok(mut file) = File::create(&html_path) {
                                 if let Err(err) = file.write_all(final_content.as_bytes()) {
                                     eprintln!("Error writing file {}: {}", html_path.display(), err);
-                                } else {
+                                }
+                                else {
                                     println!("Generated: {}", html_path.display());
                                 }
                             }
                         }
                     }
                     "md" | "mdx" => {
+                        // 检查缓存是否有效
+                        if !cache_manager.render_needs_update(&cache_key) {
+                            // 使用缓存的渲染结果
+                            if let Some(cache_item) = cache_manager.get_render(&cache_key) {
+                                if let Ok(mut file) = File::create(&html_path) {
+                                    if let Err(err) = file.write_all(cache_item.result.as_bytes()) {
+                                        eprintln!("Error writing file {}: {}", html_path.display(), err);
+                                    }
+                                    else {
+                                        println!("Generated from cache: {}", html_path.display());
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+
                         // 处理 Markdown 页面
                         if let Ok(content) = fs::read_to_string(path) {
                             // 执行插件处理内容
@@ -258,9 +362,9 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                                     content
                                 }
                             };
-                            
+
                             let rendered = markdown_renderer.render(&processed_content);
-                            
+
                             // 对渲染结果再次执行插件
                             let final_content = match plugin_manager.execute_all(&rendered) {
                                 Ok(processed) => processed,
@@ -269,11 +373,21 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                                     rendered
                                 }
                             };
-                            
+
+                            // 缓存渲染结果
+                            let mut dependencies = std::collections::HashMap::new();
+                            if let Ok(metadata) = path.metadata() {
+                                if let Ok(modified_time) = metadata.modified() {
+                                    dependencies.insert(path.to_path_buf(), modified_time);
+                                }
+                            }
+                            cache_manager.set_render(&cache_key, final_content.clone(), dependencies);
+
                             if let Ok(mut file) = File::create(&html_path) {
                                 if let Err(err) = file.write_all(final_content.as_bytes()) {
                                     eprintln!("Error writing file {}: {}", html_path.display(), err);
-                                } else {
+                                }
+                                else {
                                     println!("Generated: {}", html_path.display());
                                 }
                             }
@@ -283,7 +397,8 @@ fn process_pages(project_path: &Path, out_path: &Path, renderer: &HtmlRenderer, 
                         // 其他文件类型，直接复制
                         if let Err(err) = fs::copy(path, &html_path) {
                             eprintln!("Error copying file {}: {}", html_path.display(), err);
-                        } else {
+                        }
+                        else {
                             println!("Copied: {}", html_path.display());
                         }
                     }
@@ -311,18 +426,20 @@ fn generate_essential_files(out_path: &Path, config: &AstroConfig) {
 </body>
 </html>
 "#;
-    
+
     if let Ok(mut file) = File::create(&not_found_path) {
         if let Err(err) = file.write_all(not_found_content.as_bytes()) {
             eprintln!("Error writing 404.html: {}", err);
-        } else {
+        }
+        else {
             println!("Generated: {}", not_found_path.display());
         }
     }
-    
+
     // 生成 sitemap.xml
     let sitemap_path = out_path.join("sitemap.xml");
-    let sitemap_content = format!(r#"
+    let sitemap_content = format!(
+        r#"
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
@@ -332,12 +449,16 @@ fn generate_essential_files(out_path: &Path, config: &AstroConfig) {
         <priority>1.0</priority>
     </url>
 </urlset>
-"#, config.base.as_deref().unwrap_or("/"), chrono::Utc::now().format("%Y-%m-%d"));
-    
+"#,
+        config.base.as_deref().unwrap_or("/"),
+        chrono::Utc::now().format("%Y-%m-%d")
+    );
+
     if let Ok(mut file) = File::create(&sitemap_path) {
         if let Err(err) = file.write_all(sitemap_content.as_bytes()) {
             eprintln!("Error writing sitemap.xml: {}", err);
-        } else {
+        }
+        else {
             println!("Generated: {}", sitemap_path.display());
         }
     }
@@ -388,17 +509,17 @@ fn process_markdown_files(project_path: &Path, out_path: &Path, renderer: &Markd
                         if let Ok(content) = fs::read_to_string(path) {
                             // 渲染 Markdown 为 HTML
                             let rendered = renderer.render(&content);
-                            
+
                             // 生成 HTML 文件路径
                             let relative_path = path.strip_prefix(project_path).unwrap();
                             let html_path = out_path.join(relative_path).with_extension("html");
-                            
+
                             // 创建输出目录
                             if let Err(err) = fs::create_dir_all(html_path.parent().unwrap()) {
                                 eprintln!("Error creating directory: {}", err);
                                 continue;
                             }
-                            
+
                             // 写入 HTML 文件
                             if let Ok(mut file) = File::create(&html_path) {
                                 if let Err(err) = file.write_all(rendered.as_bytes()) {
@@ -443,7 +564,7 @@ pub fn dev(path: &str, port: u16) {
     // 2. 初始化插件系统
     println!("🔌 Initializing plugin system...");
     let mut plugin_manager = PluginManager::new();
-    
+
     // 创建插件上下文
     let plugin_context = PluginContext {
         config: serde_json::to_value(&config).unwrap_or_default(),
@@ -452,7 +573,7 @@ pub fn dev(path: &str, port: u16) {
             "mode": "development",
             "port": port
         }),
-        shared_data: serde_json::Value::Object(serde_json::Map::new())
+        shared_data: serde_json::Value::Object(serde_json::Map::new()),
     };
     plugin_manager.set_context(plugin_context);
 

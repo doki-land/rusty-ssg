@@ -3,10 +3,7 @@
 
 use super::HugoContentIndex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+use std::{collections::HashMap, fs::File, io::Read, path::Path};
 
 /// 翻译条目
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -33,10 +30,7 @@ pub struct I18nSystem {
 impl I18nSystem {
     /// 创建新的国际化系统
     pub fn new(default_lang: &str) -> Self {
-        Self {
-            translations: HashMap::new(),
-            default_lang: default_lang.to_string(),
-        }
+        Self { translations: HashMap::new(), default_lang: default_lang.to_string() }
     }
 
     /// 加载翻译文件
@@ -72,7 +66,8 @@ impl I18nSystem {
 
         let translations: I18nMap = if path.extension() == Some(std::ffi::OsStr::new("toml")) {
             oak_toml::language::from_str(&content).unwrap()
-        } else {
+        }
+        else {
             oak_yaml::from_str(&content).unwrap()
         };
 

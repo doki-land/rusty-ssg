@@ -51,7 +51,10 @@ impl BuildCommand {
                         let rel_path = path.strip_prefix(&source_dir).unwrap_or(path).to_string_lossy().to_string();
 
                         let path_components: Vec<&str> = rel_path.split(std::path::MAIN_SEPARATOR).collect();
-                        if path_components.iter().any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress") {
+                        if path_components
+                            .iter()
+                            .any(|&c| c == "node_modules" || c == ".git" || c == "dist" || c == ".vitepress")
+                        {
                             continue;
                         }
 

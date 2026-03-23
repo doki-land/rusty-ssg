@@ -1,7 +1,10 @@
 //! 依赖分析模块
 
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
+use hashbrown::{HashMap, HashSet};
+use std::{
+    path::{Path, PathBuf},
+    sync::RwLock,
+};
 
 /// 依赖关系
 #[derive(Debug)]
@@ -27,58 +30,51 @@ pub enum DependencyType {
 #[derive(Debug)]
 pub struct DependencyGraph {
     /// 依赖关系映射
-    dependencies: HashMap<PathBuf, HashSet<PathBuf>>,
+    dependencies: RwLock<HashMap<PathBuf, HashSet<PathBuf>>>,
     /// 反向依赖关系映射
-    reverse_dependencies: HashMap<PathBuf, HashSet<PathBuf>>,
+    reverse_dependencies: RwLock<HashMap<PathBuf, HashSet<PathBuf>>>,
 }
 
 impl DependencyGraph {
     /// 创建新的依赖图
     pub fn new() -> Self {
-        Self {
-            dependencies: HashMap::new(),
-            reverse_dependencies: HashMap::new(),
-        }
+        Self { dependencies: RwLock::new(HashMap::new()), reverse_dependencies: RwLock::new(HashMap::new()) }
     }
-    
+
     /// 添加依赖关系
-    pub fn add_dependency(&mut self, source: PathBuf, target: PathBuf) {
+    pub fn add_dependency(&self, source: PathBuf, target: PathBuf) {
         // 添加正向依赖
-        self.dependencies
-            .entry(source.clone())
-            .or_insert_with(HashSet::new)
-            .insert(target.clone());
-        
+        let mut dependencies = self.dependencies.write().unwrap();
+        dependencies.entry(source.clone()).or_insert_with(HashSet::new).insert(target.clone());
+
         // 添加反向依赖
-        self.reverse_dependencies
-            .entry(target)
-            .or_insert_with(HashSet::new)
-            .insert(source);
+        let mut reverse_dependencies = self.reverse_dependencies.write().unwrap();
+        reverse_dependencies.entry(target).or_insert_with(HashSet::new).insert(source);
     }
-    
+
     /// 获取文件的所有依赖
-    pub fn get_dependencies(&self, file: &Path) -> Option<&HashSet<PathBuf>> {
-        self.dependencies.get(file)
+    pub fn get_dependencies(&self, file: &Path) -> Option<HashSet<PathBuf>> {
+        let dependencies = self.dependencies.read().unwrap();
+        dependencies.get(file).cloned()
     }
-    
+
     /// 获取文件的所有反向依赖
-    pub fn get_reverse_dependencies(&self, file: &Path) -> Option<&HashSet<PathBuf>> {
-        self.reverse_dependencies.get(file)
+    pub fn get_reverse_dependencies(&self, file: &Path) -> Option<HashSet<PathBuf>> {
+        let reverse_dependencies = self.reverse_dependencies.read().unwrap();
+        reverse_dependencies.get(file).cloned()
     }
-    
+
     /// 检查是否存在依赖关系
     pub fn has_dependency(&self, source: &Path, target: &Path) -> bool {
-        if let Some(deps) = self.dependencies.get(source) {
-            deps.contains(target)
-        } else {
-            false
-        }
+        let dependencies = self.dependencies.read().unwrap();
+        if let Some(deps) = dependencies.get(source) { deps.contains(target) } else { false }
     }
-    
+
     /// 获取所有文件路径
     pub fn all_files(&self) -> HashSet<PathBuf> {
+        let dependencies = self.dependencies.read().unwrap();
         let mut files = HashSet::new();
-        for (source, targets) in &self.dependencies {
+        for (source, targets) in &*dependencies {
             files.insert(source.clone());
             for target in targets {
                 files.insert(target.clone());
@@ -97,24 +93,22 @@ pub struct DependencyAnalyzer {
 impl DependencyAnalyzer {
     /// 创建新的依赖分析器
     pub fn new() -> Self {
-        Self {
-            graph: DependencyGraph::new(),
-        }
+        Self { graph: DependencyGraph::new() }
     }
-    
+
     /// 分析文件依赖
-    pub fn analyze_file(&mut self, file_path: &Path, content: &str) -> Result<(), String> {
+    pub fn analyze_file(&self, file_path: &Path, content: &str) -> Result<(), String> {
         // 解析 import 语句
         self.parse_imports(file_path, content);
-        
+
         // 解析 export 语句
         self.parse_exports(file_path, content);
-        
+
         Ok(())
     }
-    
+
     /// 解析 import 语句
-    fn parse_imports(&mut self, file_path: &Path, content: &str) {
+    fn parse_imports(&self, file_path: &Path, content: &str) {
         // 简单的 import 语句解析
         // 实际应该使用更复杂的解析器
         for line in content.lines() {
@@ -128,9 +122,9 @@ impl DependencyAnalyzer {
             }
         }
     }
-    
+
     /// 解析 export 语句
-    fn parse_exports(&mut self, file_path: &Path, content: &str) {
+    fn parse_exports(&self, file_path: &Path, content: &str) {
         // 简单的 export 语句解析
         for line in content.lines() {
             let line = line.trim();
@@ -143,7 +137,7 @@ impl DependencyAnalyzer {
             }
         }
     }
-    
+
     /// 从 import 语句中提取路径
     fn extract_import_path<'a>(&self, line: &'a str) -> Option<&'a str> {
         // 简单实现，实际应该使用正则表达式或解析器
@@ -151,16 +145,19 @@ impl DependencyAnalyzer {
             let path_part = &line[from_idx + 4..].trim();
             if path_part.starts_with('"') && path_part.ends_with('"') {
                 Some(&path_part[1..path_part.len() - 1])
-            } else if path_part.starts_with("'") && path_part.ends_with("'") {
+            }
+            else if path_part.starts_with("'") && path_part.ends_with("'") {
                 Some(&path_part[1..path_part.len() - 1])
-            } else {
+            }
+            else {
                 None
             }
-        } else {
+        }
+        else {
             None
         }
     }
-    
+
     /// 从 export 语句中提取路径
     fn extract_export_path<'a>(&self, line: &'a str) -> Option<&'a str> {
         // 简单实现，实际应该使用正则表达式或解析器
@@ -168,36 +165,49 @@ impl DependencyAnalyzer {
             let path_part = &line[from_idx + 4..].trim();
             if path_part.starts_with('"') && path_part.ends_with('"') {
                 Some(&path_part[1..path_part.len() - 1])
-            } else if path_part.starts_with("'") && path_part.ends_with("'") {
+            }
+            else if path_part.starts_with("'") && path_part.ends_with("'") {
                 Some(&path_part[1..path_part.len() - 1])
-            } else {
+            }
+            else {
                 None
             }
-        } else {
+        }
+        else {
             None
         }
     }
-    
+
     /// 解析路径
     fn resolve_path(&self, base_path: &Path, path_str: &str) -> Option<PathBuf> {
         // 处理相对路径
         if path_str.starts_with('.') {
             let mut resolved_path = base_path.parent()?.to_path_buf();
             resolved_path.push(path_str);
-            
+
             // 添加扩展名
             if !resolved_path.extension().is_some() {
                 resolved_path.set_extension("js");
             }
-            
+
             Some(resolved_path)
-        } else {
+        }
+        else {
             // 处理绝对路径和模块路径
             // 这里简化处理，实际应该根据模块解析规则来处理
             None
         }
     }
-    
+
+    /// 批量分析文件依赖
+    pub fn analyze_files(&self, files: &[(PathBuf, String)]) {
+        files.par_iter().for_each(|(path, content)| {
+            if let Err(err) = self.analyze_file(path, content) {
+                eprintln!("Error analyzing dependencies for file {}: {}", path.display(), err);
+            }
+        });
+    }
+
     /// 获取依赖图
     pub fn graph(&self) -> &DependencyGraph {
         &self.graph

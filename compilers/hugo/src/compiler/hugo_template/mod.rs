@@ -180,13 +180,51 @@ impl HugoTemplateEngine {
     ///
     /// 渲染后的 HTML 字符串
     pub fn render(&self, template_name: &str, page: HugoPage) -> Result<String, HugoTemplateError> {
+        // 检查是否需要使用 baseof 模板
+        let template_to_render = self.resolve_template_with_baseof(template_name)?;
+
         let context = HugoTemplateContext { site: self.site.clone(), page };
         let json_value =
             serde_json::to_value(context).map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })?;
 
         self.template_manager
-            .render(TemplateEngine::Liquid, template_name, &json_value)
+            .render(TemplateEngine::Liquid, &template_to_render, &json_value)
             .map_err(|e| HugoTemplateError::RenderError { message: e.to_string() })
+    }
+
+    /// 解析模板，考虑 baseof 继承
+    ///
+    /// # Arguments
+    ///
+    /// * `template_name` - 模板名称
+    ///
+    /// # Returns
+    ///
+    /// 最终要渲染的模板名称
+    fn resolve_template_with_baseof(&self, template_name: &str) -> Result<String, HugoTemplateError> {
+        // 检查模板是否存在
+        if self.resolver.template_exists(template_name) {
+            // 尝试加载模板
+            self.load_template(template_name)?;
+
+            // 检查模板是否引用了 baseof
+            // 这里简化实现，实际应该解析模板内容
+            // 暂时直接返回模板名称
+            Ok(template_name.to_string())
+        }
+        else {
+            // 尝试使用 baseof 模板
+            let baseof_name = "baseof.html";
+            if self.resolver.template_exists(baseof_name) {
+                self.load_template(baseof_name)?;
+                Ok(baseof_name.to_string())
+            }
+            else {
+                Err(HugoTemplateError::ResolveError {
+                    source: TemplateResolverError::TemplateNotFound { name: template_name.to_string() },
+                })
+            }
+        }
     }
 
     /// 获取站点配置的引用

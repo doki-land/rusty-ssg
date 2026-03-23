@@ -2,16 +2,25 @@
 //! 负责将解析后的内容渲染为 HTML
 
 use crate::{Result, types::VuePressConfig};
+use nargo_parser::MarkdownParser;
 
 /// HTML 渲染器配置
 pub struct HtmlRendererConfig {
     /// 是否启用压缩
     pub minify: bool,
+    /// 是否启用代码高亮
+    pub highlight_code: bool,
+    /// 是否启用数学公式渲染
+    pub math: bool,
 }
 
 impl Default for HtmlRendererConfig {
     fn default() -> Self {
-        Self { minify: false }
+        Self {
+            minify: false,
+            highlight_code: true,
+            math: true,
+        }
     }
 }
 
@@ -29,8 +38,122 @@ impl HtmlRenderer {
         Self { config, html_config: HtmlRendererConfig::default() }
     }
 
+    /// 创建带自定义配置的 HTML 渲染器实例
+    pub fn with_config(config: VuePressConfig, html_config: HtmlRendererConfig) -> Self {
+        Self { config, html_config }
+    }
+
     /// 渲染内容为 HTML
     pub fn render(&self, content: &str) -> Result<String> {
-        Ok(content.to_string())
+        // 处理 Vue 组件标签
+        let content_with_vue = self.process_vue_components(content);
+        
+        // 使用 MarkdownParser 将 Markdown 转换为 HTML
+        let mut html = MarkdownParser::to_html(&content_with_vue)?;
+        
+        // 应用代码高亮
+        if self.html_config.highlight_code {
+            html = self.highlight_code(&html)?;
+        }
+        
+        // 应用数学公式渲染
+        if self.html_config.math {
+            html = self.render_math(&html)?;
+        }
+        
+        // 压缩 HTML
+        if self.html_config.minify {
+            html = self.minify_html(&html)?;
+        }
+        
+        Ok(html)
+    }
+
+    /// 处理 Vue 组件标签
+    fn process_vue_components(&self, content: &str) -> String {
+        let mut result = content.to_string();
+        
+        // 识别并处理 Vue 组件标签
+        // 这里使用简单的正则表达式来识别 Vue 组件
+        // 实际项目中可能需要更复杂的解析逻辑
+        lazy_static::lazy_static! {
+            static ref VUE_COMPONENT_REGEX: regex::Regex = regex::Regex::new(r#"<([A-Z][a-zA-Z0-9-]+)([^>]*?)>([\s\S]*?)</\1>"#).unwrap();
+        }
+        
+        result = VUE_COMPONENT_REGEX.replace_all(&result, |caps: &regex::Captures| {
+            let component_name = caps.get(1).unwrap().as_str();
+            let attributes = caps.get(2).unwrap().as_str();
+            let content = caps.get(3).unwrap().as_str();
+            
+            // 保留 Vue 组件标签，不进行 Markdown 解析
+            format!(r#"<{} {}>{}</{}>"#, component_name, attributes, content, component_name)
+        }).to_string();
+        
+        result
+    }
+
+    /// 高亮代码块
+    fn highlight_code(&self, html: &str) -> Result<String> {
+        // 简单的代码高亮实现
+        // 实际项目中可能需要使用更复杂的高亮库
+        let mut result = html.to_string();
+        
+        // 处理代码块
+        lazy_static::lazy_static! {
+            static ref CODE_BLOCK_REGEX: regex::Regex = regex::Regex::new(r#"```([a-z]+)\n([\s\S]*?)```"#).unwrap();
+        }
+        
+        result = CODE_BLOCK_REGEX.replace_all(&result, |caps: &regex::Captures| {
+            let language = caps.get(1).unwrap().as_str();
+            let code = caps.get(2).unwrap().as_str();
+            format!(
+                r#"<pre><code class="language-{}">{}</code></pre>"#,
+                language,
+                html_escape::encode_text(code)
+            )
+        }).to_string();
+        
+        Ok(result)
+    }
+
+    /// 渲染数学公式
+    fn render_math(&self, html: &str) -> Result<String> {
+        // 简单的数学公式渲染实现
+        // 实际项目中可能需要使用 KaTeX 或 MathJax
+        let mut result = html.to_string();
+        
+        // 处理行内数学公式
+        lazy_static::lazy_static! {
+            static ref INLINE_MATH_REGEX: regex::Regex = regex::Regex::new(r#"\$(.*?)\$"#).unwrap();
+        }
+        
+        result = INLINE_MATH_REGEX.replace_all(&result, |caps: &regex::Captures| {
+            let math = caps.get(1).unwrap().as_str();
+            format!(r#"<span class="math inline">{}</span>"#, math)
+        }).to_string();
+        
+        // 处理块级数学公式
+        lazy_static::lazy_static! {
+            static ref BLOCK_MATH_REGEX: regex::Regex = regex::Regex::new(r#"\$\$(.*?)\$\$"#s).unwrap();
+        }
+        
+        result = BLOCK_MATH_REGEX.replace_all(&result, |caps: &regex::Captures| {
+            let math = caps.get(1).unwrap().as_str();
+            format!(r#"<div class="math block">{}</div>"#, math)
+        }).to_string();
+        
+        Ok(result)
+    }
+
+    /// 压缩 HTML
+    fn minify_html(&self, html: &str) -> Result<String> {
+        // 简单的 HTML 压缩实现
+        let result = html
+            .replace(&['\n', '\r', '\t'][..], " ")
+            .replace(r#" >"#, ">")
+            .replace(r#"< "#, "<")
+            .replace(r#"  "#, " ");
+        
+        Ok(result)
     }
 }

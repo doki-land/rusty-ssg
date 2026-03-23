@@ -8,9 +8,10 @@ pub use super::{
 };
 
 pub use crate::{
-    CompileResult, JekyllCompiler,
-    errors::{Result, JekyllError},
+    JekyllCompiler,
+    errors::{JekyllError, Result},
     jekyll::JekyllConfig,
+    types::CompileResult,
 };
 
 use clap::Parser;

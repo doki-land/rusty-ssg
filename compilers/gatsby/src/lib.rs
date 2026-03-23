@@ -36,14 +36,16 @@ pub use nargo_types::Document;
 
 pub use plugin::{Page, Plugin, PluginContext, PluginError, PluginMeta, PluginRegistry};
 
-pub use types::graphql::{
-    Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType,
-    GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore, NodeType,
-    Selection, SelectionSet,
-};
-pub use types::CompileResult;
-pub use types::graphql_service::GraphQLService;
 pub use data::{ContentDigest, DataLayerManager, FileDataSource, MarkdownDataSource, SiteMetadataDataSource};
+pub use types::{
+    CompileResult,
+    graphql::{
+        Directive, FieldSelection, GraphQLArgument, GraphQLError, GraphQLField, GraphQLFieldType, GraphQLObjectType,
+        GraphQLRequest, GraphQLResponse, GraphQLResult, GraphQLSchema, Internal, Node, NodeActions, NodeId, NodeStore,
+        NodeType, Selection, SelectionSet,
+    },
+    graphql_service::GraphQLService,
+};
 
 use std::collections::HashMap;
 

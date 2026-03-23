@@ -4,14 +4,13 @@
 //!
 //! 提供 Liquid 模板引擎的集成和渲染功能
 
-use std::collections::HashMap;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use serde_json::Value;
 
 use crate::errors::{LiquidError, Result};
 
-use super::{front_matter::FrontMatter, FrontMatterParser, JekyllConfig, JekyllStructure};
+use super::{FrontMatterParser, JekyllConfig, JekyllStructure, front_matter::FrontMatter};
 
 /// Liquid 过滤器
 pub struct LiquidFilter {
@@ -116,24 +115,14 @@ impl LiquidEngine {
         self.filters.insert(
             "upcase".to_string(),
             LiquidFilter::new("upcase", |args| {
-                if let Some(Value::String(s)) = args.first() {
-                    Value::String(s.to_uppercase())
-                }
-                else {
-                    Value::Null
-                }
+                if let Some(Value::String(s)) = args.first() { Value::String(s.to_uppercase()) } else { Value::Null }
             }),
         );
 
         self.filters.insert(
             "downcase".to_string(),
             LiquidFilter::new("downcase", |args| {
-                if let Some(Value::String(s)) = args.first() {
-                    Value::String(s.to_lowercase())
-                }
-                else {
-                    Value::Null
-                }
+                if let Some(Value::String(s)) = args.first() { Value::String(s.to_lowercase()) } else { Value::Null }
             }),
         );
 
@@ -156,24 +145,14 @@ impl LiquidEngine {
         self.filters.insert(
             "strip".to_string(),
             LiquidFilter::new("strip", |args| {
-                if let Some(Value::String(s)) = args.first() {
-                    Value::String(s.trim().to_string())
-                }
-                else {
-                    Value::Null
-                }
+                if let Some(Value::String(s)) = args.first() { Value::String(s.trim().to_string()) } else { Value::Null }
             }),
         );
 
         self.filters.insert(
             "escape".to_string(),
             LiquidFilter::new("escape", |args| {
-                if let Some(Value::String(s)) = args.first() {
-                    Value::String(html_escape(s))
-                }
-                else {
-                    Value::Null
-                }
+                if let Some(Value::String(s)) = args.first() { Value::String(html_escape(s)) } else { Value::Null }
             }),
         );
     }
@@ -200,11 +179,7 @@ impl LiquidEngine {
             return Ok(());
         }
 
-        for entry in walkdir::WalkDir::new(dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
-        {
+        for entry in walkdir::WalkDir::new(dir).into_iter().filter_map(|e| e.ok()).filter(|e| e.file_type().is_file()) {
             let path = entry.path();
 
             if let Some(ext) = path.extension() {
@@ -285,7 +260,8 @@ impl LiquidEngine {
     /// 渲染变量
     fn render_variables(&self, template: &str, context: &Value) -> Result<String> {
         let mut result = template.to_string();
-        let var_regex = regex::Regex::new(r"\{\{\s*(\w+(?:\.\w+)*)\s*\}\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
+        let var_regex =
+            regex::Regex::new(r"\{\{\s*(\w+(?:\.\w+)*)\s*\}\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
 
         for cap in var_regex.captures_iter(template) {
             if let Some(full_match) = cap.get(0) {
@@ -305,14 +281,16 @@ impl LiquidEngine {
     /// 渲染过滤器
     fn render_filters(&self, template: &str, context: &Value) -> Result<String> {
         let mut result = template.to_string();
-        let filter_regex = regex::Regex::new(r"\{\{\s*(\w+)(?:\s*\|\s*(\w+(?::[^}]+)?))*\s*\}\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
+        let filter_regex = regex::Regex::new(r"\{\{\s*(\w+)(?:\s*\|\s*(\w+(?::[^}]+)?))*\s*\}\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
 
         for cap in filter_regex.captures_iter(template) {
             if let Some(full_match) = cap.get(0) {
                 if let Some(var_name) = cap.get(1) {
                     let var_value = self.get_variable(var_name.as_str(), context);
 
-                    let filter_pattern = regex::Regex::new(r"\|\s*(\w+)(?::([^}]+))?").map_err(|e| LiquidError::parse_error(e.to_string()))?;
+                    let filter_pattern =
+                        regex::Regex::new(r"\|\s*(\w+)(?::([^}]+))?").map_err(|e| LiquidError::parse_error(e.to_string()))?;
                     let mut final_value = var_value;
 
                     for filter_cap in filter_pattern.captures_iter(full_match.as_str()) {
@@ -348,7 +326,8 @@ impl LiquidEngine {
     fn render_if_tags(&self, template: &str, _context: &Value) -> Result<String> {
         let mut result = template.to_string();
 
-        let if_regex = regex::Regex::new(r"\{%\s*if\s+(\w+(?:\.\w+)*)\s*%\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
+        let if_regex =
+            regex::Regex::new(r"\{%\s*if\s+(\w+(?:\.\w+)*)\s*%\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
         let endif_regex = regex::Regex::new(r"\{%\s*endif\s*%\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
         let else_regex = regex::Regex::new(r"\{%\s*else\s*%\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
 
@@ -403,7 +382,8 @@ impl LiquidEngine {
     fn render_for_tags(&self, template: &str, _context: &Value) -> Result<String> {
         let mut result = template.to_string();
 
-        let for_regex = regex::Regex::new(r"\{%\s*for\s+(\w+)\s+in\s+(\w+(?:\.\w+)*)\s*%\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
+        let for_regex = regex::Regex::new(r"\{%\s*for\s+(\w+)\s+in\s+(\w+(?:\.\w+)*)\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
         let endfor_regex = regex::Regex::new(r"\{%\s*endfor\s*%\}").map_err(|e| LiquidError::parse_error(e.to_string()))?;
 
         let for_matches: Vec<_> = for_regex.find_iter(template).collect();
@@ -429,7 +409,7 @@ impl LiquidEngine {
                 let mut rendered_items = Vec::new();
 
                 for item in arr {
-                    let mut item_content = content.replace(&format!("{{ {} }}", item_var), &value_to_string(item));
+                    let mut item_content = content.replace(&format!("{{ {} }}", item_var), &value_to_string(&item));
                     rendered_items.push(item_content);
                 }
 
@@ -500,7 +480,8 @@ impl LiquidEngine {
             self.load_layouts()?;
         }
 
-        let layout_content = self.layouts.get(layout_name).ok_or_else(|| LiquidError::template_not_found(layout_name.to_string()))?;
+        let layout_content =
+            self.layouts.get(layout_name).ok_or_else(|| LiquidError::template_not_found(layout_name.to_string()))?;
 
         let mut full_context = context.clone();
 
@@ -528,7 +509,8 @@ impl LiquidEngine {
             self.load_includes()?;
         }
 
-        let include_content = self.includes.get(include_name).ok_or_else(|| LiquidError::template_not_found(include_name.to_string()))?;
+        let include_content =
+            self.includes.get(include_name).ok_or_else(|| LiquidError::template_not_found(include_name.to_string()))?;
 
         self.render_template(include_content, context)
     }

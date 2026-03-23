@@ -2,10 +2,8 @@
 //! 提供文件系统监听和热重载功能
 
 use crate::types::Result;
-use notify::{RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind};
-use std::sync::mpsc;
-use std::time::Duration;
-use std::path::PathBuf;
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use std::{path::PathBuf, sync::mpsc, time::Duration};
 
 /// 文件监听器
 pub struct FileWatcher {
@@ -36,8 +34,7 @@ impl FileWatcher {
     }
 
     /// 添加监听目录
-    pub fn add_watch_dir(&mut self, dir: impl AsRef<std::path::Path>) -> Result<()>
-    {
+    pub fn add_watch_dir(&mut self, dir: impl AsRef<std::path::Path>) -> Result<()> {
         let dir = dir.as_ref();
         if dir.exists() && dir.is_dir() {
             self.watcher.watch(dir, RecursiveMode::Recursive)?;
@@ -54,9 +51,7 @@ impl FileWatcher {
     /// 检查是否应该忽略文件
     fn should_ignore(&self, path: &PathBuf) -> bool {
         let path_str = path.to_string_lossy();
-        self.ignore_patterns.iter().any(|pattern| {
-            path_str.contains(pattern)
-        })
+        self.ignore_patterns.iter().any(|pattern| path_str.contains(pattern))
     }
 
     /// 开始监听
@@ -102,9 +97,14 @@ pub struct DevServer {
 
 impl DevServer {
     /// 创建新的开发服务器
-    pub fn new(addr: &str, port: u16, source_dir: impl AsRef<std::path::Path>, output_dir: impl AsRef<std::path::Path>) -> Result<Self> {
+    pub fn new(
+        addr: &str,
+        port: u16,
+        source_dir: impl AsRef<std::path::Path>,
+        output_dir: impl AsRef<std::path::Path>,
+    ) -> Result<Self> {
         let watcher = FileWatcher::new()?;
-        
+
         Ok(Self {
             addr: addr.to_string(),
             port,
@@ -115,79 +115,79 @@ impl DevServer {
     }
 
     /// 启动服务器
-    pub async fn start(&mut self) -> Result<()>
-    {
+    pub async fn start(&mut self) -> Result<()> {
         // 添加监听目录
         self.watcher.add_watch_dir(&self.source_dir)?;
-        
+
         // 添加忽略模式
         self.watcher.add_ignore_pattern("node_modules");
         self.watcher.add_ignore_pattern(".git");
         self.watcher.add_ignore_pattern("site");
-        
+
         println!("Starting development server at http://{}:{}", self.addr, self.port);
         println!("Watching for changes in: {}", self.source_dir.display());
-        
+
         // 启动文件监听
         let server = self.clone();
         tokio::spawn(async move {
-            server.watcher.start(|path, kind| {
-                println!("File changed: {:?} ({:?})", path, kind);
-                // 这里可以添加重新编译逻辑
-                Ok(())
-            }).await
+            server
+                .watcher
+                .start(|path, kind| {
+                    println!("File changed: {:?} ({:?})", path, kind);
+                    // 这里可以添加重新编译逻辑
+                    Ok(())
+                })
+                .await
         });
-        
+
         // 启动 HTTP 服务器
         self.start_http_server().await
     }
 
     /// 启动 HTTP 服务器
-    async fn start_http_server(&self) -> Result<()>
-    {
-        use hyper::body::Incoming;
-        use hyper::{Request, Response, StatusCode};
+    async fn start_http_server(&self) -> Result<()> {
+        use hyper::{
+            body::Body,
+            header::CONTENT_TYPE,
+            Request, Response, StatusCode,
+        };
         use hyper::server::conn::AddrIncoming;
-        use hyper::server::Builder;
-        use std::fs::File;
-        use std::io::Read;
-        
+        use hyper::service::service_fn;
+        use std::{fs::File, io::Read};
+
         let output_dir = self.output_dir.clone();
         let addr = format!("{}:{}", self.addr, self.port).parse()?;
-        
+
         let incoming = AddrIncoming::bind(&addr)?;
-        let service = hyper::service::service_fn(move |_req: Request<Incoming>| {
+        let service = service_fn(move |req| {
             let output_dir = output_dir.clone();
             async move {
-                let path = _req.uri().path();
-                let file_path = if path == "/" {
-                    output_dir.join("index.html")
-                } else {
-                    output_dir.join(&path[1..])
-                };
-                
+                let path = req.uri().path();
+                let file_path = if path == "/" { output_dir.join("index.html") } else { output_dir.join(&path[1..]) };
+
                 if file_path.exists() && file_path.is_file() {
                     let mut file = File::open(file_path)?;
                     let mut content = Vec::new();
                     file.read_to_end(&mut content)?;
-                    
+
                     let content_type = mime_guess::from_path(&file_path).first_or_octet_stream();
-                    
+
                     Ok(Response::builder()
                         .status(StatusCode::OK)
-                        .header(hyper::header::CONTENT_TYPE, content_type.to_string())
-                        .body(hyper::body::Bytes::from(content))?)
-                } else {
+                        .header(CONTENT_TYPE, content_type.to_string())
+                        .body(Body::from(content))?)
+                }
+                else {
                     Ok(Response::builder()
                         .status(StatusCode::NOT_FOUND)
-                        .body(hyper::body::Bytes::from("404 Not Found"))?)
+                        .body(Body::from("404 Not Found"))?)
                 }
             }
         });
-        
-        let server = Builder::new(incoming).serve(service);
+
+        let server = hyper::server::Builder::new(incoming).serve(service);
         server.await?;
-        
+
         Ok(())
     }
 }

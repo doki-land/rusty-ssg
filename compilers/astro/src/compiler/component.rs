@@ -1,7 +1,8 @@
 //! 组件系统模块
 
 use crate::compiler::renderer::html_renderer::Context;
-use std::{collections::HashMap, fs::File, io::Read, path::Path};
+use hashbrown::HashMap;
+use std::{borrow::Cow, fs::File, io::Read, path::Path, sync::RwLock};
 
 /// 前端框架类型
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,13 +28,13 @@ pub enum Framework {
 /// 组件定义
 pub struct Component {
     /// 组件名称
-    name: String,
+    name: Cow<'static, str>,
     /// 组件模板
-    template: String,
+    template: Cow<'static, str>,
     /// 组件脚本
-    script: Option<String>,
+    script: Option<Cow<'static, str>>,
     /// 组件样式
-    style: Option<String>,
+    style: Option<Cow<'static, str>>,
     /// 组件所属框架
     framework: Framework,
 }
@@ -41,7 +42,13 @@ pub struct Component {
 impl Component {
     /// 创建新组件
     pub fn new(name: &str, template: &str, framework: Framework) -> Self {
-        Self { name: name.to_string(), template: template.to_string(), script: None, style: None, framework }
+        Self {
+            name: Cow::Owned(name.to_string()),
+            template: Cow::Owned(template.to_string()),
+            script: None,
+            style: None,
+            framework,
+        }
     }
 
     /// 创建 Astro 组件
@@ -86,12 +93,12 @@ impl Component {
 
     /// 设置组件脚本
     pub fn set_script(&mut self, script: &str) {
-        self.script = Some(script.to_string());
+        self.script = Some(Cow::Owned(script.to_string()));
     }
 
     /// 设置组件样式
     pub fn set_style(&mut self, style: &str) {
-        self.style = Some(style.to_string());
+        self.style = Some(Cow::Owned(style.to_string()));
     }
 
     /// 获取组件名称
@@ -192,18 +199,19 @@ impl Component {
 /// 组件注册表
 pub struct ComponentRegistry {
     /// 组件映射
-    components: HashMap<String, Component>,
+    components: RwLock<HashMap<String, Component>>,
 }
 
 impl ComponentRegistry {
     /// 创建新的组件注册表
     pub fn new() -> Self {
-        Self { components: HashMap::new() }
+        Self { components: RwLock::new(HashMap::new()) }
     }
 
     /// 注册组件
-    pub fn register(&mut self, component: Component) {
-        self.components.insert(component.name().to_string(), component);
+    pub fn register(&self, component: Component) {
+        let mut components = self.components.write().unwrap();
+        components.insert(component.name().to_string(), component);
     }
 
     /// 从文件路径导入组件
@@ -213,14 +221,12 @@ impl ComponentRegistry {
     ///
     /// # 返回值
     /// 导入的组件名称
-    pub fn import_component(&mut self, file_path: &Path) -> Result<String, String> {
+    pub fn import_component(&self, file_path: &Path) -> Result<String, String> {
         // 读取文件内容
-        let mut file = File::open(file_path).map_err(|e| format!("Failed to open file: {}", e))?;
-        let mut content = String::new();
-        file.read_to_string(&mut content).map_err(|e| format!("Failed to read file: {}", e))?;
+        let content = std::fs::read_to_string(file_path).map_err(|e| format!("Failed to read file: {}", e))?;
 
         // 简单实现：创建一个 Astro 组件
-        let file_name = file_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let file_name = file_path.file_name().unwrap_or_default().to_string_lossy();
         let component_name = file_name.split('.').next().unwrap_or(&file_name).to_string();
         let component = Component::new_astro(&component_name, &content);
 
@@ -237,7 +243,7 @@ impl ComponentRegistry {
     ///
     /// # 返回值
     /// 导入的组件名称列表
-    pub fn import_components(&mut self, file_paths: &[&Path]) -> Result<Vec<String>, String> {
+    pub fn import_components(&self, file_paths: &[&Path]) -> Result<Vec<String>, String> {
         let mut imported_components = Vec::new();
 
         for file_path in file_paths {
@@ -249,18 +255,21 @@ impl ComponentRegistry {
     }
 
     /// 获取组件
-    pub fn get(&self, name: &str) -> Option<&Component> {
-        self.components.get(name)
+    pub fn get(&self, name: &str) -> Option<Component> {
+        let components = self.components.read().unwrap();
+        components.get(name).cloned()
     }
 
     /// 检查组件是否存在
     pub fn exists(&self, name: &str) -> bool {
-        self.components.contains_key(name)
+        let components = self.components.read().unwrap();
+        components.contains_key(name)
     }
 
     /// 获取所有组件的迭代器
-    pub fn iter(&self) -> impl Iterator<Item = (&String, &Component)> {
-        self.components.iter()
+    pub fn iter(&self) -> Vec<(String, Component)> {
+        let components = self.components.read().unwrap();
+        components.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
     }
 }
 
@@ -283,29 +292,24 @@ impl ComponentParser {
     }
 
     /// 解析组件文件
-    pub fn parse_component(&mut self, content: &str) -> Result<Component, String> {
+    pub fn parse_component(&self, content: &str) -> Result<Component, String> {
         // 暂时返回一个简单的组件，不使用 oaks 库的解析功能
         Ok(Component::new_astro("TestComponent", content))
     }
 
     /// 从文件路径解析并注册组件
-    pub fn parse_and_register_from_path(&mut self, file_path: &Path) -> Result<String, String> {
+    pub fn parse_and_register_from_path(&self, file_path: &Path) -> Result<String, String> {
         self.registry.import_component(file_path)
     }
 
     /// 注册组件
-    pub fn register_component(&mut self, component: Component) {
+    pub fn register_component(&self, component: Component) {
         self.registry.register(component);
     }
 
     /// 获取组件注册表
     pub fn registry(&self) -> &ComponentRegistry {
         &self.registry
-    }
-
-    /// 获取可变的组件注册表
-    pub fn registry_mut(&mut self) -> &mut ComponentRegistry {
-        &mut self.registry
     }
 }
 

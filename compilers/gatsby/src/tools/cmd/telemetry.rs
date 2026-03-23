@@ -20,18 +20,12 @@ impl TelemetryCommand {
     /// 执行结果
     pub async fn execute(args: TelemetryArgs) -> crate::types::Result<()> {
         match args.subcommand {
-            TelemetrySubCommand::Enable => {
-                Self::enable().await
-            }
-            TelemetrySubCommand::Disable => {
-                Self::disable().await
-            }
-            TelemetrySubCommand::Status => {
-                Self::status().await
-            }
+            TelemetrySubCommand::Enable => Self::enable().await,
+            TelemetrySubCommand::Disable => Self::disable().await,
+            TelemetrySubCommand::Status => Self::status().await,
         }
     }
-    
+
     /// 启用遥测
     ///
     /// # Returns
@@ -45,7 +39,7 @@ impl TelemetryCommand {
         println!("ℹ️  Telemetry helps us improve Gatsby by collecting anonymous usage data");
         Ok(())
     }
-    
+
     /// 禁用遥测
     ///
     /// # Returns
@@ -58,7 +52,7 @@ impl TelemetryCommand {
         println!("✅ Telemetry disabled");
         Ok(())
     }
-    
+
     /// 显示遥测状态
     ///
     /// # Returns

@@ -150,8 +150,9 @@ impl DevCommand {
             options.overwrite = true;
             options.copy_inside = true;
 
-            copy(&public_dir, &output_public_dir, &options)
-                .map_err(|e| crate::types::VitePressError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+            copy(&public_dir, &output_public_dir, &options).map_err(|e| {
+                crate::types::VitePressError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+            })?;
         }
 
         Ok(())

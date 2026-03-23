@@ -2,8 +2,7 @@
 //! 提供分类和标签的处理功能
 
 use super::{HugoContentIndex, HugoPage};
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 /// 分类项
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -40,9 +39,7 @@ pub struct TaxonomySystem {
 impl TaxonomySystem {
     /// 创建新的分类系统
     pub fn new(content_index: &'static HugoContentIndex) -> Self {
-        Self {
-            content_index,
-        }
+        Self { content_index }
     }
 
     /// 获取所有标签
@@ -132,11 +129,7 @@ impl TaxonomySystem {
         frontmatter.title = Some(name.to_string());
         frontmatter.description = Some(format!("All {} on this site", name.to_lowercase()));
 
-        let content = format!(
-            "# {}\n\nThis page lists all {} on the site.\n",
-            name,
-            name.to_lowercase()
-        );
+        let content = format!("# {}\n\nThis page lists all {} on the site.\n", name, name.to_lowercase());
 
         let mut page = HugoPage::new(path.clone(), path);
         page.frontmatter = frontmatter;
@@ -160,11 +153,7 @@ impl TaxonomySystem {
         frontmatter.title = Some(term.name.clone());
         frontmatter.description = Some(format!("All posts tagged with '{}'", term.name));
 
-        let content = format!(
-            "# {}\n\nThis page lists all posts tagged with '{}'.\n",
-            term.name,
-            term.name
-        );
+        let content = format!("# {}\n\nThis page lists all posts tagged with '{}'.\n", term.name, term.name);
 
         let mut page = HugoPage::new(path.clone(), path);
         page.frontmatter = frontmatter;

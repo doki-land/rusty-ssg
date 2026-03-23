@@ -1,8 +1,7 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::jekyll::JekyllConfig;
-use crate::types::Result;
+use crate::{jekyll::JekyllConfig, types::Result};
 
 /// 语言信息
 #[derive(Debug, Clone)]

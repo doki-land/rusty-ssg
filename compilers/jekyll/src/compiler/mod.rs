@@ -1,8 +1,10 @@
 //! 编译器模块
 //! 提供 Jekyll 文档编译器的核心功能
 
-use crate::jekyll::{JekyllConfig, MarkdownConverter};
-use crate::types::{Result, CompileResult};
+use crate::{
+    jekyll::{JekyllConfig, MarkdownConverter},
+    types::{CompileResult, Result},
+};
 use std::{collections::HashMap, time::Instant};
 
 mod parser;
@@ -12,7 +14,7 @@ pub use parser::JekyllParser;
 pub use renderer::JekyllRenderer;
 
 /// Jekyll 文档编译器
-/// 
+///
 /// 负责将 Markdown 文档编译为 HTML 格式
 pub struct JekyllCompiler {
     /// 编译器配置
@@ -28,12 +30,7 @@ pub struct JekyllCompiler {
 impl JekyllCompiler {
     /// 创建新的编译器
     pub fn new(config: JekyllConfig) -> Result<Self> {
-        Ok(Self {
-            config,
-            parser: JekyllParser::new(),
-            renderer: JekyllRenderer::new(),
-            cache: HashMap::new(),
-        })
+        Ok(Self { config, parser: JekyllParser::new(), renderer: JekyllRenderer::new(), cache: HashMap::new() })
     }
 
     /// 获取编译器配置
@@ -47,14 +44,14 @@ impl JekyllCompiler {
     }
 
     /// 编译单个文档
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `source` - 文档内容
     /// * `path` - 文档路径
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 编译后的文档
     pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
         if let Some(cached) = self.cache.get(path) {
@@ -63,23 +60,23 @@ impl JekyllCompiler {
 
         // 解析文档
         let parsed = self.parser.parse(source, path)?;
-        
+
         // 渲染为 HTML
         let rendered = self.renderer.render(&parsed, &self.config)?;
-        
+
         self.cache.insert(path.to_string(), rendered.clone());
 
         Ok(rendered)
     }
 
     /// 批量编译文档
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `documents` - 文档映射（路径 -> 内容）
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// 编译结果
     pub fn compile_batch(&mut self, documents: &HashMap<String, String>) -> CompileResult {
         let start_time = Instant::now();

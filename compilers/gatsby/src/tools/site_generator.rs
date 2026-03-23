@@ -2,12 +2,18 @@
 //! 提供静态站点生成的核心功能
 
 use crate::{
+    GatsbyConfig,
     tools::theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
-    GatsbyConfig, types::Result,
+    types::Result,
 };
 use nargo_types::Document;
 use rayon::prelude::*;
-use std::{collections::HashMap, fs, path::PathBuf, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    fs,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 /// 语言分组的文档映射
 pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
@@ -45,7 +51,7 @@ impl StaticSiteGenerator {
 
         // 并行生成页面
         let results = Arc::new(Mutex::new(Vec::new()));
-        
+
         all_docs_by_lang.par_iter().for_each(|(lang, docs)| {
             let nav_items = self.generate_nav_items(lang);
 
@@ -67,7 +73,7 @@ impl StaticSiteGenerator {
 
             for (path, doc) in docs {
                 let results_clone = Arc::clone(&results);
-                
+
                 let result = (|| -> Result<()> {
                     let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
                     let html_path = normalized_path.replace(".md", ".html");
@@ -108,11 +114,11 @@ impl StaticSiteGenerator {
 
                     Ok(())
                 })();
-                
+
                 results_clone.lock().unwrap().push(result);
             }
         });
-        
+
         let mut results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
 
         // 检查是否有错误
@@ -142,7 +148,8 @@ impl StaticSiteGenerator {
                 .replace("{{ lang }}", &default_lang)
                 .replace("{{ year }}", &chrono::Utc::now().format("%Y").to_string())
                 .replace("{{ site_title }}", self.theme.site_title())
-        } else {
+        }
+        else {
             // 如果模板不存在，使用默认HTML
             format!(
                 r#"<!DOCTYPE html>
@@ -215,11 +222,14 @@ impl StaticSiteGenerator {
         let site_url = self.config.site_url().unwrap_or("https://example.com");
         let sitemap_url = format!("{}/sitemap.xml", site_url.trim_end_matches('/'));
 
-        let robots = format!(r#"User-agent: *
+        let robots = format!(
+            r#"User-agent: *
 Allow: /
 
 Sitemap: {}
-"#, sitemap_url);
+"#,
+            sitemap_url
+        );
 
         fs::write(robots_path, robots)?;
         Ok(())

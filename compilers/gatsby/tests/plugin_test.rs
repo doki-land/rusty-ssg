@@ -1,5 +1,7 @@
-use gatsby::plugin::{Plugin, PluginMeta, PluginContext, PluginRegistry, Node, Page};
-use gatsby::config::PluginConfig;
+use gatsby::{
+    config::PluginConfig,
+    plugin::{Node, Page, Plugin, PluginContext, PluginMeta, PluginRegistry},
+};
 use nargo_types::NargoValue;
 use std::collections::HashMap;
 
@@ -72,13 +74,7 @@ fn test_plugin_hooks() {
     plugin.on_post_build(&mut context).unwrap();
 
     // 验证所有钩子都被调用
-    assert_eq!(plugin.called_hooks, [
-        "on_pre_bootstrap",
-        "on_bootstrap",
-        "on_post_bootstrap",
-        "on_pre_build",
-        "on_post_build"
-    ]);
+    assert_eq!(plugin.called_hooks, ["on_pre_bootstrap", "on_bootstrap", "on_post_bootstrap", "on_pre_build", "on_post_build"]);
 }
 
 #[test]

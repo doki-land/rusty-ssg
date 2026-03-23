@@ -1,6 +1,9 @@
 //! HTML 渲染器
 
-use crate::compiler::{ComponentRegistry, parser::ast::{AstNode, InterpolationType, DirectiveType}};
+use crate::compiler::{
+    ComponentRegistry,
+    parser::ast::{AstNode, DirectiveType, InterpolationType},
+};
 use std::collections::HashMap;
 
 /// 模板上下文，用于存储变量和数据
@@ -139,14 +142,14 @@ impl HtmlRenderer {
     pub fn render_astro(&self, template: &str, context: &Context) -> String {
         // 执行插件预处理
         let preprocessed_template = self.execute_plugins(template);
-        
+
         // 使用解析器解析模板
         let mut parser = crate::compiler::parser::Parser::new(Box::leak(preprocessed_template.into_boxed_str()));
         let ast = parser.parse();
-        
+
         // 渲染 AST
         let rendered = self.render_ast(&ast, context);
-        
+
         // 执行插件后处理
         self.execute_plugins(&rendered)
     }
@@ -154,7 +157,7 @@ impl HtmlRenderer {
     /// 渲染抽象语法树
     fn render_ast(&self, nodes: &[AstNode], context: &Context) -> String {
         let mut result = String::new();
-        
+
         for node in nodes {
             match node {
                 AstNode::Text(text) => result.push_str(text),
@@ -178,13 +181,13 @@ impl HtmlRenderer {
                                 if arguments.len() >= 3 {
                                     let var_name = &arguments[0];
                                     let array_name = &arguments[2];
-                                    
+
                                     if let Some(array) = context.get(array_name) {
                                         if let Some(array) = array.as_array() {
                                             for item in array {
                                                 let mut item_context = context.clone();
                                                 item_context.insert(var_name.to_string(), item.clone());
-                                                
+
                                                 let processed_content = self.render_ast(content, &item_context);
                                                 result.push_str(&processed_content);
                                             }
@@ -239,12 +242,13 @@ impl HtmlRenderer {
                 AstNode::Component { name, attributes, content, self_closing } => {
                     // 提取组件 props
                     let props = self.extract_component_props(attributes, context);
-                    
+
                     // 渲染组件
                     if let Some(component) = self.component_registry.get(name) {
                         let component_html = component.render(&props);
                         result.push_str(&component_html);
-                    } else {
+                    }
+                    else {
                         // 如果组件不存在，渲染为普通标签
                         result.push_str(&format!("<{}", name));
                         for (attr_name, attr_value) in attributes {
@@ -252,7 +256,8 @@ impl HtmlRenderer {
                         }
                         if *self_closing {
                             result.push_str(" />");
-                        } else {
+                        }
+                        else {
                             result.push_str(">");
                             if let Some(content) = content {
                                 let processed_content = self.render_ast(content, context);
@@ -266,13 +271,14 @@ impl HtmlRenderer {
                     // 处理布局组件
                     let props = self.extract_component_props(attributes, context);
                     let processed_content = self.render_ast(content, context);
-                    
+
                     if let Some(component) = self.component_registry.get(name) {
                         let mut layout_props = props;
                         layout_props.insert("children".to_string(), serde_json::Value::String(processed_content));
                         let layout_html = component.render(&layout_props);
                         result.push_str(&layout_html);
-                    } else {
+                    }
+                    else {
                         // 如果布局组件不存在，直接渲染内容
                         result.push_str(&processed_content);
                     }
@@ -284,7 +290,7 @@ impl HtmlRenderer {
                 }
             }
         }
-        
+
         result
     }
 
@@ -293,7 +299,7 @@ impl HtmlRenderer {
         // 简单的表达式评估实现
         // 支持变量访问和基本的属性访问
         let expression = expression.trim();
-        
+
         // 处理属性访问，如 user.name
         if expression.contains('.') {
             let parts: Vec<&str> = expression.split('.').collect();
@@ -305,7 +311,8 @@ impl HtmlRenderer {
                             serde_json::Value::Object(obj) => {
                                 if let Some(next_value) = obj.get(*part) {
                                     current_value = next_value;
-                                } else {
+                                }
+                                else {
                                     return serde_json::Value::Null;
                                 }
                             }
@@ -315,23 +322,28 @@ impl HtmlRenderer {
                     return current_value.clone();
                 }
             }
-        } else if let Some(value) = context.get(expression) {
+        }
+        else if let Some(value) = context.get(expression) {
             return value.clone();
         }
-        
+
         // 尝试解析为字面量
         if let Ok(num) = expression.parse::<i64>() {
             return serde_json::Value::Number(serde_json::Number::from(num));
-        } else if let Ok(num) = expression.parse::<f64>() {
+        }
+        else if let Ok(num) = expression.parse::<f64>() {
             return serde_json::Value::Number(serde_json::Number::from_f64(num).unwrap());
-        } else if expression == "true" {
+        }
+        else if expression == "true" {
             return serde_json::Value::Bool(true);
-        } else if expression == "false" {
+        }
+        else if expression == "false" {
             return serde_json::Value::Bool(false);
-        } else if expression == "null" {
+        }
+        else if expression == "null" {
             return serde_json::Value::Null;
         }
-        
+
         serde_json::Value::Null
     }
 
@@ -339,7 +351,7 @@ impl HtmlRenderer {
     fn evaluate_condition(&self, condition: &str, context: &Context) -> bool {
         // 简单的条件评估实现
         let condition = condition.trim();
-        
+
         // 处理逻辑运算符
         if condition.contains(" && ") {
             let parts: Vec<&str> = condition.split(" && ").collect();
@@ -349,7 +361,8 @@ impl HtmlRenderer {
                 }
             }
             return true;
-        } else if condition.contains(" || ") {
+        }
+        else if condition.contains(" || ") {
             let parts: Vec<&str> = condition.split(" || ").collect();
             for part in parts {
                 if self.evaluate_condition(part, context) {
@@ -357,24 +370,28 @@ impl HtmlRenderer {
                 }
             }
             return false;
-        } else if condition.starts_with("!") {
+        }
+        else if condition.starts_with("!") {
             let inner_condition = &condition[1..].trim();
             return !self.evaluate_condition(inner_condition, context);
-        } else if condition.contains(" == ") {
+        }
+        else if condition.contains(" == ") {
             let parts: Vec<&str> = condition.split(" == ").collect();
             if parts.len() == 2 {
                 let left = self.evaluate_expression(parts[0], context);
                 let right = self.evaluate_expression(parts[1], context);
                 return left == right;
             }
-        } else if condition.contains(" != ") {
+        }
+        else if condition.contains(" != ") {
             let parts: Vec<&str> = condition.split(" != ").collect();
             if parts.len() == 2 {
                 let left = self.evaluate_expression(parts[0], context);
                 let right = self.evaluate_expression(parts[1], context);
                 return left != right;
             }
-        } else if condition.contains(" > ") {
+        }
+        else if condition.contains(" > ") {
             let parts: Vec<&str> = condition.split(" > ").collect();
             if parts.len() == 2 {
                 let left = self.evaluate_expression(parts[0], context);
@@ -383,7 +400,8 @@ impl HtmlRenderer {
                     return left_num.as_f64().unwrap() > right_num.as_f64().unwrap();
                 }
             }
-        } else if condition.contains(" < ") {
+        }
+        else if condition.contains(" < ") {
             let parts: Vec<&str> = condition.split(" < ").collect();
             if parts.len() == 2 {
                 let left = self.evaluate_expression(parts[0], context);
@@ -392,7 +410,8 @@ impl HtmlRenderer {
                     return left_num.as_f64().unwrap() < right_num.as_f64().unwrap();
                 }
             }
-        } else if condition.contains(" >= ") {
+        }
+        else if condition.contains(" >= ") {
             let parts: Vec<&str> = condition.split(" >= ").collect();
             if parts.len() == 2 {
                 let left = self.evaluate_expression(parts[0], context);
@@ -401,7 +420,8 @@ impl HtmlRenderer {
                     return left_num.as_f64().unwrap() >= right_num.as_f64().unwrap();
                 }
             }
-        } else if condition.contains(" <= ") {
+        }
+        else if condition.contains(" <= ") {
             let parts: Vec<&str> = condition.split(" <= ").collect();
             if parts.len() == 2 {
                 let left = self.evaluate_expression(parts[0], context);
@@ -411,7 +431,7 @@ impl HtmlRenderer {
                 }
             }
         }
-        
+
         // 检查变量是否存在
         self.evaluate_expression(condition, context) != serde_json::Value::Null
     }
@@ -438,12 +458,12 @@ impl HtmlRenderer {
     /// 提取组件 props
     fn extract_component_props(&self, attributes: &HashMap<String, String>, context: &Context) -> Context {
         let mut props = Context::new();
-        
+
         for (name, value) in attributes {
             let processed_value = self.process_prop_value(value, context);
             props.insert(name.to_string(), processed_value);
         }
-        
+
         props
     }
 

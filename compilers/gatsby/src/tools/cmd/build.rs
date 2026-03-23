@@ -111,7 +111,7 @@ impl BuildCommand {
             for entry in WalkDir::new(&static_dir).into_iter().filter_map(|e| e.ok()) {
                 let path = entry.path();
                 if path.is_file() {
-                    let relative_path = 
+                    let relative_path =
                         path.strip_prefix(&static_dir).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
                     let dest_path = static_out_dir.join(relative_path);
 

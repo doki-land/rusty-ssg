@@ -2,6 +2,7 @@
 
 //! Astro static site generator compiler
 
+pub mod cache;
 pub mod compiler;
 pub mod config;
 pub mod data;

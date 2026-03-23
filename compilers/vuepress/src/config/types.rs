@@ -298,14 +298,14 @@ impl VuePressConfig {
     /// 从目录查找并加载配置
     pub fn load_from_dir(dir: &std::path::PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let config_files = ["vuepress.config.toml", "vuepress.config.json", "vuepress.config.js"];
-        
+
         for file_name in &config_files {
             let config_path = dir.join(file_name);
             if config_path.exists() {
                 return Self::load_from_file(&config_path);
             }
         }
-        
+
         // 如果没有找到配置文件，返回默认配置
         Ok(Self::new())
     }
