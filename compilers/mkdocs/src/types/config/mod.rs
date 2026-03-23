@@ -266,6 +266,10 @@ fn default_validation_level_warn() -> ValidationLevel {
     ValidationLevel::Warn
 }
 
+fn default_true() -> bool {
+    true
+}
+
 /// 主题配置
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ThemeConfig {
@@ -434,6 +438,7 @@ impl MkDocsConfig {
     pub fn load_from_file(path: &std::path::PathBuf) -> Result<Self, crate::types::errors::MkDocsError> {
         let content = std::fs::read_to_string(path)?;
         let config = Self::from_yaml(&content)?;
+        let config = config.resolve_inheritance(path)?;
         config.validate()?;
         Ok(config)
     }
@@ -463,6 +468,87 @@ impl MkDocsConfig {
         }
 
         Ok(MkDocsConfig::default())
+    }
+
+    /// 解析配置继承
+    fn resolve_inheritance(
+        mut self,
+        config_path: &std::path::PathBuf,
+    ) -> Result<Self, crate::types::errors::MkDocsError> {
+        if let Some(inherit_path) = &self.inherit {
+            let parent_path = config_path
+                .parent()
+                .ok_or_else(|| crate::types::errors::MkDocsError::ConfigValidationError {
+                    message: "Cannot determine parent directory".to_string(),
+                })?
+                .join(inherit_path);
+
+            let parent = Self::load_from_file(&parent_path)?;
+            self = self.merge_with_parent(parent);
+        }
+        Ok(self)
+    }
+
+    /// 与父配置合并
+    fn merge_with_parent(mut self, parent: Self) -> Self {
+        if self.site_name.is_empty() {
+            self.site_name = parent.site_name;
+        }
+        if self.site_description.is_none() {
+            self.site_description = parent.site_description;
+        }
+        if self.site_author.is_none() {
+            self.site_author = parent.site_author;
+        }
+        if self.site_url.is_none() {
+            self.site_url = parent.site_url;
+        }
+        if self.repo_url.is_none() {
+            self.repo_url = parent.repo_url;
+        }
+        if self.repo_name.is_none() {
+            self.repo_name = parent.repo_name;
+        }
+        if self.edit_uri.is_none() {
+            self.edit_uri = parent.edit_uri;
+        }
+        if self.edit_uri_template.is_none() {
+            self.edit_uri_template = parent.edit_uri_template;
+        }
+        if self.copyright.is_none() {
+            self.copyright = parent.copyright;
+        }
+
+        if self.docs_dir == "docs" && parent.docs_dir != "docs" {
+            self.docs_dir = parent.docs_dir;
+        }
+        if self.site_dir == "site" && parent.site_dir != "site" {
+            self.site_dir = parent.site_dir;
+        }
+
+        if self.nav.is_empty() && !parent.nav.is_empty() {
+            self.nav = parent.nav;
+        }
+
+        if self.markdown_extensions.is_empty() && !parent.markdown_extensions.is_empty() {
+            self.markdown_extensions = parent.markdown_extensions;
+        }
+
+        if self.plugins.is_empty() && !parent.plugins.is_empty() {
+            self.plugins = parent.plugins;
+        }
+
+        for (key, value) in parent.extra {
+            self.extra.entry(key).or_insert(value);
+        }
+
+        self.extra_css.extend(parent.extra_css);
+        self.extra_javascript.extend(parent.extra_javascript);
+        self.extra_templates.extend(parent.extra_templates);
+        self.hooks.extend(parent.hooks);
+        self.watch.extend(parent.watch);
+
+        self
     }
 
     /// 验证配置是否有效
@@ -501,7 +587,7 @@ impl MkDocsConfig {
     }
 
     /// 获取 Markdown 扩展配置
-    pub fn markdown_extensions(&self) -> &Vec<String> {
+    pub fn markdown_extensions(&self) -> &Vec<MarkdownExtension> {
         &self.markdown_extensions
     }
 
@@ -521,8 +607,63 @@ impl MkDocsConfig {
     }
 
     /// 获取额外的 JavaScript 文件
-    pub fn extra_javascript(&self) -> &Vec<String> {
+    pub fn extra_javascript(&self) -> &Vec<ExtraJavaScript> {
         &self.extra_javascript
+    }
+
+    /// 获取编辑 URI
+    pub fn edit_uri(&self) -> Option<&str> {
+        self.edit_uri.as_deref()
+    }
+
+    /// 获取编辑 URI 模板
+    pub fn edit_uri_template(&self) -> Option<&str> {
+        self.edit_uri_template.as_deref()
+    }
+
+    /// 获取验证配置
+    pub fn validation(&self) -> &ValidationConfig {
+        &self.validation
+    }
+
+    /// 是否使用目录 URL
+    pub fn use_directory_urls(&self) -> bool {
+        self.use_directory_urls
+    }
+
+    /// 获取开发服务器地址
+    pub fn dev_addr(&self) -> &str {
+        &self.dev_addr
+    }
+
+    /// 获取远程分支
+    pub fn remote_branch(&self) -> &str {
+        &self.remote_branch
+    }
+
+    /// 获取远程名称
+    pub fn remote_name(&self) -> &str {
+        &self.remote_name
+    }
+
+    /// 获取监听目录
+    pub fn watch(&self) -> &Vec<String> {
+        &self.watch
+    }
+
+    /// 获取 Hooks 脚本
+    pub fn hooks(&self) -> &Vec<String> {
+        &self.hooks
+    }
+
+    /// 获取排除文档模式
+    pub fn exclude_docs(&self) -> Option<&str> {
+        self.exclude_docs.as_deref()
+    }
+
+    /// 获取草稿文档模式
+    pub fn draft_docs(&self) -> Option<&str> {
+        self.draft_docs.as_deref()
     }
 }
 

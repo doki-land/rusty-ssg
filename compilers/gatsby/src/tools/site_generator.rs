@@ -99,7 +99,74 @@ impl StaticSiteGenerator {
         }
 
         self.generate_root_index(output_dir)?;
+        self.generate_404_page(output_dir)?;
+        self.generate_sitemap(output_dir)?;
+        self.generate_robots_txt(output_dir)?;
 
+        Ok(())
+    }
+
+    /// 生成 404 页面
+    fn generate_404_page(&self, output_dir: &PathBuf) -> Result<()> {
+        let default_lang = self.get_default_language();
+        let not_found_path = output_dir.join("404.html");
+
+        let html = format!(
+            r#"<!DOCTYPE html>
+<html lang="{default_lang}">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 Not Found</title>
+</head>
+<body>
+    <div style="text-align: center; padding: 4rem;">
+        <h1>404</h1>
+        <h2>Page Not Found</h2>
+        <p>The page you are looking for does not exist.</p>
+        <a href="./">Go back to home</a>
+    </div>
+</body>
+</html>
+"#
+        );
+
+        fs::write(not_found_path, html)?;
+        Ok(())
+    }
+
+    /// 生成 sitemap.xml
+    fn generate_sitemap(&self, output_dir: &PathBuf) -> Result<()> {
+        let sitemap_path = output_dir.join("sitemap.xml");
+
+        let sitemap = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://example.com/</loc>
+        <lastmod>{}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>
+"#, chrono::Utc::now().format("%Y-%m-%d").to_string()
+        );
+
+        fs::write(sitemap_path, sitemap)?;
+        Ok(())
+    }
+
+    /// 生成 robots.txt
+    fn generate_robots_txt(&self, output_dir: &PathBuf) -> Result<()> {
+        let robots_path = output_dir.join("robots.txt");
+
+        let robots = r#"User-agent: *
+Allow: /
+
+Sitemap: https://example.com/sitemap.xml
+"#;
+
+        fs::write(robots_path, robots)?;
         Ok(())
     }
 

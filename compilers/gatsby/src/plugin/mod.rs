@@ -212,6 +212,72 @@ pub trait Plugin: Send + Sync {
     fn on_post_extract_queries(&mut self, _context: &mut PluginContext) -> Result<()> {
         Ok(())
     }
+
+    /// onPreRenderHTML 钩子
+    /// 在渲染 HTML 前调用
+    fn on_pre_render_html(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPostRenderHTML 钩子
+    /// 在渲染 HTML 后调用
+    fn on_post_render_html(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onRouteUpdate 钩子
+    /// 在路由更新时调用
+    fn on_route_update(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onClientEntry 钩子
+    /// 在客户端入口时调用
+    fn on_client_entry(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onInitialClientRender 钩子
+    /// 在初始客户端渲染时调用
+    fn on_initial_client_render(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPreExtractQueries 钩子
+    /// 在提取查询前调用
+    fn on_extract_queries(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onCreateWebpackConfig 钩子
+    /// 在创建 Webpack 配置时调用
+    fn on_create_webpack_config(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPreSourceNodes 钩子
+    /// 在源代码节点前调用
+    fn on_pre_source_nodes(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPostSourceNodes 钩子
+    /// 在源代码节点后调用
+    fn on_post_source_nodes(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPreProcessSource 钩子
+    /// 在处理源代码前调用
+    fn on_pre_process_source(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPostProcessSource 钩子
+    /// 在处理源代码后调用
+    fn on_post_process_source(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// 插件注册表
@@ -300,6 +366,94 @@ impl PluginRegistry {
     pub fn on_post_extract_queries_all(&mut self, context: &mut PluginContext) -> Result<()> {
         for plugin in &mut self.plugins {
             plugin.on_post_extract_queries(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_pre_render_html 钩子
+    pub fn on_pre_render_html_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_pre_render_html(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_post_render_html 钩子
+    pub fn on_post_render_html_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_post_render_html(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_route_update 钩子
+    pub fn on_route_update_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_route_update(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_client_entry 钩子
+    pub fn on_client_entry_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_client_entry(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_initial_client_render 钩子
+    pub fn on_initial_client_render_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_initial_client_render(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_extract_queries 钩子
+    pub fn on_extract_queries_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_extract_queries(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_create_webpack_config 钩子
+    pub fn on_create_webpack_config_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_create_webpack_config(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_pre_source_nodes 钩子
+    pub fn on_pre_source_nodes_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_pre_source_nodes(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_post_source_nodes 钩子
+    pub fn on_post_source_nodes_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_post_source_nodes(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_pre_process_source 钩子
+    pub fn on_pre_process_source_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_pre_process_source(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_post_process_source 钩子
+    pub fn on_post_process_source_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_post_process_source(context)?;
         }
         Ok(())
     }

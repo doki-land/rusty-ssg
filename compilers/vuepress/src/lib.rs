@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-#![doc = "VuTeX 文档编译器 - 将 Markdown 文档编译为元信息供 JS 运行时使用"]
+#![doc = "VuePress 文档编译器 - 将 Markdown 文档编译为元信息供 JS 运行时使用"]
 
 pub mod compiler;
 pub mod config;
@@ -16,7 +16,7 @@ pub use types::{CodeWriter, CompileMode, CompileOptions, Cursor, ErrorKind, Narg
 
 pub use types_config::{
     BuildConfig, ConfigError, ConfigValidation, FooterConfig, LocaleConfig, MarkdownConfig, NavItem as ConfigNavItem,
-    PluginConfig, SidebarItem, SocialLink, ThemeConfig, VutexConfig,
+    PluginConfig, SidebarItem, SocialLink, ThemeConfig, VuePressConfig,
 };
 
 pub use types::{Result, VutexError};
@@ -24,7 +24,7 @@ pub use types::{Result, VutexError};
 pub use plugin::{PluginContext, PluginMeta, PluginRegistry, VutexPlugin, katex::KaTeXPlugin};
 pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage};
 
-pub use compiler::VutexCompiler;
+pub use compiler::VuePressCompiler;
 pub use nargo_types::Document;
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
@@ -85,7 +85,7 @@ impl CompileResult {
 ///
 /// 编译后的文档
 pub fn compile_single(source: &str, path: &str) -> Result<Document> {
-    let mut compiler = VutexCompiler::new();
+    let mut compiler = VuePressCompiler::new();
     compiler.compile_document(source, path)
 }
 
@@ -99,6 +99,6 @@ pub fn compile_single(source: &str, path: &str) -> Result<Document> {
 ///
 /// 编译结果
 pub fn compile_batch(documents: &HashMap<String, String>) -> CompileResult {
-    let mut compiler = VutexCompiler::new();
+    let mut compiler = VuePressCompiler::new();
     compiler.compile_batch(documents)
 }

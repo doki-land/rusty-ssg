@@ -1,8 +1,8 @@
 //! 编译器模块
-//! 提供 VuTeX 文档编译器的核心功能
+//! 提供 VuePress 文档编译器的核心功能
 
 use crate::types::{
-    Result, VutexConfig,
+    Result, VuePressConfig,
     ipc::{InvokePluginRequest, PluginContext},
 };
 use nargo_document::generator::markdown::MarkdownRenderer;
@@ -18,12 +18,12 @@ pub use html_renderer::{HtmlRenderer, HtmlRendererConfig};
 
 use crate::plugin_host::PluginHost;
 
-/// VuTeX 文档编译器
+/// VuePress 文档编译器
 ///
-/// 负责将 Markdown 文档编译为 VuTeX 文档格式，支持通过 Node.js 混合执行模式调用插件
-pub struct VutexCompiler {
+/// 负责将 Markdown 文档编译为 VuePress 文档格式，支持通过 Node.js 混合执行模式调用插件
+pub struct VuePressCompiler {
     /// 编译器配置
-    config: VutexConfig,
+    config: VuePressConfig,
     /// Markdown 渲染器
     markdown_renderer: MarkdownRenderer,
     /// 编译缓存
@@ -32,11 +32,11 @@ pub struct VutexCompiler {
     plugin_host: Option<PluginHost>,
 }
 
-impl VutexCompiler {
+impl VuePressCompiler {
     /// 创建新的编译器（无插件支持，降级模式）
     pub fn new() -> Self {
         Self {
-            config: VutexConfig::new(),
+            config: VuePressConfig::new(),
             markdown_renderer: MarkdownRenderer::new(),
             cache: HashMap::new(),
             plugin_host: None,
@@ -48,7 +48,7 @@ impl VutexCompiler {
     /// # Arguments
     ///
     /// * `config` - 编译器配置
-    pub fn with_config(config: VutexConfig) -> Self {
+    pub fn with_config(config: VuePressConfig) -> Self {
         Self { config, markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new(), plugin_host: None }
     }
 
@@ -59,7 +59,7 @@ impl VutexCompiler {
     /// * `plugin_host` - 插件宿主实例
     pub fn with_plugin_host(plugin_host: PluginHost) -> Self {
         Self {
-            config: VutexConfig::new(),
+            config: VuePressConfig::new(),
             markdown_renderer: MarkdownRenderer::new(),
             cache: HashMap::new(),
             plugin_host: Some(plugin_host),
@@ -72,17 +72,17 @@ impl VutexCompiler {
     ///
     /// * `config` - 编译器配置
     /// * `plugin_host` - 插件宿主实例
-    pub fn with_config_and_plugin_host(config: VutexConfig, plugin_host: PluginHost) -> Self {
+    pub fn with_config_and_plugin_host(config: VuePressConfig, plugin_host: PluginHost) -> Self {
         Self { config, markdown_renderer: MarkdownRenderer::new(), cache: HashMap::new(), plugin_host: Some(plugin_host) }
     }
 
     /// 获取编译器配置
-    pub fn config(&self) -> &VutexConfig {
+    pub fn config(&self) -> &VuePressConfig {
         &self.config
     }
 
     /// 获取可变的编译器配置
-    pub fn config_mut(&mut self) -> &mut VutexConfig {
+    pub fn config_mut(&mut self) -> &mut VuePressConfig {
         &mut self.config
     }
 
@@ -136,7 +136,7 @@ impl VutexCompiler {
             return Ok(cached.clone());
         }
 
-        let mut doc = parse_document(source, path)?;
+        let mut doc = crate::compiler::parser::parse_content_file(source, path)?
 
         let frontmatter_map = self.convert_frontmatter_to_map(&doc);
 
@@ -237,7 +237,7 @@ impl VutexCompiler {
     }
 }
 
-impl Default for VutexCompiler {
+impl Default for VuePressCompiler {
     fn default() -> Self {
         Self::new()
     }

@@ -7,7 +7,7 @@ use crate::{
         Result,
         theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     },
-    types::{LocaleConfig, VutexConfig},
+    types::{LocaleConfig, VuePressConfig},
 };
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -17,14 +17,14 @@ pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
 /// 静态站点生成器
 pub struct StaticSiteGenerator {
     /// 配置
-    config: VutexConfig,
+    config: VuePressConfig,
     /// 默认主题
     theme: DefaultTheme,
 }
 
 impl StaticSiteGenerator {
     /// 创建新的静态站点生成器
-    pub fn new(config: VutexConfig) -> Result<Self> {
+    pub fn new(config: VuePressConfig) -> Result<Self> {
         let theme = DefaultTheme::new(config.clone())?;
 
         Ok(Self { config, theme })
@@ -412,15 +412,15 @@ impl ConfigLoader {
     /// # Errors
     ///
     /// 返回错误如果文件读取、解析或验证失败
-    pub fn load_from_file(path: &PathBuf) -> Result<VutexConfig> {
-        Ok(VutexConfig::load_from_file(path)?)
+    pub fn load_from_file(path: &PathBuf) -> Result<VuePressConfig> {
+        Ok(VuePressConfig::load_from_file(path)?)
     }
 
     /// 从目录查找并加载配置
     ///
     /// 按以下顺序查找配置文件：
-    /// 1. vutex.config.toml
-    /// 2. vutex.config.json
+    /// 1. vuepress.config.toml
+    /// 2. vuepress.config.json
     ///
     /// # Arguments
     ///
@@ -429,7 +429,7 @@ impl ConfigLoader {
     /// # Errors
     ///
     /// 返回错误如果配置文件读取、解析或验证失败
-    pub fn load_from_dir(dir: &PathBuf) -> Result<VutexConfig> {
-        Ok(VutexConfig::load_from_dir(dir)?)
+    pub fn load_from_dir(dir: &PathBuf) -> Result<VuePressConfig> {
+        Ok(VuePressConfig::load_from_dir(dir)?)
     }
 }
