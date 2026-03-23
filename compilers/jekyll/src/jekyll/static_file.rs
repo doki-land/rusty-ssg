@@ -73,7 +73,9 @@ impl StaticFile {
     /// 
     /// 相对路径
     pub fn relative_path<P: AsRef<Path>>(&self, base: P) -> Result<PathBuf> {
-        self.path.strip_prefix(base).map_err(|_| JekyllError::DirectoryNotFound(base.as_ref().display().to_string()).into())
+        self.path.strip_prefix(base)
+            .map(|p| p.to_path_buf())
+            .map_err(|_| JekyllError::DirectoryNotFound(base.as_ref().display().to_string()).into())
     }
 }
 
@@ -128,7 +130,7 @@ impl StaticFileManager {
             let relative_path = path.strip_prefix(dir).unwrap();
             let file_dest_dir = dest_dir.join(relative_path.parent().unwrap_or_else(|| Path::new("")));
             
-            match StaticFile::from_path(path, file_dest_dir) {
+            match StaticFile::from_path(path, &file_dest_dir) {
                 Ok(file) => {
                     self.add_file(file);
                     count += 1;

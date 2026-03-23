@@ -8,6 +8,7 @@ use crate::compiler::{
     renderer::html_renderer::Context,
 };
 use crate::config::{ConfigManager, AstroConfig};
+use crate::plugin::{PluginManager, PluginContext, PluginLifecycleEvent};
 use std::{fs, fs::File, io::Write, path::Path};
 use walkdir::WalkDir;
 
@@ -144,7 +145,7 @@ fn optimize_build(output_dir: &Path, config: &AstroConfig) {
     println!("Optimizing build output...");
     
     let optimizer = Optimizer::new(
-        config.build.compress,
+        config.compress_html,
         true, // 启用代码分割
         true  // 启用预加载
     );
@@ -254,7 +255,7 @@ fn generate_essential_files(out_path: &Path, config: &AstroConfig) {
         <priority>1.0</priority>
     </url>
 </urlset>
-"#, config.base_url, chrono::Utc::now().format("%Y-%m-%d"));
+"#, config.base.as_deref().unwrap_or("/"), chrono::Utc::now().format("%Y-%m-%d"));
     
     if let Ok(mut file) = File::create(&sitemap_path) {
         if let Err(err) = file.write_all(sitemap_content.as_bytes()) {

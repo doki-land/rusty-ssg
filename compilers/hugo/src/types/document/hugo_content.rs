@@ -319,6 +319,28 @@ pub struct ContentResource {
     pub size: Option<u64>,
 }
 
+/// 目录项
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TableOfContentsItem {
+    /// 标题文本
+    pub text: String,
+    /// 标题级别（1-6）
+    pub level: u32,
+    /// 锚点 ID
+    pub id: String,
+    /// 子目录项
+    pub children: Vec<TableOfContentsItem>,
+}
+
+/// 目录结构
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TableOfContents {
+    /// 目录项列表
+    pub items: Vec<TableOfContentsItem>,
+    /// 目录 HTML
+    pub html: String,
+}
+
 /// Hugo 内容页面
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HugoPage {
@@ -340,6 +362,10 @@ pub struct HugoPage {
     pub section: Option<String>,
     /// 页面语言
     pub lang: Option<String>,
+    /// 目录结构
+    pub table_of_contents: Option<TableOfContents>,
+    /// 永久链接
+    pub permalink: Option<String>,
 }
 
 impl HugoPage {
@@ -355,6 +381,8 @@ impl HugoPage {
             children: Vec::new(),
             section: None,
             lang: None,
+            table_of_contents: None,
+            permalink: None,
         }
     }
 
@@ -371,6 +399,39 @@ impl HugoPage {
     /// 检查是否为草稿
     pub fn is_draft(&self) -> bool {
         self.frontmatter.is_draft()
+    }
+
+    /// 生成目录
+    pub fn generate_table_of_contents(&mut self) {
+        // 检查 Front Matter 是否启用了目录
+        if let Some(toc) = self.frontmatter.toc {
+            if !toc {
+                return;
+            }
+        }
+
+        if let Some(toc) = HugoContentLoader::generate_table_of_contents(&self.content) {
+            self.table_of_contents = Some(toc);
+        }
+    }
+
+    /// 生成永久链接
+    pub fn generate_permalink(&mut self, base_url: &str) {
+        // 如果 Front Matter 中已经设置了 permalink，直接使用
+        if let Some(permalink) = &self.frontmatter.permalink {
+            self.permalink = Some(permalink.to_string());
+            return;
+        }
+
+        // 如果 Front Matter 中设置了 url，使用它
+        if let Some(url) = &self.frontmatter.url {
+            self.permalink = Some(format!("{}{}", base_url, url));
+            return;
+        }
+
+        // 否则根据文件路径生成
+        let permalink = HugoContentLoader::generate_permalink(&self.relative_path, &self.frontmatter);
+        self.permalink = Some(format!("{}{}", base_url, permalink));
     }
 }
 
@@ -471,6 +532,108 @@ impl HugoContentIndex {
     /// 根据路径获取页面
     pub fn get_page(&self, path: &Path) -> Option<&HugoPage> {
         self.page_map.get(path)
+    }
+
+    /// 按日期排序页面（降序）
+    pub fn sort_by_date(&self) -> Vec<&HugoPage> {
+        let mut sorted = self.pages.iter().collect::<Vec<_>>();
+        sorted.sort_by(|a, b| {
+            let date_a = a.frontmatter.date.as_deref().unwrap_or("");
+            let date_b = b.frontmatter.date.as_deref().unwrap_or("");
+            date_b.cmp(date_a)
+        });
+        sorted
+    }
+
+    /// 按权重排序页面（升序）
+    pub fn sort_by_weight(&self) -> Vec<&HugoPage> {
+        let mut sorted = self.pages.iter().collect::<Vec<_>>();
+        sorted.sort_by(|a, b| {
+            let weight_a = a.frontmatter.weight.unwrap_or(0);
+            let weight_b = b.frontmatter.weight.unwrap_or(0);
+            weight_a.cmp(&weight_b)
+        });
+        sorted
+    }
+
+    /// 按标题排序页面（升序）
+    pub fn sort_by_title(&self) -> Vec<&HugoPage> {
+        let mut sorted = self.pages.iter().collect::<Vec<_>>();
+        sorted.sort_by(|a, b| {
+            let title_a = a.title().unwrap_or("");
+            let title_b = b.title().unwrap_or("");
+            title_a.cmp(title_b)
+        });
+        sorted
+    }
+
+    /// 按 Section 分组页面
+    pub fn group_by_section(&self) -> std::collections::HashMap<String, Vec<&HugoPage>> {
+        let mut groups = std::collections::HashMap::new();
+        
+        for page in &self.pages {
+            if let Some(section) = &page.section {
+                groups.entry(section.clone())
+                    .or_insert_with(Vec::new)
+                    .push(page);
+            } else {
+                groups.entry("_".to_string())
+                    .or_insert_with(Vec::new)
+                    .push(page);
+            }
+        }
+        
+        groups
+    }
+
+    /// 按标签分组页面
+    pub fn group_by_tag(&self) -> std::collections::HashMap<String, Vec<&HugoPage>> {
+        let mut groups = std::collections::HashMap::new();
+        
+        for page in &self.pages {
+            if let Some(tags) = &page.frontmatter.tags {
+                for tag in tags {
+                    groups.entry(tag.clone())
+                        .or_insert_with(Vec::new)
+                        .push(page);
+                }
+            }
+        }
+        
+        groups
+    }
+
+    /// 按分类分组页面
+    pub fn group_by_category(&self) -> std::collections::HashMap<String, Vec<&HugoPage>> {
+        let mut groups = std::collections::HashMap::new();
+        
+        for page in &self.pages {
+            if let Some(categories) = &page.frontmatter.categories {
+                for category in categories {
+                    groups.entry(category.clone())
+                        .or_insert_with(Vec::new)
+                        .push(page);
+                }
+            }
+        }
+        
+        groups
+    }
+
+    /// 获取指定 Section 的页面
+    pub fn get_section_pages(&self, section: &str) -> Vec<&HugoPage> {
+        self.pages
+            .iter()
+            .filter(|page| page.section.as_deref() == Some(section))
+            .collect()
+    }
+
+    /// 获取所有非草稿页面
+    pub fn get_published_pages(&self) -> Vec<&HugoPage> {
+        self.pages
+            .iter()
+            .filter(|page| !page.is_draft())
+            .collect()
     }
 }
 
@@ -665,6 +828,9 @@ impl HugoContentLoader {
         page.frontmatter = enhanced_frontmatter;
         page.content = body_content;
         page.section = section;
+        
+        // 生成目录
+        page.generate_table_of_contents();
 
         Ok(page)
     }
@@ -694,6 +860,143 @@ impl HugoContentLoader {
         } else {
             None
         }
+    }
+    
+    /// 生成目录结构
+    pub fn generate_table_of_contents(content: &str) -> Option<TableOfContents> {
+        use regex::Regex;
+        
+        // 匹配 Markdown 标题
+        let re = Regex::new(r"^(#{1,6})\s+(.+)$").unwrap();
+        let mut items = Vec::new();
+        let mut levels = Vec::new();
+        
+        for line in content.lines() {
+            if let Some(captures) = re.captures(line) {
+                let level = captures[1].len() as u32;
+                let text = captures[2].trim();
+                
+                // 生成锚点 ID
+                let id = text
+                    .to_lowercase()
+                    .replace(|c: char| !c.is_alphanumeric() && c != ' ', "-")
+                    .trim_matches('-')
+                    .to_string();
+                
+                let mut item = TableOfContentsItem {
+                    text: text.to_string(),
+                    level,
+                    id,
+                    children: Vec::new(),
+                };
+                
+                // 维护目录层级
+                while !levels.is_empty() && levels.last().unwrap() >= &level {
+                    levels.pop();
+                }
+                
+                if levels.is_empty() {
+                    items.push(item);
+                    levels.push(level);
+                } else {
+                    // 找到对应的父级节点
+                    let mut parent = &mut items;
+                    for (i, &l) in levels.iter().enumerate() {
+                        if i == levels.len() - 1 {
+                            parent.last_mut().unwrap().children.push(item);
+                            break;
+                        }
+                        parent = &mut parent.last_mut().unwrap().children;
+                    }
+                    levels.push(level);
+                }
+            }
+        }
+        
+        if items.is_empty() {
+            return None;
+        }
+        
+        // 生成 HTML
+        let html = Self::generate_toc_html(&items);
+        
+        Some(TableOfContents {
+            items,
+            html,
+        })
+    }
+    
+    /// 生成目录 HTML
+    fn generate_toc_html(items: &[TableOfContentsItem]) -> String {
+        let mut html = "<nav id=\"TableOfContents\"><ul>".to_string();
+        
+        for item in items {
+            html.push_str(&format!(
+                "<li><a href=\"#{}\">{}</a>",
+                item.id,
+                item.text
+            ));
+            
+            if !item.children.is_empty() {
+                html.push_str("<ul>");
+                html.push_str(&Self::generate_toc_html(&item.children));
+                html.push_str("</ul>");
+            }
+            
+            html.push_str("</li>");
+        }
+        
+        html.push_str("</ul></nav>");
+        html
+    }
+    
+    /// 生成永久链接
+    pub fn generate_permalink(relative_path: &Path, frontmatter: &HugoFrontMatter) -> String {
+        let mut parts = Vec::new();
+        
+        // 处理 Section
+        if let Some(section) = relative_path.components().next().and_then(|c| c.as_os_str().to_str()) {
+            if section != "_index.md" && section != "index.md" {
+                parts.push(section.to_string());
+            }
+        }
+        
+        // 处理文件名
+        let file_name = relative_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        if file_name != "_index.md" && file_name != "index.md" {
+            // 从文件名中提取 slug
+            let slug = if let Some(slug) = &frontmatter.slug {
+                slug.to_string()
+            } else if file_name.starts_with(|c: char| c.is_numeric()) {
+                // 处理 YYYY-MM-DD-filename.md 格式
+                file_name.split('-').skip(3).collect::<Vec<_>>().join("-")
+                    .trim_end_matches(".md")
+                    .trim_end_matches(".markdown")
+                    .to_string()
+            } else {
+                file_name
+                    .trim_end_matches(".md")
+                    .trim_end_matches(".markdown")
+                    .to_string()
+            };
+            
+            if !slug.is_empty() {
+                parts.push(slug);
+            }
+        }
+        
+        // 构建永久链接
+        let mut permalink = "/".to_string();
+        if !parts.is_empty() {
+            permalink.push_str(&parts.join("/"));
+        }
+        
+        // 对于非索引页面，添加尾部斜杠
+        if file_name != "_index.md" && file_name != "index.md" {
+            permalink.push('/');
+        }
+        
+        permalink
     }
 }
 
@@ -732,5 +1035,197 @@ mod tests {
         let content = "Short content";
         let summary = HugoContentLoader::generate_summary(content);
         assert_eq!(summary, Some("Short content".to_string()));
+    }
+
+    #[test]
+    fn test_generate_table_of_contents() {
+        let content = r#"# Heading 1
+
+Some content
+
+## Heading 2
+
+More content
+
+### Heading 3
+
+Even more content
+
+# Another Heading 1
+
+Final content"#;
+        
+        let toc = HugoContentLoader::generate_table_of_contents(content);
+        assert!(toc.is_some());
+        
+        let toc = toc.unwrap();
+        assert_eq!(toc.items.len(), 2);
+        assert_eq!(toc.items[0].text, "Heading 1");
+        assert_eq!(toc.items[0].level, 1);
+        assert_eq!(toc.items[0].children.len(), 2);
+        assert_eq!(toc.items[0].children[0].text, "Heading 2");
+        assert_eq!(toc.items[0].children[0].level, 2);
+        assert_eq!(toc.items[0].children[0].children[0].text, "Heading 3");
+        assert_eq!(toc.items[0].children[0].children[0].level, 3);
+        assert_eq!(toc.items[1].text, "Another Heading 1");
+        assert_eq!(toc.items[1].level, 1);
+    }
+
+    #[test]
+    fn test_generate_table_of_contents_empty() {
+        let content = "No headings here";
+        let toc = HugoContentLoader::generate_table_of_contents(content);
+        assert_eq!(toc, None);
+    }
+
+    #[test]
+    fn test_generate_table_of_contents_html() {
+        let content = r#"# Heading 1
+
+## Heading 2"#;
+        
+        let toc = HugoContentLoader::generate_table_of_contents(content);
+        assert!(toc.is_some());
+        
+        let toc = toc.unwrap();
+        assert!(toc.html.contains("<nav id=\"TableOfContents\">"));
+        assert!(toc.html.contains("<a href=\"#heading-1\">Heading 1</a>"));
+        assert!(toc.html.contains("<a href=\"#heading-2\">Heading 2</a>"));
+    }
+
+    #[test]
+    fn test_generate_permalink() {
+        let path = PathBuf::from("posts/2024-01-01-my-post.md");
+        let frontmatter = HugoFrontMatter::new();
+        
+        let permalink = HugoContentLoader::generate_permalink(&path, &frontmatter);
+        assert_eq!(permalink, "/posts/my-post/");
+    }
+
+    #[test]
+    fn test_generate_permalink_with_slug() {
+        let path = PathBuf::from("posts/2024-01-01-my-post.md");
+        let mut frontmatter = HugoFrontMatter::new();
+        frontmatter.slug = Some("custom-slug".to_string());
+        
+        let permalink = HugoContentLoader::generate_permalink(&path, &frontmatter);
+        assert_eq!(permalink, "/posts/custom-slug/");
+    }
+
+    #[test]
+    fn test_generate_permalink_index() {
+        let path = PathBuf::from("posts/_index.md");
+        let frontmatter = HugoFrontMatter::new();
+        
+        let permalink = HugoContentLoader::generate_permalink(&path, &frontmatter);
+        assert_eq!(permalink, "/posts/");
+    }
+
+    #[test]
+    fn test_generate_permalink_root() {
+        let path = PathBuf::from("index.md");
+        let frontmatter = HugoFrontMatter::new();
+        
+        let permalink = HugoContentLoader::generate_permalink(&path, &frontmatter);
+        assert_eq!(permalink, "/");
+    }
+
+    #[test]
+    fn test_sort_by_date() {
+        let mut index = HugoContentIndex::new();
+        
+        // 创建测试页面
+        let mut page1 = HugoPage::new(PathBuf::from("page1.md"), PathBuf::from("page1.md"));
+        page1.frontmatter.date = Some("2024-01-01".to_string());
+        
+        let mut page2 = HugoPage::new(PathBuf::from("page2.md"), PathBuf::from("page2.md"));
+        page2.frontmatter.date = Some("2024-02-01".to_string());
+        
+        let mut page3 = HugoPage::new(PathBuf::from("page3.md"), PathBuf::from("page3.md"));
+        page3.frontmatter.date = Some("2023-12-01".to_string());
+        
+        index.add_page(page1);
+        index.add_page(page2);
+        index.add_page(page3);
+        
+        let sorted = index.sort_by_date();
+        assert_eq!(sorted.len(), 3);
+        assert_eq!(sorted[0].frontmatter.date, Some("2024-02-01".to_string()));
+        assert_eq!(sorted[1].frontmatter.date, Some("2024-01-01".to_string()));
+        assert_eq!(sorted[2].frontmatter.date, Some("2023-12-01".to_string()));
+    }
+
+    #[test]
+    fn test_sort_by_weight() {
+        let mut index = HugoContentIndex::new();
+        
+        // 创建测试页面
+        let mut page1 = HugoPage::new(PathBuf::from("page1.md"), PathBuf::from("page1.md"));
+        page1.frontmatter.weight = Some(3);
+        
+        let mut page2 = HugoPage::new(PathBuf::from("page2.md"), PathBuf::from("page2.md"));
+        page2.frontmatter.weight = Some(1);
+        
+        let mut page3 = HugoPage::new(PathBuf::from("page3.md"), PathBuf::from("page3.md"));
+        page3.frontmatter.weight = Some(2);
+        
+        index.add_page(page1);
+        index.add_page(page2);
+        index.add_page(page3);
+        
+        let sorted = index.sort_by_weight();
+        assert_eq!(sorted.len(), 3);
+        assert_eq!(sorted[0].frontmatter.weight, Some(1));
+        assert_eq!(sorted[1].frontmatter.weight, Some(2));
+        assert_eq!(sorted[2].frontmatter.weight, Some(3));
+    }
+
+    #[test]
+    fn test_group_by_section() {
+        let mut index = HugoContentIndex::new();
+        
+        // 创建测试页面
+        let mut page1 = HugoPage::new(PathBuf::from("posts/page1.md"), PathBuf::from("posts/page1.md"));
+        page1.section = Some("posts".to_string());
+        
+        let mut page2 = HugoPage::new(PathBuf::from("posts/page2.md"), PathBuf::from("posts/page2.md"));
+        page2.section = Some("posts".to_string());
+        
+        let mut page3 = HugoPage::new(PathBuf::from("about.md"), PathBuf::from("about.md"));
+        page3.section = Some("about".to_string());
+        
+        index.add_page(page1);
+        index.add_page(page2);
+        index.add_page(page3);
+        
+        let groups = index.group_by_section();
+        assert_eq!(groups.len(), 2);
+        assert_eq!(groups.get("posts").unwrap().len(), 2);
+        assert_eq!(groups.get("about").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_group_by_tag() {
+        let mut index = HugoContentIndex::new();
+        
+        // 创建测试页面
+        let mut page1 = HugoPage::new(PathBuf::from("page1.md"), PathBuf::from("page1.md"));
+        page1.frontmatter.tags = Some(vec!["rust".to_string(), "programming".to_string()]);
+        
+        let mut page2 = HugoPage::new(PathBuf::from("page2.md"), PathBuf::from("page2.md"));
+        page2.frontmatter.tags = Some(vec!["rust".to_string(), "web".to_string()]);
+        
+        let mut page3 = HugoPage::new(PathBuf::from("page3.md"), PathBuf::from("page3.md"));
+        page3.frontmatter.tags = Some(vec!["programming".to_string()]);
+        
+        index.add_page(page1);
+        index.add_page(page2);
+        index.add_page(page3);
+        
+        let groups = index.group_by_tag();
+        assert_eq!(groups.len(), 3);
+        assert_eq!(groups.get("rust").unwrap().len(), 2);
+        assert_eq!(groups.get("programming").unwrap().len(), 2);
+        assert_eq!(groups.get("web").unwrap().len(), 1);
     }
 }

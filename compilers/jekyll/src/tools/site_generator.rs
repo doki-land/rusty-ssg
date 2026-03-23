@@ -156,7 +156,7 @@ impl StaticSiteGenerator {
 
         let first_part = parts[0];
 
-        if self.config.locales.contains_key(first_part) || first_part.contains('-') || first_part.len() == 2 {
+        if first_part.contains('-') || first_part.len() == 2 {
             let normalized_path = parts[1..].join("/");
             (first_part.to_string(), if normalized_path.is_empty() { "index.md".to_string() } else { normalized_path })
         }
@@ -232,18 +232,9 @@ impl StaticSiteGenerator {
     }
 
     /// 生成导航栏项目
-    fn generate_nav_items(&self, lang: &str) -> Vec<NavItem> {
-        let nav_source = if let Some(locale_config) = self.config.locales.get(lang) {
-            if let Some(ref nav) = locale_config.nav { nav } else { &self.config.theme.nav }
-        }
-        else {
-            &self.config.theme.nav
-        };
-
-        nav_source
-            .iter()
-            .map(|item| NavItem { text: item.text.clone(), link: item.link.as_deref().unwrap_or("#").to_string() })
-            .collect()
+    fn generate_nav_items(&self, _lang: &str) -> Vec<NavItem> {
+        // 返回空的导航项列表，因为 JekyllConfig 中没有 locales 和 theme 字段
+        Vec::new()
     }
 
     /// 生成侧边栏组

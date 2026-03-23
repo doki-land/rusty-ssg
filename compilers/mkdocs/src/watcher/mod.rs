@@ -145,22 +145,18 @@ impl DevServer {
     /// 启动 HTTP 服务器
     async fn start_http_server(&self) -> Result<()>
     {
-        use hyper::service::service_fn;
         use hyper::body::Body;
-        use hyper::{Request, Response, StatusCode};
-        use hyper::server::conn::AddrIncoming;
-        use hyper::server::Builder;
+        use hyper::{Request, Response, StatusCode, Server};
         use std::fs::File;
         use std::io::Read;
         
         let output_dir = self.output_dir.clone();
         let addr = format!("{}:{}", self.addr, self.port).parse()?;
         
-        let incoming = AddrIncoming::bind(&addr)?;
-        let server = Builder::new(incoming).serve(hyper::service::service_fn(move |req| {
+        let service = hyper::service::service_fn(move |_req: Request<Body>| {
             let output_dir = output_dir.clone();
             async move {
-                let path = req.uri().path();
+                let path = _req.uri().path();
                 let file_path = if path == "/" {
                     output_dir.join("index.html")
                 } else {
@@ -184,8 +180,9 @@ impl DevServer {
                         .body(Body::from("404 Not Found"))?)
                 }
             }
-        }));
+        });
         
+        let server = Server::bind(&addr).serve(service);
         server.await?;
         
         Ok(())

@@ -122,22 +122,26 @@ impl SiteMetadataDataSource {
         let mut node = Node::new(id, NodeType::new("Site".to_string()), content_digest);
 
         // 创建 siteMetadata 对象
-        let mut site_metadata = HashMap::new();
+        use async_graphql_value::Name;
+        use indexmap::IndexMap;
+        
+        let mut site_metadata = IndexMap::new();
 
         if let Some(title) = title {
-            site_metadata.insert("title".to_string(), title);
+            site_metadata.insert(Name::new("title"), ConstValue::String(title));
         }
 
         if let Some(description) = description {
-            site_metadata.insert("description".to_string(), description);
+            site_metadata.insert(Name::new("description"), ConstValue::String(description));
         }
 
         if let Some(site_url) = site_url {
-            site_metadata.insert("siteUrl".to_string(), site_url);
+            site_metadata.insert(Name::new("siteUrl"), ConstValue::String(site_url));
         }
 
         // 将 siteMetadata 添加到节点
-        node.set_field("siteMetadata".to_string(), ConstValue::String(format!("{:?}", site_metadata)));
+        let site_metadata_value = ConstValue::Object(site_metadata);
+        node.set_field("siteMetadata".to_string(), site_metadata_value);
 
         Ok(node)
     }

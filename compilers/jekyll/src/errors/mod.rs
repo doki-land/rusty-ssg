@@ -429,3 +429,21 @@ impl From<std::io::Error> for PostError {
         PostError::FileSystemError(error)
     }
 }
+
+impl From<PostError> for JekyllError {
+    fn from(error: PostError) -> Self {
+        match error {
+            PostError::InvalidFilename(filename) => JekyllError::InvalidPostFilename(filename),
+            PostError::DateParseError(error) => JekyllError::DateParseError(error),
+            PostError::PermalinkError(error) => JekyllError::PermalinkError(error),
+            PostError::JekyllError(error) => error,
+            PostError::FileSystemError(error) => JekyllError::FileSystemError(error),
+        }
+    }
+}
+
+impl From<notify::Error> for JekyllError {
+    fn from(error: notify::Error) -> Self {
+        JekyllError::FileSystemError(std::io::Error::new(std::io::ErrorKind::Other, error.to_string()))
+    }
+}

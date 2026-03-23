@@ -127,16 +127,16 @@ impl LinkValidator {
 
     /// 验证导航链接
     pub fn validate_nav(&mut self) {
-        let nav_items = self.config.nav();
-        let nav_config = self.config.validation().nav;
+        let nav_items = self.config.nav().to_vec();
+        let not_found_level = self.config.validation().nav.not_found.clone();
         
         for item in nav_items {
-            self.validate_nav_item(item, nav_config.not_found);
+            self.validate_nav_item(&item, &not_found_level);
         }
     }
 
     /// 验证导航项
-    fn validate_nav_item(&mut self, item: &crate::types::NavItem, not_found_level: crate::types::ValidationLevel) {
+    fn validate_nav_item(&mut self, item: &crate::types::NavItem, not_found_level: &crate::types::ValidationLevel) {
         match item {
             crate::types::NavItem::String(_) => {
                 // 字符串类型的导航项不需要验证
@@ -145,7 +145,7 @@ impl LinkValidator {
                 for (_, value) in map {
                     match value {
                         crate::types::NavValue::String(path) => {
-                            self.validate_link(path, &not_found_level);
+                            self.validate_link(path, not_found_level);
                         }
                         crate::types::NavValue::List(items) => {
                             for sub_item in items {
@@ -199,14 +199,14 @@ impl LinkValidator {
         self.validate_nav();
 
         // 验证文档中的链接
-        let link_config = self.config.validation().links;
+        let not_found_level = self.config.validation().links.not_found.clone();
         for (path, content) in documents {
-            self.validate_document_links(path, content, link_config.not_found);
+            self.validate_document_links(path, content, &not_found_level);
         }
     }
 
     /// 验证文档中的链接
-    fn validate_document_links(&mut self, _path: &str, content: &str, not_found_level: crate::types::ValidationLevel) {
+    fn validate_document_links(&mut self, _path: &str, content: &str, not_found_level: &crate::types::ValidationLevel) {
         // 简单的链接提取正则
         let link_regex = regex::Regex::new(r#"!(.*?)(.*?)"#).unwrap();
         

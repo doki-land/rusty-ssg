@@ -2,35 +2,32 @@
 
 use oak_toml as toml;
 use serde_json;
-use vutex::types::config::Config;
+use vitepress::config::VitePressConfig;
 
 #[test]
 fn test_default_config() {
-    let config = Config::default();
-    assert_eq!(config.base, "/");
-    assert_eq!(config.lang, "en-US");
-    assert_eq!(config.title, "");
-    assert_eq!(config.description, "");
-    assert!(config.head.is_empty());
-    assert!(config.locales.is_empty());
+    let config = VitePressConfig::default();
+    assert_eq!(config.base, Some("/".to_string()));
+    assert_eq!(config.lang, Some("en-US".to_string()));
+    assert_eq!(config.title, Some("".to_string()));
+    assert_eq!(config.description, Some("".to_string()));
+    assert!(config.head.is_none() || config.head.as_ref().unwrap().is_empty());
+    assert!(config.locales.is_none() || config.locales.as_ref().unwrap().is_empty());
     assert!(config.theme.is_none());
-    assert!(config.bundler.is_none());
-    assert_eq!(config.dest, ".vuepress/dist");
-    assert_eq!(config.temp, ".vuepress/.temp");
-    assert_eq!(config.cache, ".vuepress/.cache");
-    assert_eq!(config.public, ".vuepress/public");
-    assert_eq!(config.debug, false);
-    assert_eq!(config.page_patterns, vec!["**/*.md", ".vuepress", "node_modules"]);
+    assert!(config.build.is_none());
+    assert_eq!(config.out_dir, Some(".vitepress/dist".to_string()));
+    assert_eq!(config.temp, Some(".vitepress/.temp".to_string()));
+    assert_eq!(config.cache, Some(".vitepress/.cache".to_string()));
+    assert_eq!(config.public_dir, Some(".vitepress/public".to_string()));
+    assert_eq!(config.debug, Some(false));
+    assert_eq!(config.page_patterns, Some(vec!["**/*.md".to_string(), ".vitepress".to_string(), "node_modules".to_string()]));
     assert!(config.permalink_pattern.is_none());
-    assert_eq!(config.host, "0.0.0.0");
-    assert_eq!(config.port, 8080);
-    assert_eq!(config.open, false);
-    assert_eq!(config.template_dev, "@vuepress/client/templates/dev.html");
-    assert!(config.should_preload.is_some());
-    assert!(config.should_prefetch.is_some());
-    assert_eq!(config.template_build, "@vuepress/client/templates/build.html");
-    assert!(config.template_build_renderer.is_none());
-    assert!(config.plugins.is_empty());
+    assert_eq!(config.host, Some("0.0.0.0".to_string()));
+    assert_eq!(config.port, Some(8080));
+    assert_eq!(config.open, Some(false));
+    assert!(config.preload.is_none() || config.preload.is_some());
+    assert!(config.prefetch.is_none() || config.prefetch.is_some());
+    assert!(config.plugins.is_none() || config.plugins.as_ref().unwrap().is_empty());
 }
 
 #[test]

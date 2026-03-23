@@ -17,7 +17,7 @@ fn test_prism_plugin() {
 
     // 测试插件设置
     let mut config = HashMap::new();
-    config.insert("line_numbers".to_string(), NargoValue::Boolean(true));
+    config.insert("line_numbers".to_string(), NargoValue::Bool(true));
     config.insert("theme".to_string(), NargoValue::String("prism-tomorrow".to_string()));
     prism_plugin.setup(Some(config));
 

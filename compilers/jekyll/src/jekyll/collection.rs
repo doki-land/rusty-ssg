@@ -285,7 +285,7 @@ impl CollectionManager {
                         }
                     }
 
-                    let mut collection = Collection::new(name.clone(), config, collection_dir);
+                    let mut collection = Collection::new(name.clone(), config, collection_dir.clone());
 
                     if collection_dir.exists() {
                         count += collection.load_items()?;

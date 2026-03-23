@@ -21,7 +21,7 @@ pub mod watcher;
 pub use errors::Result;
 
 /// 导出类型模块
-pub use types::{BuildArgs, CheckArgs, CompileResult, DevArgs, InitArgs};
+pub use tools::{BuildArgs, CheckArgs, CompileResult, DevArgs, InitArgs};
 
 /// 导出编译器模块
 pub use compiler::*;

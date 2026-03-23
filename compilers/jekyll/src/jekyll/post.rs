@@ -4,7 +4,7 @@
 //!
 //! 提供 Jekyll 博客帖子的加载、解析和管理功能
 
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use serde_json::Value;
 
 use crate::errors::{JekyllError, PostError, Result};
@@ -341,12 +341,14 @@ impl PostManager {
         let mut count = 0;
 
         if let Some(posts_dir) = self.structure.posts_dir() {
-            count += self.load_posts_from_dir(posts_dir, false)?;
+            let posts_dir = posts_dir;
+            count += self.load_posts_from_dir(&posts_dir, false)?;
         }
 
         if self.include_drafts {
             if let Some(drafts_dir) = self.structure.drafts_dir() {
-                count += self.load_posts_from_dir(drafts_dir, true)?;
+                let drafts_dir = drafts_dir;
+                count += self.load_posts_from_dir(&drafts_dir, true)?;
             }
         }
 

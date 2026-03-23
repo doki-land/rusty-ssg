@@ -2,7 +2,7 @@
 //!
 //! 提供对 Markdown 中 LaTeX 数学公式的支持，包括行内公式 `$...$` 和块级公式 `$$...$$`
 
-use crate::plugin::{PluginContext, PluginMeta, VutexPlugin};
+use crate::plugin::{PluginContext, PluginMeta, JekyllPlugin};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -74,7 +74,7 @@ impl Default for KaTeXPlugin {
     }
 }
 
-impl VutexPlugin for KaTeXPlugin {
+impl JekyllPlugin for KaTeXPlugin {
     /// 获取插件元数据
     fn meta(&self) -> &PluginMeta {
         &self.meta

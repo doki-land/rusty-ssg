@@ -36,9 +36,10 @@ pub struct VuePressCompiler {
 impl VuePressCompiler {
     /// 创建新的编译器（无插件支持，降级模式）
     pub fn new() -> Self {
+        let config = VuePressConfig::new();
         Self {
-            config: VuePressConfig::new(),
-            html_renderer: HtmlRenderer::new(),
+            config: config.clone(),
+            html_renderer: HtmlRenderer::new(config),
             cache: HashMap::new(),
             plugin_host: None,
         }
@@ -50,7 +51,7 @@ impl VuePressCompiler {
     ///
     /// * `config` - 编译器配置
     pub fn with_config(config: VuePressConfig) -> Self {
-        Self { config, html_renderer: HtmlRenderer::new(), cache: HashMap::new(), plugin_host: None }
+        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: None }
     }
 
     /// 创建带 PluginHost 的编译器（支持 Node.js 混合执行模式）
@@ -59,9 +60,10 @@ impl VuePressCompiler {
     ///
     /// * `plugin_host` - 插件宿主实例
     pub fn with_plugin_host(plugin_host: PluginHost) -> Self {
+        let config = VuePressConfig::new();
         Self {
-            config: VuePressConfig::new(),
-            html_renderer: HtmlRenderer::new(),
+            config: config.clone(),
+            html_renderer: HtmlRenderer::new(config),
             cache: HashMap::new(),
             plugin_host: Some(plugin_host),
         }
@@ -74,7 +76,7 @@ impl VuePressCompiler {
     /// * `config` - 编译器配置
     /// * `plugin_host` - 插件宿主实例
     pub fn with_config_and_plugin_host(config: VuePressConfig, plugin_host: PluginHost) -> Self {
-        Self { config, html_renderer: HtmlRenderer::new(), cache: HashMap::new(), plugin_host: Some(plugin_host) }
+        Self { config: config.clone(), html_renderer: HtmlRenderer::new(config), cache: HashMap::new(), plugin_host: Some(plugin_host) }
     }
 
     /// 获取编译器配置
@@ -167,7 +169,7 @@ impl VuePressCompiler {
     </div>
 </body>
 </html>"#,
-            lang = self.config.lang.as_ref().unwrap_or(&"en-US".to_string()),
+            lang = "en-US",
             title = title,
             content = content
         )
@@ -200,7 +202,7 @@ impl VuePressCompiler {
             content = Self::invoke_hook(plugin_host, "before_render", context)?;
         }
 
-        let rendered_html = self.html_renderer.render(&content);
+        let rendered_html = self.html_renderer.render(&content)?;
         let mut final_html = rendered_html;
 
         if let Some(ref mut plugin_host) = self.plugin_host {

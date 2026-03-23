@@ -4,7 +4,7 @@
 use clap::Parser;
 use gatsby::{
     GatsbyCli, GatsbyCommands,
-    tools::cmd::{BuildCommand, CheckCommand, InitCommand, NewCommand, VersionCommand},
+    tools::cmd::{BuildCommand, CheckCommand, CleanCommand, InitCommand, InfoCommand, NewCommand, PluginCommand, TelemetryCommand, VersionCommand},
     types::Result,
 };
 
@@ -35,6 +35,18 @@ async fn main() -> Result<()> {
         }
         GatsbyCommands::Check(args) => {
             CheckCommand::execute(args).await?;
+        }
+        GatsbyCommands::Clean(args) => {
+            CleanCommand::execute(args).await?;
+        }
+        GatsbyCommands::Info => {
+            InfoCommand::execute().await;
+        }
+        GatsbyCommands::Plugin(args) => {
+            PluginCommand::execute(args).await?;
+        }
+        GatsbyCommands::Telemetry(args) => {
+            TelemetryCommand::execute(args).await?;
         }
     }
 

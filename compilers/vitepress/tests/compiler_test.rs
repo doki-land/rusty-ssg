@@ -52,7 +52,7 @@ fn test_compiler_batch() {
 #[test]
 fn test_compiler_with_config() {
     // 创建配置
-    let config = VitePressConfig::new().with_title("测试站点").with_lang("zh-CN");
+    let config = VitePressConfig::new().with_title("测试站点".to_string()).with_lang("zh-CN".to_string());
 
     // 创建带配置的编译器
     let mut compiler = VitePressCompiler::with_config(config);

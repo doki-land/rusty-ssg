@@ -39,6 +39,14 @@ pub enum GatsbyCommands {
     Init(InitArgs),
     /// 检查文档
     Check(CheckArgs),
+    /// 清理缓存和构建文件
+    Clean(CleanArgs),
+    /// 显示项目信息
+    Info,
+    /// 插件相关命令
+    Plugin(PluginArgs),
+    /// 遥测相关命令
+    Telemetry(TelemetryArgs),
 }
 
 /// new 命令参数
@@ -110,4 +118,64 @@ pub struct CheckArgs {
     /// 源目录
     #[arg(short, long)]
     pub source: Option<PathBuf>,
+}
+
+/// clean 命令参数
+#[derive(Parser, Debug)]
+pub struct CleanArgs {
+    /// 是否强制清理
+    #[arg(short, long)]
+    pub force: bool,
+}
+
+/// plugin 命令参数
+#[derive(Parser, Debug)]
+pub struct PluginArgs {
+    /// 插件子命令
+    #[command(subcommand)]
+    pub subcommand: PluginSubCommand,
+}
+
+/// 插件子命令
+#[derive(Parser, Debug)]
+pub enum PluginSubCommand {
+    /// 安装插件
+    Install(InstallArgs),
+    /// 卸载插件
+    Uninstall(UninstallArgs),
+    /// 列出已安装插件
+    List,
+}
+
+/// 安装插件参数
+#[derive(Parser, Debug)]
+pub struct InstallArgs {
+    /// 插件名称
+    pub plugins: Vec<String>,
+}
+
+/// 卸载插件参数
+#[derive(Parser, Debug)]
+pub struct UninstallArgs {
+    /// 插件名称
+    pub plugins: Vec<String>,
+}
+
+/// telemetry 命令参数
+#[derive(Parser, Debug)]
+pub struct TelemetryArgs {
+    /// 遥测子命令
+    #[command(subcommand)]
+    pub subcommand: TelemetrySubCommand,
+}
+
+/// 遥测子命令
+#[derive(Parser, Debug)]
+pub enum TelemetrySubCommand {
+    /// 启用遥测
+    Enable,
+    /// 禁用遥测
+    Disable,
+    /// 显示遥测状态
+    Status,
 }

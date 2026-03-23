@@ -14,7 +14,6 @@ use crate::errors::{LiquidError, Result};
 use super::{front_matter::FrontMatter, FrontMatterParser, JekyllConfig, JekyllStructure};
 
 /// Liquid 过滤器
-#[derive(Debug, Clone)]
 pub struct LiquidFilter {
     /// 过滤器名称
     name: String,
@@ -182,7 +181,7 @@ impl LiquidEngine {
     /// 加载布局文件
     pub fn load_layouts(&mut self) -> Result<()> {
         if let Some(layouts_dir) = self.structure.layouts_dir() {
-            self.load_templates_from_dir(layouts_dir, &mut self.layouts)?;
+            Self::load_templates_from_dir(layouts_dir, &mut self.layouts)?;
         }
         Ok(())
     }
@@ -190,13 +189,13 @@ impl LiquidEngine {
     /// 加载包含文件
     pub fn load_includes(&mut self) -> Result<()> {
         if let Some(includes_dir) = self.structure.includes_dir() {
-            self.load_templates_from_dir(includes_dir, &mut self.includes)?;
+            Self::load_templates_from_dir(includes_dir, &mut self.includes)?;
         }
         Ok(())
     }
 
     /// 从目录加载模板
-    fn load_templates_from_dir(&self, dir: &Path, cache: &mut HashMap<String, String>) -> Result<()> {
+    fn load_templates_from_dir(dir: &Path, cache: &mut HashMap<String, String>) -> Result<()> {
         if !dir.exists() {
             return Ok(());
         }
