@@ -209,6 +209,21 @@ pub struct ValidationConfig {
     pub links: LinksValidationConfig,
 }
 
+impl ValidationConfig {
+    /// 与父验证配置合并
+    pub fn merge_with_parent(self, parent: Self) -> Self {
+        let mut merged = self;
+        
+        // 合并导航验证配置
+        merged.nav = merged.nav.merge_with_parent(parent.nav);
+        
+        // 合并链接验证配置
+        merged.links = merged.links.merge_with_parent(parent.links);
+        
+        merged
+    }
+}
+
 /// 导航验证配置
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NavValidationConfig {
@@ -223,6 +238,30 @@ pub struct NavValidationConfig {
     /// 绝对链接的处理方式
     #[serde(default = "default_validation_level_info")]
     pub absolute_links: ValidationLevel,
+}
+
+impl NavValidationConfig {
+    /// 与父导航验证配置合并
+    pub fn merge_with_parent(self, parent: Self) -> Self {
+        let mut merged = self;
+        
+        // 合并遗漏文件的处理方式
+        if merged.omitted_files == ValidationLevel::Info {
+            merged.omitted_files = parent.omitted_files;
+        }
+        
+        // 合并未找到文件的处理方式
+        if merged.not_found == ValidationLevel::Warn {
+            merged.not_found = parent.not_found;
+        }
+        
+        // 合并绝对链接的处理方式
+        if merged.absolute_links == ValidationLevel::Info {
+            merged.absolute_links = parent.absolute_links;
+        }
+        
+        merged
+    }
 }
 
 /// 链接验证配置
@@ -243,6 +282,35 @@ pub struct LinksValidationConfig {
     /// 未识别链接的处理方式
     #[serde(default = "default_validation_level_info")]
     pub unrecognized_links: ValidationLevel,
+}
+
+impl LinksValidationConfig {
+    /// 与父链接验证配置合并
+    pub fn merge_with_parent(self, parent: Self) -> Self {
+        let mut merged = self;
+        
+        // 合并未找到链接的处理方式
+        if merged.not_found == ValidationLevel::Warn {
+            merged.not_found = parent.not_found;
+        }
+        
+        // 合并锚点的处理方式
+        if merged.anchors == ValidationLevel::Info {
+            merged.anchors = parent.anchors;
+        }
+        
+        // 合并绝对链接的处理方式
+        if merged.absolute_links == ValidationLevel::Info {
+            merged.absolute_links = parent.absolute_links;
+        }
+        
+        // 合并未识别链接的处理方式
+        if merged.unrecognized_links == ValidationLevel::Info {
+            merged.unrecognized_links = parent.unrecognized_links;
+        }
+        
+        merged
+    }
 }
 
 /// 验证级别
@@ -569,6 +637,34 @@ impl MkDocsConfig {
         self.hooks.extend(parent.hooks);
         self.watch.extend(parent.watch);
 
+        // 继承其他配置选项
+        if self.exclude_docs.is_none() {
+            self.exclude_docs = parent.exclude_docs;
+        }
+        if self.draft_docs.is_none() {
+            self.draft_docs = parent.draft_docs;
+        }
+        if self.not_in_nav.is_none() {
+            self.not_in_nav = parent.not_in_nav;
+        }
+
+        // 继承开发服务器配置
+        if self.dev_addr == "127.0.0.1:8000" && parent.dev_addr != "127.0.0.1:8000" {
+            self.dev_addr = parent.dev_addr;
+        }
+        if self.remote_branch == "gh-pages" && parent.remote_branch != "gh-pages" {
+            self.remote_branch = parent.remote_branch;
+        }
+        if self.remote_name == "origin" && parent.remote_name != "origin" {
+            self.remote_name = parent.remote_name;
+        }
+
+        // 继承验证配置
+        self.validation = self.validation.merge_with_parent(parent.validation);
+
+        // 继承主题配置
+        self.theme = self.theme.merge_with_parent(parent.theme);
+
         self
     }
 
@@ -578,6 +674,123 @@ impl MkDocsConfig {
             return Err(crate::types::errors::MkDocsError::ConfigValidationError {
                 message: "site_name cannot be empty".to_string(),
             });
+        }
+
+        // 严格模式下的额外验证
+        if self.strict {
+            // 检查文档目录是否存在
+            let docs_dir = std::path::PathBuf::from(self.docs_dir.clone());
+            if !docs_dir.exists() {
+                return Err(crate::types::errors::MkDocsError::ConfigValidationError {
+                    message: format!("docs_dir '{}' does not exist", self.docs_dir),
+                });
+            }
+
+            // 检查主题配置
+            if self.theme.name().is_empty() {
+                return Err(crate::types::errors::MkDocsError::ConfigValidationError {
+                    message: "theme name cannot be empty in strict mode".to_string(),
+                });
+            }
+
+            // 检查导航配置
+            for (i, nav_item) in self.nav.iter().enumerate() {
+                match nav_item {
+                    crate::types::NavItem::Map(map) => {
+                        for (key, value) in map {
+                            match value {
+                                crate::types::NavValue::String(path) => {
+                                    // 检查导航链接是否指向有效的文件
+                                    let full_path = if path.starts_with("http://") || path.starts_with("https://") {
+                                        continue; // 跳过外部链接
+                                    } else if path.starts_with("#") {
+                                        continue; // 跳过锚点链接
+                                    } else {
+                                        let base_path = if path.ends_with(".md") {
+                                            path.to_string()
+                                        } else if path.ends_with("/") {
+                                            format!("{}{}", path, "index.md")
+                                        } else {
+                                            format!("{}{}", path, ".md")
+                                        };
+                                        docs_dir.join(base_path)
+                                    };
+
+                                    if !full_path.exists() {
+                                        return Err(crate::types::errors::MkDocsError::ConfigValidationError {
+                                            message: format!("navigation link '{}' in item '{}' points to non-existent file '{}'", path, key, full_path.display()),
+                                        });
+                                    }
+                                }
+                                crate::types::NavValue::List(items) => {
+                                    // 递归检查子导航
+                                    self.validate_nav_items(items, &docs_dir)?;
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            // 检查插件配置
+            for (i, plugin_config) in self.plugins.iter().enumerate() {
+                match plugin_config {
+                    crate::types::PluginConfig::Map(map) => {
+                        for (name, options) in map {
+                            if !options.enabled() {
+                                continue;
+                            }
+                            // 这里可以添加插件特定的验证
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 验证导航项目
+    fn validate_nav_items(&self, items: &[crate::types::NavItem], docs_dir: &std::path::Path) -> Result<(), crate::types::errors::MkDocsError> {
+        for item in items {
+            match item {
+                crate::types::NavItem::Map(map) => {
+                    for (key, value) in map {
+                        match value {
+                            crate::types::NavValue::String(path) => {
+                                // 检查导航链接是否指向有效的文件
+                                let full_path = if path.starts_with("http://") || path.starts_with("https://") {
+                                    continue; // 跳过外部链接
+                                } else if path.starts_with("#") {
+                                    continue; // 跳过锚点链接
+                                } else {
+                                    let base_path = if path.ends_with(".md") {
+                                        path.to_string()
+                                    } else if path.ends_with("/") {
+                                        format!("{}{}", path, "index.md")
+                                    } else {
+                                        format!("{}{}", path, ".md")
+                                    };
+                                    docs_dir.join(base_path)
+                                };
+
+                                if !full_path.exists() {
+                                    return Err(crate::types::errors::MkDocsError::ConfigValidationError {
+                                        message: format!("navigation link '{}' in item '{}' points to non-existent file '{}'", path, key, full_path.display()),
+                                    });
+                                }
+                            }
+                            crate::types::NavValue::List(sub_items) => {
+                                // 递归检查子导航
+                                self.validate_nav_items(sub_items, docs_dir)?;
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
         }
         Ok(())
     }
@@ -692,6 +905,53 @@ impl ThemeConfig {
     /// 创建默认主题配置
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// 与父主题配置合并
+    pub fn merge_with_parent(self, parent: Self) -> Self {
+        let mut merged = self;
+        
+        // 合并主题名称
+        if merged.name == "material" && parent.name != "material" {
+            merged.name = parent.name;
+        }
+        
+        // 合并自定义主题目录
+        if merged.custom_dir.is_none() {
+            merged.custom_dir = parent.custom_dir;
+        }
+        
+        // 合并主题语言
+        if merged.language == "en" && parent.language != "en" {
+            merged.language = parent.language;
+        }
+        
+        // 合并主题特性
+        if merged.features.is_empty() {
+            merged.features = parent.features;
+        }
+        
+        // 合并调色板配置
+        if merged.palette.is_none() {
+            merged.palette = parent.palette;
+        }
+        
+        // 合并字体配置
+        if merged.font.is_none() {
+            merged.font = parent.font;
+        }
+        
+        // 合并图标配置
+        if merged.icon.is_none() {
+            merged.icon = parent.icon;
+        }
+        
+        // 合并其他主题选项
+        for (key, value) in parent.options {
+            merged.options.entry(key).or_insert(value);
+        }
+        
+        merged
     }
 
     /// 获取主题名称

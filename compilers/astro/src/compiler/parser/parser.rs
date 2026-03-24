@@ -425,7 +425,7 @@ impl<'a> Parser<'a> {
             None
         };
 
-        AstNode::slot(&slot_name, content.unwrap_or_default())
+        AstNode::slot(Some(&slot_name), content.unwrap_or_default())
     }
 
     /// 获取下一个 token

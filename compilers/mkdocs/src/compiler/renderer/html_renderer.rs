@@ -2,7 +2,6 @@
 //! 
 //! 使用 nargo-document 的 Markdown 渲染器将 Markdown 内容转换为 HTML。
 
-use nargo_document::MarkdownRenderer as NargoMarkdownRenderer;
 use std::collections::HashMap;
 
 /// HTML 转义函数
@@ -32,8 +31,6 @@ impl Default for HtmlRendererConfig {
 pub struct HtmlRenderer {
     /// 渲染器配置
     config: HtmlRendererConfig,
-    /// nargo-document 的 Markdown 渲染器
-    markdown_renderer: NargoMarkdownRenderer,
     /// Markdown 扩展
     markdown_extensions: Vec<String>,
 }
@@ -51,7 +48,6 @@ impl HtmlRenderer {
     pub fn with_config(config: HtmlRendererConfig) -> Self {
         Self {
             config: config.clone(),
-            markdown_renderer: NargoMarkdownRenderer::new(),
             markdown_extensions: config.markdown_extensions,
         }
     }
@@ -89,8 +85,14 @@ impl HtmlRenderer {
             return "<p></p>".to_string();
         }
 
+        // 应用 Markdown 扩展
+        let processed_content = self.apply_markdown_extensions(content);
+        
         // 直接使用简单的 Markdown 渲染方法，确保标题等基本元素能正确渲染
-        self.render_simple(content)
+        let html = self.render_simple(&processed_content);
+        
+        // 对渲染后的 HTML 进行后处理
+        self.post_process_html(html)
     }
 
     /// 简单的 Markdown 渲染方法
@@ -313,20 +315,137 @@ impl HtmlRenderer {
 
     /// 处理表格
     fn process_tables(&self, content: &str) -> String {
-        // 这里可以实现表格处理逻辑
-        content.to_string()
+        use regex::Regex;
+        
+        // 表格正则表达式：匹配表格行，包括表头、分隔线和数据行
+        let table_regex = Regex::new(r"(?m)^\|.*\|\n(?:^\|.*\|\n)*").unwrap();
+        
+        let mut processed_content = content.to_string();
+        
+        // 查找并处理所有表格
+        for capture in table_regex.captures_iter(content) {
+            let table_text = capture.get(0).unwrap().as_str();
+            let html_table = self.convert_table_to_html(table_text);
+            processed_content = processed_content.replace(table_text, &html_table);
+        }
+        
+        processed_content
+    }
+    
+    /// 将 Markdown 表格转换为 HTML 表格
+    fn convert_table_to_html(&self, table_text: &str) -> String {
+        let lines: Vec<&str> = table_text.lines().collect();
+        if lines.len() < 2 {  // 至少需要表头和分隔线
+            return table_text.to_string();
+        }
+        
+        let mut html = String::from("<table>\n");
+        
+        // 处理表头
+        let header_line = lines[0].trim();
+        let headers: Vec<&str> = header_line
+            .trim_matches('|')
+            .split('|')
+            .map(|h| h.trim())
+            .collect();
+        
+        html.push_str("  <thead>\n");
+        html.push_str("    <tr>\n");
+        for header in headers {
+            html.push_str(&format!("      <th>{}</th>\n", html_escape(header)));
+        }
+        html.push_str("    </tr>\n");
+        html.push_str("  </thead>\n");
+        
+        // 处理数据行（跳过分隔线）
+        html.push_str("  <tbody>\n");
+        for line in &lines[2..] {  // 跳过表头和分隔线
+            let line = line.trim();
+            if line.is_empty() || !line.starts_with('|') {
+                continue;
+            }
+            
+            let cells: Vec<&str> = line
+                .trim_matches('|')
+                .split('|')
+                .map(|c| c.trim())
+                .collect();
+            
+            html.push_str("    <tr>\n");
+            for cell in cells {
+                html.push_str(&format!("      <td>{}</td>\n", html_escape(cell)));
+            }
+            html.push_str("    </tr>\n");
+        }
+        html.push_str("  </tbody>\n");
+        html.push_str("</table>\n");
+        
+        html
     }
 
     /// 处理脚注
     fn process_footnotes(&self, content: &str) -> String {
-        // 这里可以实现脚注处理逻辑
-        content.to_string()
+        use regex::Regex;
+        
+        // 脚注定义正则表达式：匹配 [^1]: 脚注内容 这样的脚注定义
+        let footnote_def_regex = Regex::new(r"(?m)^\[\^(\d+)\]:\s*(.*)").unwrap();
+        
+        let mut processed_content = content.to_string();
+        let mut footnotes = Vec::new();
+        
+        // 查找所有脚注定义
+        for capture in footnote_def_regex.captures_iter(content) {
+            let id = capture.get(1).unwrap().as_str();
+            let content = capture.get(2).unwrap().as_str();
+            footnotes.push((id, content));
+            
+            // 从内容中移除脚注定义
+            let def_text = capture.get(0).unwrap().as_str();
+            processed_content = processed_content.replace(def_text, "");
+        }
+        
+        // 替换所有脚注引用为带有 ID 的链接
+        for (id, _) in &footnotes {
+            let ref_pattern = format!("[^{}]", id);
+            let replacement = format!("<sup id=\"fnref:{}\"><a href=\"#fn:{}\" class=\"footnote-ref\">{}</a></sup>", id, id, id);
+            processed_content = processed_content.replace(&ref_pattern, &replacement);
+        }
+        
+        // 如果有脚注，在文档末尾添加脚注列表
+        if !footnotes.is_empty() {
+            processed_content.push_str("\n<div class=\"footnotes\">\n");
+            processed_content.push_str("  <hr>\n");
+            processed_content.push_str("  <ol>\n");
+            
+            for (id, content) in footnotes {
+                processed_content.push_str(&format!("    <li id=\"fn:{}\">{}</li>\n", id, html_escape(content)));
+            }
+            
+            processed_content.push_str("  </ol>\n");
+            processed_content.push_str("</div>\n");
+        }
+        
+        processed_content
     }
 
     /// 处理代码高亮
     fn process_code_highlight(&self, content: &str) -> String {
-        // 这里可以实现代码高亮处理逻辑
-        content.to_string()
+        use regex::Regex;
+        
+        // 代码块正则表达式：匹配 ```language
+        let code_block_regex = Regex::new(r"```(\w+)").unwrap();
+        
+        let mut processed_content = content.to_string();
+        
+        // 查找并处理所有代码块
+        for capture in code_block_regex.captures_iter(content) {
+            let lang = capture.get(1).unwrap().as_str();
+            let pattern = format!("```{}", lang);
+            let replacement = format!("```language-{}", lang);
+            processed_content = processed_content.replace(&pattern, &replacement);
+        }
+        
+        processed_content
     }
 
     /// 对渲染后的 HTML 进行后处理
@@ -335,22 +454,7 @@ impl HtmlRenderer {
         html
     }
 
-    /// 简单的后备渲染方法，在 nargo-document 渲染失败时使用
-    ///
-    /// # 参数
-    /// * `content` - Markdown 内容字符串
-    ///
-    /// # 返回值
-    /// 简单转义后的 HTML 字符串
-    fn render_simple_fallback(&self, content: &str) -> String {
-        let escaped = content
-            .replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', "&quot;")
-            .replace('\'', "&#39;");
-        format!("<p>{}</p>", escaped.replace("\n\n", "</p><p>"))
-    }
+
 }
 
 impl Default for HtmlRenderer {

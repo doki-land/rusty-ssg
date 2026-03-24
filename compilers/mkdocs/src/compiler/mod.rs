@@ -107,7 +107,18 @@ impl MkDocsCompiler {
             crate::types::errors::MkDocsError::PathError { message: format!("Failed to get relative path: {}", e) }
         })?;
 
-        let output_path = self.output_dir.join(relative_path).with_extension("html");
+        let output_path = if self.config.use_directory_urls() {
+            // 使用目录 URL: page.md -> page/index.html
+            if relative_path.extension().map(|ext| ext == "md" || ext == "markdown").unwrap_or(false) {
+                let base_path = relative_path.with_extension("");
+                self.output_dir.join(base_path).join("index.html")
+            } else {
+                self.output_dir.join(relative_path)
+            }
+        } else {
+            // 不使用目录 URL: page.md -> page.html
+            self.output_dir.join(relative_path).with_extension("html")
+        };
 
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
@@ -188,6 +199,68 @@ impl MkDocsCompiler {
     pub fn build(&self) -> Result<Vec<u64>> {
         let compile_results = self.compile_all()?;
         self.copy_static_files()?;
+        
+        // 运行链接验证
+        self.validate_links()?;
+        
         Ok(compile_results)
+    }
+
+    /// 验证站点链接
+    ///
+    /// # 返回值
+    /// 操作结果
+    pub fn validate_links(&self) -> Result<()> {
+        use crate::tools::link_validator::LinkValidator;
+        
+        // 收集所有 Markdown 文件
+        let mut documents = std::collections::HashMap::new();
+        let mut files = std::collections::HashSet::new();
+        
+        for entry in walkdir::WalkDir::new(&self.source_dir) {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    if ext == "md" || ext == "markdown" {
+                        let relative_path = path.strip_prefix(&self.source_dir).map_err(|e| {
+                            crate::types::errors::MkDocsError::PathError { message: format!("Failed to get relative path: {}", e) }
+                        })?;
+                        let relative_path_str = relative_path.to_str().ok_or_else(|| {
+                            crate::types::errors::MkDocsError::PathError { message: "Failed to convert path to string".to_string() }
+                        })?;
+                        
+                        let content = std::fs::read_to_string(path)?;
+                        documents.insert(relative_path_str.to_string(), content);
+                        files.insert(relative_path_str.to_string());
+                    }
+                }
+            }
+        }
+        
+        // 创建链接验证器
+        let mut validator = LinkValidator::new(self.config.clone());
+        
+        // 添加所有文件
+        for file in &files {
+            validator.add_file(file);
+        }
+        
+        // 验证所有链接
+        validator.validate_all(&documents);
+        
+        // 打印验证结果
+        let result = validator.result();
+        result.print();
+        
+        // 如果有错误，根据配置决定是否失败
+        if result.has_errors() && self.config.validation().links.not_found == crate::types::ValidationLevel::Warn {
+            return Err(crate::types::errors::MkDocsError::CompileError {
+                message: "Link validation failed".to_string(),
+            });
+        }
+        
+        Ok(())
     }
 }

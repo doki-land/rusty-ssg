@@ -245,9 +245,5 @@ impl PluginManager {
         &mut self.context
     }
 
-    /// 清理插件
-    pub fn cleanup(&mut self) {
-        self.plugins.clear();
-        self.factories.clear();
-    }
+
 }

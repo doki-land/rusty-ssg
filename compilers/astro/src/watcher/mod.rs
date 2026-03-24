@@ -20,8 +20,10 @@ impl FileWatcher {
         // 创建通道用于接收文件变更事件
         let (tx, rx) = channel();
 
+        // 创建监听器配置
+        let config = notify::Config::default();
         // 创建监听器
-        let mut watcher: RecommendedWatcher = RecommendedWatcher::new(tx, Duration::from_secs(1))?;
+        let mut watcher: RecommendedWatcher = RecommendedWatcher::new(tx, config)?;
 
         // 启动一个线程来处理事件
         std::thread::spawn(move || {

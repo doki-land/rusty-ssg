@@ -9,38 +9,38 @@ pub type Context = HashMap<String, serde_json::Value>;
 /// 组件状态管理
 pub struct ComponentState {
     /// 组件状态数据
-    data: HashMap<String, serde_json::Value>,
+    data: std::cell::RefCell<HashMap<String, serde_json::Value>>,
     /// 组件事件处理函数
-    event_handlers: HashMap<String, Box<dyn Fn(&mut ComponentState, serde_json::Value)>>,
+    event_handlers: std::cell::RefCell<HashMap<String, Box<dyn Fn(&ComponentState, serde_json::Value)>>>,
 }
 
 impl ComponentState {
     /// 创建新的组件状态
     pub fn new() -> Self {
         Self {
-            data: HashMap::new(),
-            event_handlers: HashMap::new(),
+            data: std::cell::RefCell::new(HashMap::new()),
+            event_handlers: std::cell::RefCell::new(HashMap::new()),
         }
     }
 
     /// 获取状态值
-    pub fn get(&self, key: &str) -> Option<&serde_json::Value> {
-        self.data.get(key)
+    pub fn get(&self, key: &str) -> Option<serde_json::Value> {
+        self.data.borrow().get(key).cloned()
     }
 
     /// 设置状态值
-    pub fn set(&mut self, key: &str, value: serde_json::Value) {
-        self.data.insert(key.to_string(), value);
+    pub fn set(&self, key: &str, value: serde_json::Value) {
+        self.data.borrow_mut().insert(key.to_string(), value);
     }
 
     /// 注册事件处理函数
-    pub fn on(&mut self, event: &str, handler: impl Fn(&mut ComponentState, serde_json::Value) + 'static) {
-        self.event_handlers.insert(event.to_string(), Box::new(handler));
+    pub fn on(&self, event: &str, handler: impl Fn(&ComponentState, serde_json::Value) + 'static) {
+        self.event_handlers.borrow_mut().insert(event.to_string(), Box::new(handler));
     }
 
     /// 触发事件
-    pub fn emit(&mut self, event: &str, data: serde_json::Value) {
-        if let Some(handler) = self.event_handlers.get(event) {
+    pub fn emit(&self, event: &str, data: serde_json::Value) {
+        if let Some(handler) = self.event_handlers.borrow().get(event) {
             let handler = handler.clone();
             handler(self, data);
         }
@@ -48,7 +48,7 @@ impl ComponentState {
 
     /// 转换为上下文
     pub fn to_context(&self) -> Context {
-        self.data.clone()
+        self.data.borrow().clone()
     }
 }
 
@@ -56,14 +56,27 @@ impl ComponentState {
 pub struct HtmlRenderer {
     /// 渲染配置
     config: HashMap<String, String>,
+    /// 组件注册表
+    component_registry: Option<crate::compiler::ComponentRegistry>,
 }
 
 impl HtmlRenderer {
     /// 创建新的 HTML 渲染器
     pub fn new() -> Self {
         Self { 
-            config: HashMap::new()
+            config: HashMap::new(),
+            component_registry: None
         }
+    }
+
+    /// 设置组件注册表
+    pub fn set_component_registry(&mut self, registry: crate::compiler::ComponentRegistry) {
+        self.component_registry = Some(registry);
+    }
+
+    /// 获取组件注册表
+    pub fn component_registry(&self) -> Option<&crate::compiler::ComponentRegistry> {
+        self.component_registry.as_ref()
     }
 
     /// 渲染 Astro 模板内容

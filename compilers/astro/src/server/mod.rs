@@ -1,15 +1,15 @@
 //! 服务器模块
 
-use crate::tools::cmd::{build, generate_static_files, process_files};
+use crate::tools::cmd::{generate_static_files, process_files};
 use crate::compiler::{ComponentParser, DependencyAnalyzer};
 use crate::config::{AstroConfig, ConfigManager};
 use crate::watcher::FileWatcher;
-use hyper::body::Body;
+use hyper::body::Incoming;
 use hyper::Request;
 use hyper::Response;
 use hyper::StatusCode;
-use hyper::server::Server;
-use hyper::service::{make_service_fn, service_fn};
+use hyper::Server;
+use hyper::service::service_fn;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -62,29 +62,22 @@ impl DevServer {
         let project_path = self.project_path.clone();
         let out_dir = self.out_dir.clone();
         
-        let make_svc = make_service_fn(move |_conn| {
+        let make_svc = hyper::service::service_fn(move |req| {
             let project_path = project_path.clone();
             let out_dir = out_dir.clone();
             
             async move {
-                Ok::<_, hyper::Error>(service_fn(move |req| {
-                    let project_path = project_path.clone();
-                    let out_dir = out_dir.clone();
-                    
-                    async move {
-                        DevServer::handle_request(req, &project_path, &out_dir).await
-                    }
-                }))
+                DevServer::handle_request(req, &project_path, &out_dir).await
             }
         });
 
-        let server = Server::bind(&addr).serve(make_svc);
+        let server = Builder::new(AddrIncoming::bind(&addr).unwrap(), make_svc);
         println!("Dev server running at http://{}", addr);
         server.await
     }
 
     /// 处理 HTTP 请求
-    async fn handle_request(req: Request<Body>, project_path: &str, out_dir: &str) -> Result<Response<Body>, hyper::Error> {
+    async fn handle_request(req: Request<Incoming>, project_path: &str, out_dir: &str) -> Result<Response<String>, hyper::Error> {
         let path = req.uri().path();
         
         // 处理根路径
@@ -114,14 +107,14 @@ impl DevServer {
                 Ok(Response::builder()
                     .status(StatusCode::OK)
                     .header("Content-Type", content_type)
-                    .body(Body::from(content))
+                    .body(String::from_utf8_lossy(&content).to_string())
                     .unwrap())
             }
             Err(_) => {
                 // 如果文件不存在，返回 404
                 Ok(Response::builder()
                     .status(StatusCode::NOT_FOUND)
-                    .body(Body::from("404 Not Found"))
+                    .body(String::from("404 Not Found"))
                     .unwrap())
             }
         }
@@ -231,27 +224,21 @@ impl PreviewServer {
         
         let build_path = self.build_path.clone();
         
-        let make_svc = make_service_fn(move |_conn| {
+        let make_svc = hyper::service::service_fn(move |req| {
             let build_path = build_path.clone();
             
             async move {
-                Ok::<_, hyper::Error>(service_fn(move |req| {
-                    let build_path = build_path.clone();
-                    
-                    async move {
-                        PreviewServer::handle_request(req, &build_path).await
-                    }
-                }))
+                PreviewServer::handle_request(req, &build_path).await
             }
         });
 
-        let server = Server::bind(&addr).serve(make_svc);
+        let server = Builder::new(AddrIncoming::bind(&addr).unwrap(), make_svc);
         println!("Preview server running at http://{}", addr);
         server.await
     }
 
     /// 处理 HTTP 请求
-    async fn handle_request(req: Request<Body>, build_path: &str) -> Result<Response<Body>, hyper::Error> {
+    async fn handle_request(req: Request<Incoming>, build_path: &str) -> Result<Response<String>, hyper::Error> {
         let path = req.uri().path();
         
         // 处理根路径
@@ -281,14 +268,14 @@ impl PreviewServer {
                 Ok(Response::builder()
                     .status(StatusCode::OK)
                     .header("Content-Type", content_type)
-                    .body(Body::from(content))
+                    .body(String::from_utf8_lossy(&content).to_string())
                     .unwrap())
             }
             Err(_) => {
                 // 如果文件不存在，返回 404
                 Ok(Response::builder()
                     .status(StatusCode::NOT_FOUND)
-                    .body(Body::from("404 Not Found"))
+                    .body(String::from("404 Not Found"))
                     .unwrap())
             }
         }

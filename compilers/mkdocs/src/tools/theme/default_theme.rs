@@ -43,10 +43,10 @@ pub struct ThemeSidebarGroup {
 
 impl ToJsonValue for ThemeSidebarGroup {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("items", self.items.to_json_value().to_string());
-        json!(map)
+        let mut map = serde_json::Map::new();
+        map.insert("text".to_string(), self.text.to_json_value());
+        map.insert("items".to_string(), self.items.to_json_value());
+        serde_json::Value::Object(map)
     }
 }
 
@@ -61,10 +61,10 @@ pub struct ThemeSidebarLink {
 
 impl ToJsonValue for ThemeSidebarLink {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("link", self.link.clone());
-        json!(map)
+        let mut map = serde_json::Map::new();
+        map.insert("text".to_string(), self.text.to_json_value());
+        map.insert("link".to_string(), self.link.to_json_value());
+        serde_json::Value::Object(map)
     }
 }
 
@@ -81,11 +81,11 @@ pub struct ThemeNavItem {
 
 impl ToJsonValue for ThemeNavItem {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("text", self.text.clone());
-        map.insert("link", self.link.clone());
-        map.insert("children", self.children.to_json_value().to_string());
-        json!(map)
+        let mut map = serde_json::Map::new();
+        map.insert("text".to_string(), self.text.to_json_value());
+        map.insert("link".to_string(), self.link.to_json_value());
+        map.insert("children".to_string(), self.children.to_json_value());
+        serde_json::Value::Object(map)
     }
 }
 
@@ -156,11 +156,11 @@ pub struct LocaleInfo {
 
 impl ToJsonValue for LocaleInfo {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("code", self.code.clone());
-        map.insert("label", self.label.clone());
-        map.insert("is_current", self.is_current.to_string());
-        json!(map)
+        let mut map = serde_json::Map::new();
+        map.insert("code".to_string(), self.code.to_json_value());
+        map.insert("label".to_string(), self.label.to_json_value());
+        map.insert("is_current".to_string(), self.is_current.to_json_value());
+        serde_json::Value::Object(map)
     }
 }
 

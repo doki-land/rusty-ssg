@@ -2,6 +2,7 @@
 //! 提供插件系统和常用插件实现
 
 use crate::types::{MkDocsConfig, PluginOptions};
+use nargo_document::plugin::{KaTeXPlugin, MermaidPlugin as NargoMermaidPlugin, PrismPlugin as NargoPrismPlugin, PluginRegistry, DocumentPlugin};
 use nargo_types::Document;
 use std::{collections::HashMap, path::Path, result::Result};
 
@@ -47,6 +48,8 @@ pub struct PluginManager {
     enabled_plugins: Vec<String>,
     /// 插件上下文
     context: Option<PluginContext>,
+    /// nargo-document 插件注册表
+    nargo_registry: PluginRegistry,
 }
 
 impl PluginManager {
@@ -56,6 +59,7 @@ impl PluginManager {
             plugins: HashMap::new(), 
             enabled_plugins: Vec::new(),
             context: None,
+            nargo_registry: PluginRegistry::new(),
         };
         manager.register_default_plugins();
         manager
@@ -76,6 +80,11 @@ impl PluginManager {
         self.register_plugin(Box::new(MermaidPlugin::new(PluginOptions::new()))).unwrap();
         self.register_plugin(Box::new(SitemapPlugin::new(PluginOptions::new()))).unwrap();
         self.register_plugin(Box::new(GoogleAnalyticsPlugin::new(PluginOptions::new()))).unwrap();
+        
+        // 注册 nargo-document 插件
+        self.nargo_registry.register(NargoPrismPlugin::new());
+        self.nargo_registry.register(KaTeXPlugin::new());
+        self.nargo_registry.register(NargoMermaidPlugin::new());
     }
 
     /// 注册插件
@@ -171,6 +180,16 @@ impl PluginManager {
     pub fn is_plugin_enabled(&self, name: &str) -> bool {
         self.enabled_plugins.contains(&name.to_string())
     }
+
+    /// 获取 nargo-document 插件注册表
+    pub fn nargo_registry(&self) -> &PluginRegistry {
+        &self.nargo_registry
+    }
+
+    /// 获取可变的 nargo-document 插件注册表
+    pub fn nargo_registry_mut(&mut self) -> &mut PluginRegistry {
+        &mut self.nargo_registry
+    }
 }
 
 /// 基础插件实现
@@ -226,7 +245,11 @@ impl Plugin for PrismPlugin {
 
     fn execute(&self, content: &str, _ctx: &PluginContext) -> Result<String, PluginError> {
         // 使用 nargo-document 的代码高亮功能
-        Ok(content.to_string())
+        use nargo_document::plugin::PluginContext as NargoPluginContext;
+        let nargo_ctx = NargoPluginContext::from_content(content.to_string(), "".to_string());
+        let plugin = NargoPrismPlugin::new();
+        let processed_ctx = plugin.before_render(nargo_ctx);
+        Ok(processed_ctx.content)
     }
 
     fn process_document(&self, document: &mut Document, _ctx: &PluginContext) -> Result<(), PluginError> {
@@ -258,7 +281,11 @@ impl Plugin for KatexPlugin {
 
     fn execute(&self, content: &str, _ctx: &PluginContext) -> Result<String, PluginError> {
         // 使用 nargo-document 的数学公式渲染功能
-        Ok(content.to_string())
+        use nargo_document::plugin::PluginContext as NargoPluginContext;
+        let nargo_ctx = NargoPluginContext::from_content(content.to_string(), "".to_string());
+        let plugin = KaTeXPlugin::new();
+        let processed_ctx = plugin.before_render(nargo_ctx);
+        Ok(processed_ctx.content)
     }
 
     fn process_document(&self, document: &mut Document, _ctx: &PluginContext) -> Result<(), PluginError> {
@@ -290,7 +317,11 @@ impl Plugin for MermaidPlugin {
 
     fn execute(&self, content: &str, _ctx: &PluginContext) -> Result<String, PluginError> {
         // 使用 nargo-document 的图表渲染功能
-        Ok(content.to_string())
+        use nargo_document::plugin::PluginContext as NargoPluginContext;
+        let nargo_ctx = NargoPluginContext::from_content(content.to_string(), "".to_string());
+        let plugin = NargoMermaidPlugin::new();
+        let processed_ctx = plugin.before_render(nargo_ctx);
+        Ok(processed_ctx.content)
     }
 
     fn process_document(&self, document: &mut Document, _ctx: &PluginContext) -> Result<(), PluginError> {
