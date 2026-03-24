@@ -218,7 +218,7 @@ impl StaticSiteGenerator {
         for (path, doc) in documents {
             let (lang, normalized_path) = self.extract_language_from_path(path, default_lang);
             let html_path = normalized_path.replace(".md", ".html");
-            let url = if lang == default_lang { format!("/{}", html_path) } else { format!("/{}/{}", lang, html_path) };
+            let url = format!("/{}/{}", lang, html_path);
 
             sitemap.push_str(&format!(
                 "<url><loc>{}</loc><lastmod>{}</lastmod></url>",

@@ -158,10 +158,27 @@ impl GraphQLService {
             );
 
         // 创建 Query 类型
-        let query_type =
-            GraphQLObjectType::new("Query".to_string()).with_description("The root query type".to_string()).with_field(
+        let query_type = GraphQLObjectType::new("Query".to_string())
+            .with_description("The root query type".to_string())
+            .with_field(
                 GraphQLField::new("site".to_string(), GraphQLFieldType::Custom("Site".to_string()))
                     .with_description("The site configuration".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("allMarkdownRemark".to_string(), GraphQLFieldType::List(Box::new(GraphQLFieldType::Custom("MarkdownRemark".to_string()))))
+                    .with_description("All MarkdownRemark nodes".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("markdownRemark".to_string(), GraphQLFieldType::Custom("MarkdownRemark".to_string()))
+                    .with_description("A single MarkdownRemark node by ID".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("allFile".to_string(), GraphQLFieldType::List(Box::new(GraphQLFieldType::Custom("File".to_string()))))
+                    .with_description("All File nodes".to_string()),
+            )
+            .with_field(
+                GraphQLField::new("file".to_string(), GraphQLFieldType::Custom("File".to_string()))
+                    .with_description("A single File node by ID".to_string()),
             );
 
         // 创建 Schema
@@ -263,6 +280,29 @@ impl GraphQLService {
             "siteMetadata" => self.execute_site_metadata_field(field),
             "title" => ConstValue::String("Gatsby Site".to_string()),
             "description" => ConstValue::String("A Gatsby site built with Rust".to_string()),
+            "author" => ConstValue::String("Rust Gatsby Team".to_string()),
+            "siteUrl" => ConstValue::String("https://example.com".to_string()),
+            "social" => self.execute_social_field(field),
+            "twitter" => ConstValue::String("@rustgatsby".to_string()),
+            "github" => ConstValue::String("rust-gatsby".to_string()),
+            "linkedin" => ConstValue::String("company/rust-gatsby".to_string()),
+            "allMarkdownRemark" => self.execute_all_markdown_remark_field(field),
+            "allFile" => self.execute_all_file_field(field),
+            "markdownRemark" => self.execute_markdown_remark_field(field),
+            "file" => self.execute_file_field(field),
+            "frontmatter" => self.execute_frontmatter_field(field),
+            "html" => ConstValue::String("<h1>Test</h1><p>Test content</p>".to_string()),
+            "excerpt" => ConstValue::String("Test excerpt".to_string()),
+            "id" => ConstValue::String("test-id".to_string()),
+            "name" => ConstValue::String("test-file.md".to_string()),
+            "relativePath" => ConstValue::String("content/test-file.md".to_string()),
+            "absolutePath" => ConstValue::String("/path/to/content/test-file.md".to_string()),
+            "extension" => ConstValue::String("md".to_string()),
+            "size" => ConstValue::String("1024".to_string()),
+            "modifiedTime" => ConstValue::String("2024-01-01T00:00:00Z".to_string()),
+            "date" => ConstValue::String("2024-01-01".to_string()),
+            "tags" => ConstValue::List(vec![ConstValue::String("test".to_string()), ConstValue::String("gatsby".to_string())]),
+            "categories" => ConstValue::List(vec![ConstValue::String("blog".to_string())]),
             _ => ConstValue::Null,
         }
     }
@@ -279,6 +319,60 @@ impl GraphQLService {
 
     /// 执行 siteMetadata 字段
     fn execute_site_metadata_field(&self, field: &FieldSelection) -> ConstValue {
+        if let Some(selection_set) = &field.selection_set {
+            self.execute_selection_set(selection_set)
+        }
+        else {
+            ConstValue::Null
+        }
+    }
+
+    /// 执行 social 字段
+    fn execute_social_field(&self, field: &FieldSelection) -> ConstValue {
+        if let Some(selection_set) = &field.selection_set {
+            self.execute_selection_set(selection_set)
+        }
+        else {
+            ConstValue::Null
+        }
+    }
+
+    /// 执行 allMarkdownRemark 字段
+    fn execute_all_markdown_remark_field(&self, field: &FieldSelection) -> ConstValue {
+        // 模拟 MarkdownRemark 节点
+        let markdown_remark = self.execute_markdown_remark_field(field);
+        ConstValue::List(vec![markdown_remark])
+    }
+
+    /// 执行 allFile 字段
+    fn execute_all_file_field(&self, field: &FieldSelection) -> ConstValue {
+        // 模拟 File 节点
+        let file = self.execute_file_field(field);
+        ConstValue::List(vec![file])
+    }
+
+    /// 执行 markdownRemark 字段
+    fn execute_markdown_remark_field(&self, field: &FieldSelection) -> ConstValue {
+        if let Some(selection_set) = &field.selection_set {
+            self.execute_selection_set(selection_set)
+        }
+        else {
+            ConstValue::Null
+        }
+    }
+
+    /// 执行 file 字段
+    fn execute_file_field(&self, field: &FieldSelection) -> ConstValue {
+        if let Some(selection_set) = &field.selection_set {
+            self.execute_selection_set(selection_set)
+        }
+        else {
+            ConstValue::Null
+        }
+    }
+
+    /// 执行 frontmatter 字段
+    fn execute_frontmatter_field(&self, field: &FieldSelection) -> ConstValue {
         if let Some(selection_set) = &field.selection_set {
             self.execute_selection_set(selection_set)
         }

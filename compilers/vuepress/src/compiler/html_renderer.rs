@@ -41,11 +41,11 @@ impl HtmlRenderer {
 
     /// 渲染内容为 HTML
     pub fn render(&self, content: &str) -> Result<String> {
-        // 处理 Vue 组件标签
-        let content_with_vue = self.process_vue_components(content);
-
         // 使用 MarkdownParser 将 Markdown 转换为 HTML
-        let mut html = MarkdownParser::to_html(&content_with_vue)?;
+        let mut html = MarkdownParser::to_html(content)?;
+
+        // 处理 Vue 组件标签
+        html = self.process_vue_components(&html);
 
         // 应用代码高亮
         if self.html_config.highlight_code {
@@ -70,9 +70,9 @@ impl HtmlRenderer {
         let mut result = content.to_string();
 
         // 识别并处理 Vue 组件标签
-        // 1. 处理单文件组件 (SFC) 格式
+        // 1. 处理单文件组件 (SFC) 格式 - 处理 Markdown 转换后的 HTML 格式
         lazy_static::lazy_static! {
-            static ref VUE_SFC_REGEX: regex::Regex = regex::Regex::new(r#"```vue\n([\s\S]*?)```"#).unwrap();
+            static ref VUE_SFC_REGEX: regex::Regex = regex::Regex::new(r#"<pre><code class="language-vue">([\s\S]*?)</code></pre>"#).unwrap();
         }
 
         result = VUE_SFC_REGEX
@@ -84,18 +84,23 @@ impl HtmlRenderer {
             .to_string();
 
         // 2. 处理内联 Vue 组件标签
+        // 注意：不使用后向引用，因为 Rust regex 库不支持
         lazy_static::lazy_static! {
-            static ref VUE_COMPONENT_REGEX: regex::Regex = regex::Regex::new(r#"<([A-Z][a-zA-Z0-9-]+)([^>]*?)>([\s\S]*?)</\1>"#).unwrap();
+            static ref VUE_COMPONENT_REGEX: regex::Regex = regex::Regex::new(r#"<([A-Z][a-zA-Z0-9-]+)([^>]*?)>([\s\S]*?)</[A-Z][a-zA-Z0-9-]+>"#).unwrap();
         }
 
         result = VUE_COMPONENT_REGEX
             .replace_all(&result, |caps: &regex::Captures| {
                 let component_name = caps.get(1).unwrap().as_str();
-                let attributes = caps.get(2).unwrap().as_str();
+                let attributes = caps.get(2).unwrap().as_str().trim();
                 let content = caps.get(3).unwrap().as_str();
 
                 // 保留 Vue 组件标签，不进行 Markdown 解析
-                format!(r#"<{} {}>{}</{}>"#, component_name, attributes, content, component_name)
+                if attributes.is_empty() {
+                    format!(r#"<{}>{}</{}>"#, component_name, content, component_name)
+                } else {
+                    format!(r#"<{} {}>{}</{}>"#, component_name, attributes, content, component_name)
+                }
             })
             .to_string();
 
@@ -107,10 +112,14 @@ impl HtmlRenderer {
         result = VUE_SELF_CLOSING_REGEX
             .replace_all(&result, |caps: &regex::Captures| {
                 let component_name = caps.get(1).unwrap().as_str();
-                let attributes = caps.get(2).unwrap().as_str();
+                let attributes = caps.get(2).unwrap().as_str().trim();
 
                 // 保留自闭合 Vue 组件标签
-                format!(r#"<{} {} />"#, component_name, attributes)
+                if attributes.is_empty() {
+                    format!(r#"<{} />"#, component_name)
+                } else {
+                    format!(r#"<{} {} />"#, component_name, attributes)
+                }
             })
             .to_string();
 

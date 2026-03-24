@@ -124,22 +124,22 @@ pub struct PageContext {
 
 impl ToJsonValue for PageContext {
     fn to_json_value(&self) -> serde_json::Value {
-        let mut map = HashMap::new();
-        map.insert("page_title", self.page_title.clone());
-        map.insert("site_title", self.site_title.clone());
-        map.insert("content", self.content.clone());
-        map.insert("nav_items", self.nav_items.to_json_value().to_string());
-        map.insert("sidebar_groups", self.sidebar_groups.to_json_value().to_string());
-        map.insert("current_path", self.current_path.clone());
-        map.insert("has_footer", self.has_footer.to_string());
-        map.insert("has_footer_message", self.has_footer_message.to_string());
-        map.insert("footer_message", self.footer_message.clone());
-        map.insert("has_footer_copyright", self.has_footer_copyright.to_string());
-        map.insert("footer_copyright", self.footer_copyright.clone());
-        map.insert("current_lang", self.current_lang.clone());
-        map.insert("available_locales", self.available_locales.to_json_value().to_string());
-        map.insert("root_path", self.root_path.clone());
-        json!(map)
+        let mut map = serde_json::Map::new();
+        map.insert("page_title".to_string(), self.page_title.to_json_value());
+        map.insert("site_title".to_string(), self.site_title.to_json_value());
+        map.insert("content".to_string(), self.content.to_json_value());
+        map.insert("nav_items".to_string(), self.nav_items.to_json_value());
+        map.insert("sidebar_groups".to_string(), self.sidebar_groups.to_json_value());
+        map.insert("current_path".to_string(), self.current_path.to_json_value());
+        map.insert("has_footer".to_string(), self.has_footer.to_json_value());
+        map.insert("has_footer_message".to_string(), self.has_footer_message.to_json_value());
+        map.insert("footer_message".to_string(), self.footer_message.to_json_value());
+        map.insert("has_footer_copyright".to_string(), self.has_footer_copyright.to_json_value());
+        map.insert("footer_copyright".to_string(), self.footer_copyright.to_json_value());
+        map.insert("current_lang".to_string(), self.current_lang.to_json_value());
+        map.insert("available_locales".to_string(), self.available_locales.to_json_value());
+        map.insert("root_path".to_string(), self.root_path.to_json_value());
+        serde_json::Value::Object(map)
     }
 }
 
@@ -164,6 +164,37 @@ impl ToJsonValue for LocaleInfo {
     }
 }
 
+/// 主题管理器
+pub struct ThemeManager {
+    /// 主题配置
+    config: MkDocsConfig,
+    /// 主题类型
+    theme_type: ThemeType,
+    /// 模板引擎类型
+    engine_type: TemplateEngineType,
+    /// 模板管理器
+    template_manager: UnifiedTemplateManager,
+    /// 自定义主题目录
+    custom_dir: Option<String>,
+    /// 主题实例
+    theme: Box<dyn Theme>,
+}
+
+/// 主题 trait
+pub trait Theme {
+    /// 渲染页面
+    fn render_page(&self, context: &PageContext) -> Result<String>;
+    
+    /// 获取主题名称
+    fn name(&self) -> &str;
+    
+    /// 获取站点标题
+    fn site_title(&self) -> &str;
+    
+    /// 获取模板引擎类型
+    fn engine_type(&self) -> &TemplateEngineType;
+}
+
 /// 默认主题
 pub struct DefaultTheme {
     /// 主题配置
@@ -176,6 +207,69 @@ pub struct DefaultTheme {
     template_manager: UnifiedTemplateManager,
     /// 自定义主题目录
     custom_dir: Option<String>,
+}
+
+impl Theme for DefaultTheme {
+    fn render_page(&self, context: &PageContext) -> Result<String> {
+        self.render_page_impl(context)
+    }
+    
+    fn name(&self) -> &str {
+        match &self.theme_type {
+            ThemeType::Default => "default",
+            ThemeType::Dark => "dark",
+            ThemeType::Tech => "tech",
+            ThemeType::Custom(name) => name.as_str(),
+        }
+    }
+    
+    fn site_title(&self) -> &str {
+        &self.config.site_name
+    }
+    
+    fn engine_type(&self) -> &TemplateEngineType {
+        &self.engine_type
+    }
+}
+
+impl ThemeManager {
+    /// 创建新的主题管理器
+    pub fn new(config: MkDocsConfig) -> Result<Self> {
+        let theme_type = DefaultTheme::get_theme_type(&config);
+        let custom_dir = config.theme.custom_dir.clone();
+        
+        // 创建默认主题实例
+        let default_theme = DefaultTheme::new(config.clone())?;
+        
+        Ok(Self {
+            config,
+            theme_type,
+            engine_type: TemplateEngineType::DejaVu, // 默认使用 DejaVu 引擎
+            template_manager: default_theme.template_manager,
+            custom_dir,
+            theme: Box::new(default_theme),
+        })
+    }
+    
+    /// 渲染页面
+    pub fn render_page(&self, context: &PageContext) -> Result<String> {
+        self.theme.render_page(context)
+    }
+    
+    /// 获取主题名称
+    pub fn theme_name(&self) -> &str {
+        self.theme.name()
+    }
+    
+    /// 获取站点标题
+    pub fn site_title(&self) -> &str {
+        self.theme.site_title()
+    }
+    
+    /// 获取模板引擎类型
+    pub fn engine_type(&self) -> &TemplateEngineType {
+        self.theme.engine_type()
+    }
 }
 
 impl DefaultTheme {
@@ -271,7 +365,7 @@ impl DefaultTheme {
         Ok(())
     }
 
-    /// 渲染页面
+    /// 渲染页面实现
     ///
     /// # Arguments
     ///
@@ -280,7 +374,7 @@ impl DefaultTheme {
     /// # Returns
     ///
     /// 渲染后的 HTML 字符串
-    pub fn render_page(&self, context: &PageContext) -> Result<String> {
+    fn render_page_impl(&self, context: &PageContext) -> Result<String> {
         match self.engine_type {
             TemplateEngineType::DejaVu => {
                 let result = self.template_manager.render(TemplateEngine::DejaVu, "page", context);

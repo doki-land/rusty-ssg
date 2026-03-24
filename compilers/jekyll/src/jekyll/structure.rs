@@ -27,6 +27,10 @@ pub enum JekyllDirectory {
     Site,
     /// 资源目录 assets
     Assets,
+    /// 插件目录 _plugins
+    Plugins,
+    /// 主题目录 _theme
+    Theme,
 }
 
 impl JekyllDirectory {
@@ -41,6 +45,8 @@ impl JekyllDirectory {
             JekyllDirectory::Sass => "_sass",
             JekyllDirectory::Site => "_site",
             JekyllDirectory::Assets => "assets",
+            JekyllDirectory::Plugins => "_plugins",
+            JekyllDirectory::Theme => "_theme",
         }
     }
 
@@ -55,6 +61,8 @@ impl JekyllDirectory {
             "_sass" => Some(JekyllDirectory::Sass),
             "_site" => Some(JekyllDirectory::Site),
             "assets" => Some(JekyllDirectory::Assets),
+            "_plugins" => Some(JekyllDirectory::Plugins),
+            "_theme" => Some(JekyllDirectory::Theme),
             _ => None,
         }
     }
@@ -70,6 +78,8 @@ impl JekyllDirectory {
                 | JekyllDirectory::Drafts
                 | JekyllDirectory::Sass
                 | JekyllDirectory::Site
+                | JekyllDirectory::Plugins
+                | JekyllDirectory::Theme
         )
     }
 }
@@ -203,6 +213,16 @@ impl JekyllStructure {
         self.get_directory(JekyllDirectory::Assets)
     }
 
+    /// 获取插件目录路径
+    pub fn plugins_dir(&self) -> Option<&PathBuf> {
+        self.get_directory(JekyllDirectory::Plugins)
+    }
+
+    /// 获取主题目录路径
+    pub fn theme_dir(&self) -> Option<&PathBuf> {
+        self.get_directory(JekyllDirectory::Theme)
+    }
+
     /// 获取所有集合名称
     pub fn collections(&self) -> &[String] {
         &self.collections
@@ -237,6 +257,8 @@ impl JekyllStructure {
     /// * `create_drafts` - 是否创建 _drafts 目录
     /// * `create_sass` - 是否创建 _sass 目录
     /// * `create_assets` - 是否创建 assets 目录
+    /// * `create_plugins` - 是否创建 _plugins 目录
+    /// * `create_theme` - 是否创建 _theme 目录
     pub fn create_structure(
         &self,
         create_posts: bool,
@@ -246,6 +268,8 @@ impl JekyllStructure {
         create_drafts: bool,
         create_sass: bool,
         create_assets: bool,
+        create_plugins: bool,
+        create_theme: bool,
     ) -> Result<()> {
         if create_posts {
             std::fs::create_dir_all(self.root.join("_posts")).map_err(JekyllError::from)?;
@@ -267,6 +291,12 @@ impl JekyllStructure {
         }
         if create_assets {
             std::fs::create_dir_all(self.root.join("assets")).map_err(JekyllError::from)?;
+        }
+        if create_plugins {
+            std::fs::create_dir_all(self.root.join("_plugins")).map_err(JekyllError::from)?;
+        }
+        if create_theme {
+            std::fs::create_dir_all(self.root.join("_theme")).map_err(JekyllError::from)?;
         }
 
         Ok(())

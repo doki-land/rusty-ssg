@@ -276,6 +276,141 @@ I'm a blogger.
 gatsby build
 ```
 
+## 扩展 Gatsby 编译器
+
+### 自定义插件开发
+
+Gatsby 编译器支持自定义插件，你可以通过实现 `Plugin` trait 来创建自己的插件：
+
+```rust
+use gatsby::{Plugin, PluginContext, PluginMeta, Page};
+
+struct MyPlugin;
+
+impl Plugin for MyPlugin {
+    fn meta(&self) -> PluginMeta {
+        PluginMeta {
+            name: "my-plugin".to_string(),
+            version: "1.0.0".to_string(),
+            description: "My custom plugin".to_string(),
+            author: "Your Name".to_string(),
+            license: "MIT".to_string(),
+            repository: None,
+        }
+    }
+
+    fn on_pre_build(&self, ctx: &PluginContext) -> Result<(), gatsby::PluginError> {
+        // 构建前的处理逻辑
+        Ok(())
+    }
+
+    // 实现其他生命周期钩子...
+}
+```
+
+### 扩展解析器
+
+你可以通过实现 `Parser` trait 来创建自定义解析器：
+
+```rust
+use gatsby::{Parser, Document};
+
+struct MyCustomParser;
+
+impl Parser for MyCustomParser {
+    fn parse(&self, content: &str, path: &str) -> Result<Document, String> {
+        // 自定义解析逻辑
+        // ...
+        Ok(document)
+    }
+}
+```
+
+### 扩展渲染器
+
+你可以创建自定义渲染器来处理不同的内容格式：
+
+```rust
+use gatsby::compiler::renderer::HtmlRenderer;
+
+struct MyCustomRenderer;
+
+impl HtmlRenderer for MyCustomRenderer {
+    fn render(&self, content: &str) -> String {
+        // 自定义渲染逻辑
+        // ...
+        rendered_html
+    }
+}
+```
+
+### 使用 GraphQL 服务
+
+你可以直接使用 GraphQL 服务来查询和修改数据：
+
+```rust
+use gatsby::{GraphQLService, GraphQLRequest};
+
+let mut service = GraphQLService::new();
+
+// 添加节点
+let node = Node::new(
+    NodeId::generate(),
+    NodeType::new("MarkdownRemark"),
+    "content-digest"
+);
+service.add_node(node).unwrap();
+
+// 执行查询
+let request = GraphQLRequest {
+    query: "query { site { siteMetadata { title } } }".to_string(),
+    operation_name: None,
+    variables: None,
+};
+
+let response = service.execute_query(request);
+```
+
+### 自定义站点生成器
+
+你可以扩展 `StaticSiteGenerator` 来自定义站点生成逻辑：
+
+```rust
+use gatsby::{StaticSiteGenerator, GatsbyConfig};
+
+let config = GatsbyConfig::new();
+let mut generator = StaticSiteGenerator::new(config).unwrap();
+
+// 自定义生成逻辑
+// ...
+
+// 生成站点
+generator.generate(&documents, &output_dir).unwrap();
+```
+
+## API 参考
+
+### 核心类型
+
+- `GatsbyCompiler` - 主编译器，负责编译文档
+- `MarkdownParser` - Markdown 解析器
+- `HtmlRenderer` - HTML 渲染器
+- `StaticSiteGenerator` - 静态站点生成器
+- `GraphQLService` - GraphQL 服务
+- `PluginRegistry` - 插件注册表
+
+### 主要函数
+
+- `compile_single()` - 编译单个文档
+- `compile_batch()` - 批量编译文档
+
+### 配置类型
+
+- `GatsbyConfig` - 主配置结构
+- `SiteMetadata` - 站点元数据
+- `PluginConfig` - 插件配置
+- `DevelopConfig` - 开发服务器配置
+
 ## 已知问题和限制
 
 - 部分 Gatsby 插件可能不兼容

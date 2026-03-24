@@ -2,6 +2,7 @@
 
 use oak_toml;
 use serde_json;
+use std::io::Write;
 use vuepress::config::types::VuePressConfig;
 
 #[test]
@@ -36,6 +37,9 @@ fn test_default_config() {
 
 #[test]
 fn test_load_toml_config() {
+    use tempfile::NamedTempFile;
+    use vuepress::config::parser::ConfigParser;
+    
     let toml_content = r#"
 base = "/test/"
 lang = "zh-CN"
@@ -49,7 +53,14 @@ name = "default"
 name = "vite"
 "#;
 
-    let config: VuePressConfig = oak_toml::from_str(toml_content).unwrap();
+    // 创建临时文件
+    let mut temp_file = NamedTempFile::with_suffix(".toml").unwrap();
+    temp_file.write_all(toml_content.as_bytes()).unwrap();
+    
+    // 使用 ConfigParser 解析
+    let parser = ConfigParser::new(temp_file.path().to_str().unwrap());
+    let config = parser.parse().unwrap();
+    
     assert_eq!(config.base.unwrap(), "/test/");
     assert_eq!(config.lang.unwrap(), "zh-CN");
     assert_eq!(config.title.unwrap(), "Test Site");

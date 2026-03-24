@@ -59,7 +59,7 @@ impl GatsbyCompiler {
     /// # Arguments
     ///
     /// * `doc` - 文档对象
-    fn convert_frontmatter_to_map(&self, doc: &Document) -> HashMap<String, String> {
+    pub fn convert_frontmatter_to_map(&self, doc: &Document) -> HashMap<String, String> {
         let mut map = HashMap::new();
 
         if let Some(title) = &doc.frontmatter.title {
@@ -100,11 +100,10 @@ impl GatsbyCompiler {
 
         let mut doc = self.markdown_parser.parse(source, path).map_err(|e| crate::types::GatsbyError::CompileError { message: e })?;
 
-        let content = doc.content.clone();
-
+        // 直接使用 doc.content 而不是克隆
         let rendered_html = self
             .markdown_renderer
-            .render(&content)
+            .render(&doc.content)
             .map_err(|e| crate::types::GatsbyError::ConfigError { message: format!("Markdown render error: {:?}", e) })?;
 
         doc.rendered_content = Some(rendered_html);
@@ -127,7 +126,7 @@ impl GatsbyCompiler {
 
         // 首先检查缓存，收集需要编译的文档
         let mut to_compile = Vec::new();
-        let mut compiled_docs = HashMap::new();
+        let mut compiled_docs = HashMap::with_capacity(documents.len());
 
         for (path, source) in documents {
             if let Some(cached) = self.cache.get(path) {
@@ -149,9 +148,8 @@ impl GatsbyCompiler {
                     Err(e) => return Err((path.clone(), crate::types::GatsbyError::CompileError { message: e })),
                 };
 
-                let content = doc.content.clone();
-
-                let rendered_html = match markdown_renderer.render(&content) {
+                // 直接使用 doc.content 而不是克隆
+                let rendered_html = match markdown_renderer.render(&doc.content) {
                     Ok(html) => html,
                     Err(e) => {
                         return Err((
@@ -174,7 +172,7 @@ impl GatsbyCompiler {
                     compiled_docs.insert(path.clone(), doc.clone());
                     self.cache.insert(path, doc);
                 }
-                Err((path, error)) => {
+                Err((_path, error)) => {
                     errors.push(error);
                 }
             }

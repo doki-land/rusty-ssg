@@ -47,10 +47,18 @@ impl ContentFunctions {
 
         let input = args[0].as_str().ok_or("Argument must be a string")?;
 
-        // 简单的 HTML 标签移除
-        let plain = input.replace('<', "<").replace('>', ">").replace(|c: char| c.is_control(), "").trim().to_string();
+        // 移除 HTML 标签
+        let mut plain = input.replace(|c: char| c.is_control(), "");
+        
+        // 移除 HTML 标签
+        let tag_regex = regex::Regex::new(r"<[^>]*>").unwrap();
+        plain = tag_regex.replace_all(&plain, "").to_string();
+        
+        // 移除多余的空白字符
+        let space_regex = regex::Regex::new(r"\s+").unwrap();
+        plain = space_regex.replace_all(&plain, " ").to_string();
 
-        Ok(Value::String(plain))
+        Ok(Value::String(plain.trim().to_string()))
     }
 
     /// highlight - 代码高亮

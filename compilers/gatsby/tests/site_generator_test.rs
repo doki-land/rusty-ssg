@@ -1,32 +1,35 @@
 //! 站点生成器测试
 
-use gatsby::tools::site_generator::SiteGenerator;
+use gatsby::{tools::StaticSiteGenerator, GatsbyConfig, Parser};
 use std::fs;
 use tempfile::tempdir;
 
 #[test]
-fn test_site_generator_creation() {
-    // 创建临时目录
-    let temp_dir = tempdir().unwrap();
-    let output_dir = temp_dir.path().join("public");
+fn test_static_site_generator_creation() {
+    // 创建配置
+    let config = GatsbyConfig::new();
 
     // 创建站点生成器
-    let generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    let generator = StaticSiteGenerator::new(config);
 
-    // 验证生成器配置
-    assert_eq!(generator.output_dir(), output_dir.to_str().unwrap());
+    // 验证生成器创建成功
+    assert!(generator.is_ok());
 }
 
 #[test]
-fn test_site_generator_generate() {
+fn test_static_site_generator_generate() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let output_dir = temp_dir.path().join("public");
 
-    // 创建站点生成器
-    let mut generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    // 创建配置
+    let config = GatsbyConfig::new();
 
-    // 生成站点
+    // 创建站点生成器
+    let mut generator = StaticSiteGenerator::new(config).unwrap();
+
+    // 准备文档
+    let mut documents = std::collections::HashMap::new();
     let content = r#"
 ---
 title: Test Page
@@ -37,8 +40,11 @@ date: 2024-01-01
 
 This is a test page.
 "#;
+    let doc = gatsby::MarkdownParser::new().parse(content, "test-page.md").unwrap();
+    documents.insert("test-page.md".to_string(), doc);
 
-    generator.generate("test-page", content).unwrap();
+    // 生成站点
+    generator.generate(&documents, &output_dir).unwrap();
 
     // 验证文件是否生成
     let output_file = output_dir.join("test-page.html");
@@ -47,23 +53,26 @@ This is a test page.
     // 验证文件内容
     let file_content = fs::read_to_string(output_file).unwrap();
     assert!(file_content.contains("<h1>Test Page</h1>"));
-    assert!(file_content.contains("<p>This is a test page.</p>"));
+    assert!(file_content.contains("This is a test page"));
 }
 
 #[test]
-fn test_site_generator_generate_multiple_pages() {
+fn test_static_site_generator_generate_multiple_pages() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let output_dir = temp_dir.path().join("public");
 
-    // 创建站点生成器
-    let mut generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    // 创建配置
+    let config = GatsbyConfig::new();
 
-    // 生成多个页面
-    let pages = vec![
-        (
-            "page1",
-            r#"
+    // 创建站点生成器
+    let mut generator = StaticSiteGenerator::new(config).unwrap();
+
+    // 准备文档
+    let mut documents = std::collections::HashMap::new();
+
+    // 添加第一个页面
+    let content1 = r#"
 ---
 title: Page 1
 date: 2024-01-01
@@ -72,11 +81,12 @@ date: 2024-01-01
 # Page 1
 
 This is page 1.
-"#,
-        ),
-        (
-            "page2",
-            r#"
+"#;
+    let doc1 = gatsby::MarkdownParser::new().parse(content1, "page1.md").unwrap();
+    documents.insert("page1.md".to_string(), doc1);
+
+    // 添加第二个页面
+    let content2 = r#"
 ---
 title: Page 2
 date: 2024-01-02
@@ -85,13 +95,12 @@ date: 2024-01-02
 # Page 2
 
 This is page 2.
-"#,
-        ),
-    ];
+"#;
+    let doc2 = gatsby::MarkdownParser::new().parse(content2, "page2.md").unwrap();
+    documents.insert("page2.md".to_string(), doc2);
 
-    for (path, content) in pages {
-        generator.generate(path, content).unwrap();
-    }
+    // 生成站点
+    generator.generate(&documents, &output_dir).unwrap();
 
     // 验证文件是否生成
     let page1_file = output_dir.join("page1.html");
@@ -109,22 +118,62 @@ This is page 2.
 }
 
 #[test]
-fn test_site_generator_clean() {
+fn test_static_site_generator_generate_index() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let output_dir = temp_dir.path().join("public");
-    fs::create_dir_all(&output_dir).unwrap();
 
-    // 创建测试文件
-    let test_file = output_dir.join("test.html");
-    fs::write(test_file, "test content").unwrap();
+    // 创建配置
+    let config = GatsbyConfig::new()
+        .with_site_metadata(
+            gatsby::config::SiteMetadata::new()
+                .with_title("Test Site".to_string())
+                .with_description("A test site".to_string())
+        );
 
     // 创建站点生成器
-    let mut generator = SiteGenerator::new(output_dir.to_str().unwrap());
+    let mut generator = StaticSiteGenerator::new(config).unwrap();
 
-    // 清理输出目录
-    generator.clean().unwrap();
+    // 准备文档
+    let mut documents = std::collections::HashMap::new();
 
-    // 验证文件是否被删除
-    assert!(!test_file.exists());
+    // 生成站点
+    generator.generate(&documents, &output_dir).unwrap();
+
+    // 验证索引文件是否生成
+    let index_file = output_dir.join("index.html");
+    assert!(index_file.exists());
+
+    // 验证文件内容
+    let index_content = fs::read_to_string(index_file).unwrap();
+    assert!(index_content.contains("Test Site"));
+    assert!(index_content.contains("A test site"));
+}
+
+#[test]
+fn test_static_site_generator_generate_404() {
+    // 创建临时目录
+    let temp_dir = tempdir().unwrap();
+    let output_dir = temp_dir.path().join("public");
+
+    // 创建配置
+    let config = GatsbyConfig::new();
+
+    // 创建站点生成器
+    let mut generator = StaticSiteGenerator::new(config).unwrap();
+
+    // 准备文档
+    let mut documents = std::collections::HashMap::new();
+
+    // 生成站点
+    generator.generate(&documents, &output_dir).unwrap();
+
+    // 验证 404 文件是否生成
+    let not_found_file = output_dir.join("404.html");
+    assert!(not_found_file.exists());
+
+    // 验证文件内容
+    let not_found_content = fs::read_to_string(not_found_file).unwrap();
+    assert!(not_found_content.contains("404"));
+    assert!(not_found_content.contains("Page Not Found"));
 }

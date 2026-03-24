@@ -106,12 +106,26 @@ impl FrontMatterEnhancer {
     /// 检查日期格式是否有效
     pub fn is_valid_date(date_str: &str) -> bool {
         // 支持多种日期格式
-        let formats = ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%SZ"];
+        let date_formats = ["%Y-%m-%d"];
+        let datetime_formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"];
 
-        for format in &formats {
-            if DateTime::parse_from_str(date_str, format).is_ok() {
+        // 尝试解析为日期
+        for format in &date_formats {
+            if chrono::NaiveDate::parse_from_str(date_str, format).is_ok() {
                 return true;
             }
+        }
+
+        // 尝试解析为本地日期时间
+        for format in &datetime_formats {
+            if chrono::NaiveDateTime::parse_from_str(date_str, format).is_ok() {
+                return true;
+            }
+        }
+
+        // 尝试解析为带时区的日期时间 (ISO 8601 格式)
+        if chrono::DateTime::parse_from_rfc3339(date_str).is_ok() {
+            return true;
         }
 
         false

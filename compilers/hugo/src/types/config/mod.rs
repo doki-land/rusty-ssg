@@ -9,6 +9,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use toml;
 
 /// 配置加载和验证相关的错误类型
 #[derive(Debug, Clone)]
@@ -149,6 +150,7 @@ pub trait ConfigValidation {
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct HugoConfig {
     /// 基础 URL
+    #[serde(rename = "baseURL", alias = "base_url")]
     pub base_url: Option<String>,
     /// 站点标题
     pub title: Option<String>,
@@ -315,7 +317,7 @@ impl HugoConfig {
     ///
     /// 返回 `ConfigError::TomlParseError` 如果 TOML 解析失败
     pub fn load_from_toml_str(toml_str: &str) -> Result<Self, ConfigError> {
-        let config: Self = oak_toml::language::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
+        let config: Self = toml::from_str(toml_str).map_err(|e| ConfigError::toml_parse_error(e.to_string()))?;
         config.validate()?;
         Ok(config)
     }

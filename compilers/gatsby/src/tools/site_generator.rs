@@ -40,83 +40,48 @@ impl StaticSiteGenerator {
             fs::create_dir_all(output_dir)?;
         }
 
-        let default_lang = self.get_default_language();
-
-        let mut all_docs_by_lang: HashMap<String, Vec<(String, Document)>> = HashMap::new();
-
-        for (path, doc) in documents {
-            let (lang, _) = self.extract_language_from_path(path, &default_lang);
-            all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
-        }
-
         // 并行生成页面
         let results = Arc::new(Mutex::new(Vec::new()));
 
-        all_docs_by_lang.par_iter().for_each(|(lang, docs)| {
-            let nav_items = self.generate_nav_items(lang);
+        documents.par_iter().for_each(|(path, doc)| {
+            let results_clone = Arc::clone(&results);
 
-            let mut all_sidebar_links = Vec::new();
+            let result = (|| -> Result<()> {
+                // 计算输出路径
+                let html_path = self.get_html_path(path);
+                let output_path = output_dir.join(&html_path);
 
-            for (path, doc) in docs {
-                let title = doc
-                    .title()
-                    .unwrap_or_else(|| {
-                        let file_name = path.split('/').last().unwrap_or(path);
-                        file_name.strip_suffix(".md").unwrap_or(file_name)
-                    })
-                    .to_string();
+                // 生成导航栏和侧边栏
+                let nav_items = self.generate_nav_items("zh-hans");
+                let sidebar_groups = self.generate_sidebar_groups(documents, "zh-hans");
 
-                let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
-                let html_path = normalized_path.replace(".md", ".html");
-                all_sidebar_links.push((title, html_path));
-            }
+                // 计算相对路径
+                let depth = html_path.matches('/').count();
+                let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
 
-            for (path, doc) in docs {
-                let results_clone = Arc::clone(&results);
-
-                let result = (|| -> Result<()> {
-                    let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
-                    let html_path = normalized_path.replace(".md", ".html");
-                    let full_html_path = format!("{}/{}", lang, html_path);
-                    let output_path = output_dir.join(&full_html_path);
-
-                    let depth = normalized_path.matches('/').count();
-                    let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
-
-                    let mut sidebar_links = Vec::new();
-                    for (title, link) in &all_sidebar_links {
-                        let relative_link = format!("{}{}", root_path, link);
-                        sidebar_links.push(SidebarLink { text: title.clone(), link: relative_link });
+                // 创建父目录
+                if let Some(parent) = output_path.parent() {
+                    if !parent.exists() {
+                        fs::create_dir_all(parent)?;
                     }
+                }
 
-                    let sidebar_group = SidebarGroup { text: "文档".to_string(), items: sidebar_links };
-                    let sidebar_groups = vec![sidebar_group];
+                // 渲染页面
+                let html_content = self.render_page(
+                    doc,
+                    "zh-hans",
+                    &nav_items,
+                    &sidebar_groups,
+                    html_path.clone(),
+                )?;
 
-                    // 创建父目录
-                    if let Some(parent) = output_path.parent() {
-                        if !parent.exists() {
-                            fs::create_dir_all(parent)?;
-                        }
-                    }
+                // 写入文件
+                fs::write(output_path, html_content)?;
 
-                    // 渲染页面
-                    let html_content = self.render_page_for_file(
-                        doc,
-                        lang,
-                        &nav_items,
-                        &sidebar_groups,
-                        normalized_path.clone(),
-                        html_path.clone(),
-                    )?;
+                Ok(())
+            })();
 
-                    // 写入文件
-                    fs::write(output_path, html_content)?;
-
-                    Ok(())
-                })();
-
-                results_clone.lock().unwrap().push(result);
-            }
+            results_clone.lock().unwrap().push(result);
         });
 
         let mut results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
@@ -127,10 +92,10 @@ impl StaticSiteGenerator {
         }
 
         // 生成其他文件
-        self.generate_root_index(output_dir)?;
         self.generate_404_page(output_dir)?;
         self.generate_sitemap(output_dir)?;
         self.generate_robots_txt(output_dir)?;
+        self.generate_site_index(output_dir)?;
 
         Ok(())
     }
@@ -235,30 +200,95 @@ Sitemap: {}
         Ok(())
     }
 
-    /// 生成根目录 index.html，重定向到默认语言页面
-    fn generate_root_index(&self, output_dir: &PathBuf) -> Result<()> {
-        let default_lang = self.get_default_language();
-        let redirect_url = format!("./{}/index.html", default_lang);
+    /// 生成站点首页
+    fn generate_site_index(&self, output_dir: &PathBuf) -> Result<()> {
+        let index_path = output_dir.join("index.html");
+        let site_title = self.theme.site_title();
+        let site_description = self.config.site_description().unwrap_or("");
 
         let html = format!(
             r#"<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-hans">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0; url={redirect_url}" />
-    <title>Redirecting...</title>
+    <meta name="description" content="{site_description}" />
+    <title>{site_title}</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }}
+        h1 {{
+            color: #2c3e50;
+        }}
+        .hero {{
+            text-align: center;
+            margin-bottom: 3rem;
+        }}
+        .features {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }}
+        .feature {{ 
+            padding: 1.5rem;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+        }}
+        .feature h3 {{ 
+            margin-top: 0;
+        }}
+        .btn {{
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 1rem;
+        }}
+        .btn:hover {{
+            background-color: #2980b9;
+        }}
+    </style>
 </head>
 <body>
-    <p>Redirecting to documentation... <a href="{redirect_url}">Click here if not redirected</a></p>
+    <div class="hero">
+        <h1>{site_title}</h1>
+        <p>{site_description}</p>
+        <a href="./" class="btn">Get Started</a>
+    </div>
+    
+    <div class="features">
+        <div class="feature">
+            <h3>Fast Builds</h3>
+            <p>Compile your site in seconds, not minutes, with Rust's performance.</p>
+        </div>
+        <div class="feature">
+            <h3>Modern Templates</h3>
+            <p>Use the latest template syntax and features.</p>
+        </div>
+        <div class="feature">
+            <h3>Easy Deployment</h3>
+            <p>Generate static files that work anywhere.</p>
+        </div>
+        <div class="feature">
+            <h3>Extensible</h3>
+            <p>Customize with plugins and themes.</p>
+        </div>
+    </div>
 </body>
 </html>
 "#
         );
 
-        let root_index_path = output_dir.join("index.html");
-        fs::write(root_index_path, html)?;
-
+        fs::write(index_path, html)?;
         Ok(())
     }
 
@@ -351,7 +381,39 @@ Sitemap: {}
 
     /// 生成导航栏项目
     fn generate_nav_items(&self, _lang: &str) -> Vec<NavItem> {
-        Vec::new()
+        vec![
+            NavItem {
+                text: "首页".to_string(),
+                link: "./".to_string(),
+            },
+            NavItem {
+                text: "关于".to_string(),
+                link: "./about.html".to_string(),
+            },
+            NavItem {
+                text: "博客".to_string(),
+                link: "./blog/".to_string(),
+            },
+        ]
+    }
+
+    /// 生成侧边栏分组
+    fn generate_sidebar_groups(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
+        let mut groups = Vec::new();
+        let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
+
+        for (path, doc) in documents {
+            let title = doc.title().unwrap_or_else(|| {
+                let file_name = path.split('/').last().unwrap_or(path);
+                file_name.strip_suffix(".md").unwrap_or(file_name)
+            }).to_string();
+
+            let html_path = self.get_html_path(path);
+            default_group.items.push(SidebarLink { text: title, link: html_path });
+        }
+
+        groups.push(default_group);
+        groups
     }
 
     /// 获取输出文件路径

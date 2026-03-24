@@ -31,7 +31,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(self.create_number_value(result))
     }
 
     /// sub - 减法
@@ -48,7 +48,7 @@ impl MathFunctions {
             result -= num;
         }
 
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(self.create_number_value(result))
     }
 
     /// mul - 乘法
@@ -69,7 +69,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(self.create_number_value(result))
     }
 
     /// div - 除法
@@ -89,7 +89,7 @@ impl MathFunctions {
             result /= num;
         }
 
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(self.create_number_value(result))
     }
 
     /// mod - 取模
@@ -106,7 +106,7 @@ impl MathFunctions {
         }
 
         let result = first % second;
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(self.create_number_value(result))
     }
 
     /// math.Max - 最大值
@@ -123,7 +123,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(serde_json::Number::from_f64(max_val.unwrap()).unwrap()))
+        Ok(self.create_number_value(max_val.unwrap()))
     }
 
     /// math.Min - 最小值
@@ -140,7 +140,7 @@ impl MathFunctions {
             }
         }
 
-        Ok(Value::Number(serde_json::Number::from_f64(min_val.unwrap()).unwrap()))
+        Ok(self.create_number_value(min_val.unwrap()))
     }
 
     /// math.Abs - 绝对值
@@ -152,7 +152,25 @@ impl MathFunctions {
         let num = args[0].as_f64().ok_or("Argument must be a number")?;
         let result = num.abs();
 
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(self.create_number_value(result))
+    }
+
+    /// 创建数字值，优先使用整数表示
+    fn create_number_value(&self, value: f64) -> Value {
+        // 检查是否为整数
+        if value.fract() == 0.0 {
+            // 尝试转换为 i64
+            let int_value = value as i64;
+            if int_value as f64 == value {
+                Value::Number(serde_json::Number::from(int_value))
+            } else {
+                // 如果超出 i64 范围，使用 f64
+                Value::Number(serde_json::Number::from_f64(value).unwrap())
+            }
+        } else {
+            // 非整数使用 f64
+            Value::Number(serde_json::Number::from_f64(value).unwrap())
+        }
     }
 }
 

@@ -5,6 +5,11 @@
 use nargo_document::MarkdownRenderer as NargoMarkdownRenderer;
 use std::collections::HashMap;
 
+/// HTML 转义函数
+fn html_escape(s: &str) -> String {
+    s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;")
+}
+
 /// HTML 渲染器配置
 #[derive(Debug, Clone)]
 pub struct HtmlRendererConfig {
@@ -58,9 +63,18 @@ impl HtmlRenderer {
     /// # 返回值
     /// 渲染后的 HTML 字符串
     pub fn render(&self, content: &str) -> String {
+        // 处理空内容
+        if content.trim().is_empty() {
+            return "<p></p>".to_string();
+        }
+
+        // 使用 nargo-document 渲染 Markdown
         match self.markdown_renderer.render(content) {
             Ok(html) => html,
-            Err(_) => self.render_simple_fallback(content),
+            Err(_) => {
+                // 渲染失败时使用简单的后备方法
+                self.render_simple_fallback(content)
+            }
         }
     }
 

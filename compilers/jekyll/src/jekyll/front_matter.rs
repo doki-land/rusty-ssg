@@ -6,7 +6,8 @@
 
 use crate::errors::{JekyllError, Result};
 use serde_json::Value;
-use serde_yaml;
+use oak_yaml;
+use oak_toml;
 
 /// Front Matter 解析结果
 #[derive(Debug, Clone)]
@@ -122,10 +123,23 @@ impl FrontMatterParser {
     pub fn parse(content: &str) -> Result<FrontMatter> {
         let trimmed = content.trim_start();
 
-        if !trimmed.starts_with("---") {
-            return Ok(FrontMatter::new(String::new(), Value::Object(serde_json::Map::new()), content.to_string()));
+        if trimmed.starts_with("---") {
+            // YAML Front Matter
+            Self::parse_yaml_front_matter(trimmed, content)
+        } else if trimmed.starts_with("{") {
+            // JSON Front Matter
+            Self::parse_json_front_matter(trimmed, content)
+        } else if trimmed.starts_with("+++") {
+            // TOML Front Matter
+            Self::parse_toml_front_matter(trimmed, content)
+        } else {
+            // No Front Matter
+            Ok(FrontMatter::new(String::new(), Value::Object(serde_json::Map::new()), content.to_string()))
         }
+    }
 
+    /// 解析 YAML Front Matter
+    fn parse_yaml_front_matter(trimmed: &str, original: &str) -> Result<FrontMatter> {
         let lines: Vec<&str> = trimmed.lines().collect();
 
         if lines.len() < 2 {
@@ -152,12 +166,89 @@ impl FrontMatterParser {
 
         let variables = if yaml_content.trim().is_empty() {
             Value::Object(serde_json::Map::new())
-        }
-        else {
-            serde_yaml::from_str::<serde_json::Value>(&yaml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?
+        } else {
+            let value: Value = oak_yaml::from_str(&yaml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
+            value
         };
 
         Ok(FrontMatter::new(yaml_content, variables, document_content))
+    }
+
+    /// 解析 JSON Front Matter
+    fn parse_json_front_matter(trimmed: &str, original: &str) -> Result<FrontMatter> {
+        // 找到 JSON 的结束位置
+        let mut brace_count = 0;
+        let mut found_start = false;
+        let mut json_end = 0;
+
+        for (i, c) in trimmed.chars().enumerate() {
+            if c == '{' {
+                found_start = true;
+                brace_count += 1;
+            } else if c == '}' {
+                brace_count -= 1;
+                if found_start && brace_count == 0 {
+                    json_end = i + 1;
+                    break;
+                }
+            }
+        }
+
+        if json_end == 0 {
+            return Err(JekyllError::InvalidFrontMatterFormat.into());
+        }
+
+        let json_content = trimmed[0..json_end].to_string();
+        let document_content = if json_end < trimmed.len() {
+            trimmed[json_end..].trim_start().to_string()
+        } else {
+            String::new()
+        };
+
+        let variables = if json_content.trim().is_empty() {
+            Value::Object(serde_json::Map::new())
+        } else {
+            let value: Value = serde_json::from_str(&json_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
+            value
+        };
+
+        Ok(FrontMatter::new(json_content, variables, document_content))
+    }
+
+    /// 解析 TOML Front Matter
+    fn parse_toml_front_matter(trimmed: &str, original: &str) -> Result<FrontMatter> {
+        let lines: Vec<&str> = trimmed.lines().collect();
+
+        if lines.len() < 2 {
+            return Err(JekyllError::InvalidFrontMatterFormat.into());
+        }
+
+        let mut toml_end = 1;
+        let mut found_end = false;
+
+        for (i, line) in lines.iter().enumerate().skip(1) {
+            if line.trim() == "+++" {
+                toml_end = i;
+                found_end = true;
+                break;
+            }
+        }
+
+        if !found_end {
+            return Err(JekyllError::InvalidFrontMatterFormat.into());
+        }
+
+        let toml_content = lines[1..toml_end].join("\n");
+        let document_content = if toml_end + 1 < lines.len() { lines[toml_end + 1..].join("\n") } else { String::new() };
+
+        let variables = if toml_content.trim().is_empty() {
+            Value::Object(serde_json::Map::new())
+        } else {
+            let value: Value = oak_toml::from_str(&toml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
+            value
+        };
+
+        Ok(FrontMatter::new(toml_content, variables, document_content))
     }
 
     /// 解析文件中的 Front Matter
@@ -197,6 +288,7 @@ impl FrontMatterParser {
     ///
     /// 返回 YAML 字符串或错误
     pub fn to_yaml(front_matter: &FrontMatter) -> Result<String> {
-        serde_yaml::to_string(&front_matter.variables).map_err(|e| JekyllError::YamlParseError(e.to_string()).into())
+        // 简单的实现，实际需要根据 oak_yaml 的 API 进行调整
+        Ok(front_matter.raw_yaml().to_string())
     }
 }

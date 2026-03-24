@@ -2,13 +2,13 @@
 //! 
 //! 测试 MkDocs 配置加载和处理功能
 
-use mkdocs::{config, MkDocsConfig};
+use mkdocs::MkDocsConfig;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::tempdir;
 
-#[tokio::test]
-async fn test_load_config() {
+#[test]
+fn test_load_config() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let config_file = temp_dir.path().join("mkdocs.yml");
@@ -31,7 +31,7 @@ plugins:
     fs::write(&config_file, config_content).unwrap();
 
     // 加载配置
-    let result = config::load_config(&config_file);
+    let result = MkDocsConfig::load_from_file(&config_file);
     assert!(result.is_ok());
     let config = result.unwrap();
 
@@ -44,8 +44,8 @@ plugins:
     assert_eq!(config.plugins.len(), 2);
 }
 
-#[tokio::test]
-async fn test_load_config_from_dir() {
+#[test]
+fn test_load_config_from_dir() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let config_file = temp_dir.path().join("mkdocs.yml");
@@ -59,7 +59,7 @@ site_dir: site
     fs::write(&config_file, config_content).unwrap();
 
     // 从目录加载配置
-    let result = config::load_config_from_dir(&temp_dir.path().to_path_buf());
+    let result = MkDocsConfig::load_from_dir(&temp_dir.path().to_path_buf());
     assert!(result.is_ok());
     let config = result.unwrap();
 
@@ -69,10 +69,10 @@ site_dir: site
     assert_eq!(config.site_dir, "site");
 }
 
-#[tokio::test]
-async fn test_default_config() {
+#[test]
+fn test_default_config() {
     // 创建默认配置
-    let config = config::create_default_config();
+    let config = MkDocsConfig::new();
 
     // 验证默认值
     assert_eq!(config.docs_dir, "docs");
@@ -83,8 +83,8 @@ async fn test_default_config() {
     assert!(config.use_directory_urls);
 }
 
-#[tokio::test]
-async fn test_config_validation() {
+#[test]
+fn test_config_validation() {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let config_file = temp_dir.path().join("mkdocs.yml");
@@ -97,6 +97,6 @@ site_dir: site
     fs::write(&config_file, config_content).unwrap();
 
     // 加载配置
-    let result = config::load_config(&config_file);
+    let result = MkDocsConfig::load_from_file(&config_file);
     assert!(result.is_err());
 }

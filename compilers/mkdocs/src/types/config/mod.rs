@@ -2,9 +2,9 @@
 //!
 //! 包含 MkDocs 配置文件的完整类型定义，用于解析和验证 mkdocs.yml 配置。
 
-use oak_yaml;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use serde_yaml;
 use std::collections::HashMap;
 
 /// MkDocs 主配置
@@ -409,12 +409,44 @@ pub struct PluginOptions {
 impl MkDocsConfig {
     /// 创建默认配置
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            inherit: None,
+            site_name: "".to_string(),
+            site_description: None,
+            site_author: None,
+            site_url: None,
+            repo_url: None,
+            repo_name: None,
+            edit_uri: None,
+            edit_uri_template: None,
+            copyright: None,
+            docs_dir: default_docs_dir(),
+            site_dir: default_site_dir(),
+            theme: ThemeConfig::new(),
+            nav: Vec::new(),
+            markdown_extensions: Vec::new(),
+            plugins: Vec::new(),
+            extra: HashMap::new(),
+            extra_css: Vec::new(),
+            extra_javascript: Vec::new(),
+            extra_templates: Vec::new(),
+            hooks: Vec::new(),
+            validation: ValidationConfig::default(),
+            exclude_docs: None,
+            draft_docs: None,
+            not_in_nav: None,
+            use_directory_urls: default_true(),
+            strict: false,
+            dev_addr: default_dev_addr(),
+            remote_branch: default_remote_branch(),
+            remote_name: default_remote_name(),
+            watch: Vec::new(),
+        }
     }
 
     /// 从 YAML 字符串解析配置
     pub fn from_yaml(content: &str) -> Result<Self, crate::types::errors::MkDocsError> {
-        oak_yaml::language::from_str(content)
+        serde_yaml::from_str(content)
             .map_err(|e| crate::types::errors::MkDocsError::ConfigParseError { message: e.to_string() })
     }
 

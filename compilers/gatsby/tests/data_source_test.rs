@@ -1,7 +1,7 @@
 use gatsby::{
     ContentDigest, DataLayerManager, FileDataSource, MarkdownDataSource, Node, NodeId, NodeType, SiteMetadataDataSource,
 };
-use gatsby::MarkdownParser;
+use gatsby::{MarkdownParser, Parser};
 
 #[test]
 fn test_markdown_data_source_creation() {

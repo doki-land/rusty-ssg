@@ -15,6 +15,7 @@ clap = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+serde_yaml = "0.9.34"
 walkdir = { workspace = true }
 
 console = { workspace = true }
@@ -36,6 +37,7 @@ notify.workspace = true
 hyper.workspace = true
 hyper-util.workspace = true
 http-body-util = "0.1.0"
+bytes = "1.0"
 
 nargo-types = { workspace = true }
 nargo-parser = { workspace = true }

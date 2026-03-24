@@ -1,7 +1,7 @@
 //! 开发服务器模块
 //! 提供本地开发服务器和热重载功能
 
-use crate::{GatsbyConfig, StaticSiteGenerator, types::Result};
+use crate::{GatsbyConfig, Parser, StaticSiteGenerator, types::Result};
 use console::style;
 use std::path::PathBuf;
 use tokio::sync::mpsc;
@@ -183,7 +183,7 @@ fn load_documents(source_dir: &PathBuf) -> Result<std::collections::HashMap<Stri
 
             // 解析文档
             let parser = crate::MarkdownParser::new();
-            let doc = parser.parse(&content, relative_path)?;
+            let doc = parser.parse(&content, relative_path).map_err(|e| crate::types::GatsbyError::config(e))?;
             documents.insert(relative_path.to_string(), doc);
         }
     }

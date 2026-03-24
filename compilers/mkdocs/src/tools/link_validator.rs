@@ -167,7 +167,7 @@ impl LinkValidator {
             }
         }
         else if link.starts_with("#") {
-            // 锚点链接，暂时不处理
+            // 锚点链接，由 validate_anchors 处理
         }
         else if link.ends_with(".md") || link.ends_with(".html") {
             // 本地文件链接
@@ -184,8 +184,39 @@ impl LinkValidator {
                 }
             }
         }
+        else if link.ends_with("/") {
+            // 目录 URL（如 page/）
+            let md_path = format!("{}{}", link.trim_end_matches("/"), ".md");
+            if !self.files.contains(&md_path) {
+                match level {
+                    ValidationLevel::Ignore => {}
+                    ValidationLevel::Info => {
+                        self.result.add_info(LinkError::NotFound(link.to_string()));
+                    }
+                    ValidationLevel::Warn => {
+                        self.result.add_warning(LinkError::NotFound(link.to_string()));
+                    }
+                }
+            }
+        }
+        else if !link.contains(".") {
+            // 可能是目录 URL 或没有扩展名的文件
+            let md_path = format!("{}{}", link, ".md");
+            if !self.files.contains(&md_path) {
+                match level {
+                    ValidationLevel::Ignore => {}
+                    ValidationLevel::Info => {
+                        self.result.add_info(LinkError::NotFound(link.to_string()));
+                    }
+                    ValidationLevel::Warn => {
+                        self.result.add_warning(LinkError::NotFound(link.to_string()));
+                    }
+                }
+            }
+        }
         else {
-            // 未识别的链接
+            // 其他链接类型（如图片、CSS、JS 等）
+            // 暂时只添加信息级别的提示
             self.result.add_info(LinkError::UnrecognizedLink(link.to_string()));
         }
     }
@@ -203,16 +234,69 @@ impl LinkValidator {
     }
 
     /// 验证文档中的链接
-    fn validate_document_links(&mut self, _path: &str, content: &str, not_found_level: &crate::types::ValidationLevel) {
-        // 简单的链接提取正则
-        let link_regex = regex::Regex::new(r#"!(.*?)(.*?)"#).unwrap();
+    fn validate_document_links(&mut self, path: &str, content: &str, not_found_level: &crate::types::ValidationLevel) {
+        // 提取 Markdown 中的链接和图片
+        let link_regex = regex::Regex::new(r#"\[([^\]]+)\]\(([^\)]+)\)"#).unwrap();
+        let image_regex = regex::Regex::new(r#"!\[([^\]]*)\]\(([^\)]+)\)"#).unwrap();
 
+        // 验证普通链接
         for capture in link_regex.captures_iter(content) {
             if let Some(link) = capture.get(2) {
-                let link_str = link.as_str();
-                self.validate_link(link_str, &not_found_level);
+                let link_str = link.as_str().trim();
+                self.validate_link(link_str, not_found_level);
             }
         }
+
+        // 验证图片链接
+        for capture in image_regex.captures_iter(content) {
+            if let Some(link) = capture.get(2) {
+                let link_str = link.as_str().trim();
+                self.validate_link(link_str, not_found_level);
+            }
+        }
+
+        // 验证锚点链接
+        self.validate_anchors(path, content);
+    }
+
+    /// 验证锚点链接
+    fn validate_anchors(&mut self, _path: &str, content: &str) {
+        // 提取文档中的锚点（标题）
+        let header_regex = regex::Regex::new(r#"^#{1,6}\s+(.+)$"#).unwrap();
+        let mut anchors = HashSet::new();
+
+        for line in content.lines() {
+            if let Some(capture) = header_regex.captures(line) {
+                if let Some(header) = capture.get(1) {
+                    let anchor = self.generate_anchor(header.as_str());
+                    anchors.insert(anchor);
+                }
+            }
+        }
+
+        // 提取文档中的锚点链接
+        let anchor_regex = regex::Regex::new(r#"\[([^\]]+)\]\((#[^\)]+)\)"#).unwrap();
+        for capture in anchor_regex.captures_iter(content) {
+            if let Some(anchor) = capture.get(2) {
+                let anchor_str = anchor.as_str();
+                // 移除 # 前缀
+                let anchor_name = &anchor_str[1..];
+                if !anchors.contains(anchor_name) {
+                    self.result.add_warning(LinkError::AnchorNotFound(anchor_name.to_string(), anchor_str.to_string()));
+                }
+            }
+        }
+    }
+
+    /// 生成锚点名称（根据 Markdown 标题生成）
+    fn generate_anchor(&self, header: &str) -> String {
+        // 转换为小写
+        let mut anchor = header.to_lowercase();
+        // 移除特殊字符
+        anchor = anchor.chars().filter(|c| c.is_alphanumeric() || *c == ' ').collect();
+        // 空格替换为连字符
+        anchor = anchor.replace(' ', "-");
+        anchor
     }
 
     /// 获取验证结果

@@ -38,6 +38,20 @@ pub struct JekyllConfig {
     pub collections: Option<serde_json::Map<String, Value>>,
     /// 插件配置
     pub plugins: Option<Vec<String>>,
+    /// 主题配置
+    pub theme: Option<String>,
+    /// 构建配置
+    pub build: Option<serde_json::Map<String, Value>>,
+    /// 开发配置
+    pub development: Option<serde_json::Map<String, Value>>,
+    /// 生产配置
+    pub production: Option<serde_json::Map<String, Value>>,
+    /// 时区
+    pub timezone: Option<String>,
+    /// 语言
+    pub lang: Option<String>,
+    /// 编码
+    pub encoding: Option<String>,
     /// 自定义配置
     pub custom: serde_json::Map<String, Value>,
 }
@@ -94,8 +108,7 @@ impl JekyllConfig {
     ///
     /// 返回配置或错误
     pub fn from_yaml_str(yaml: &str) -> Result<Self> {
-        let value: Value = serde_yaml::from_str(yaml).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
-
+        let value: Value = oak_yaml::from_str(yaml).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
         Self::from_json_value(value)
     }
 
@@ -171,6 +184,41 @@ impl JekyllConfig {
                                     .filter_map(|v| if let Value::String(s) = v { Some(s.clone()) } else { None })
                                     .collect(),
                             );
+                        }
+                    }
+                    "theme" => {
+                        if let Value::String(s) = val {
+                            config.theme = Some(s);
+                        }
+                    }
+                    "build" => {
+                        if let Value::Object(obj) = val {
+                            config.build = Some(obj);
+                        }
+                    }
+                    "development" => {
+                        if let Value::Object(obj) = val {
+                            config.development = Some(obj);
+                        }
+                    }
+                    "production" => {
+                        if let Value::Object(obj) = val {
+                            config.production = Some(obj);
+                        }
+                    }
+                    "timezone" => {
+                        if let Value::String(s) = val {
+                            config.timezone = Some(s);
+                        }
+                    }
+                    "lang" => {
+                        if let Value::String(s) = val {
+                            config.lang = Some(s);
+                        }
+                    }
+                    "encoding" => {
+                        if let Value::String(s) = val {
+                            config.encoding = Some(s);
                         }
                     }
                     _ => {
@@ -258,6 +306,27 @@ impl JekyllConfig {
         }
         if other.plugins.is_some() {
             result.plugins = other.plugins.clone();
+        }
+        if other.theme.is_some() {
+            result.theme = other.theme.clone();
+        }
+        if other.build.is_some() {
+            result.build = other.build.clone();
+        }
+        if other.development.is_some() {
+            result.development = other.development.clone();
+        }
+        if other.production.is_some() {
+            result.production = other.production.clone();
+        }
+        if other.timezone.is_some() {
+            result.timezone = other.timezone.clone();
+        }
+        if other.lang.is_some() {
+            result.lang = other.lang.clone();
+        }
+        if other.encoding.is_some() {
+            result.encoding = other.encoding.clone();
         }
 
         for (key, value) in &other.custom {

@@ -15,7 +15,7 @@ fn test_add_and_render_template() {
     let site = HugoSite::new().with_title("Test Site".to_string());
     let mut engine = HugoTemplateEngine::new(dir.path(), site).unwrap();
 
-    engine.add_template("test", "Hello, {site.title}!").unwrap();
+    engine.add_template("test", "Hello, {{ site.title }}!").unwrap();
 
     let page = HugoPage::new();
     let result = engine.render("test", page).unwrap();

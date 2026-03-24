@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MkDocs - Rust Reimplementation | </title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #fff;
+            border-right: 1px solid #e5e5e5;
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+        
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+        }
+        
+        .sidebar-nav li {
+            margin-bottom: 8px;
+        }
+        
+        .sidebar-nav a {
+            color: #666;
+            text-decoration: none;
+            display: block;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: #f0f0f0;
+            color: #007acc;
+        }
+        
+        .sidebar-nav .group-title {
+            font-weight: 600;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 40px;
+            max-width: 900px;
+        }
+        
+        .navbar {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 0 40px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 280px;
+            right: 0;
+            z-index: 100;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: #666;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .nav-links a:hover {
+            color: #007acc;
+        }
+        
+        .content-wrapper {
+            margin-top: 80px;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid #eee;
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+        }
+        
+        p {
+            margin-bottom: 16px;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        
+        ul, ol {
+            margin-bottom: 16px;
+            padding-left: 2em;
+        }
+        
+        li {
+            margin-bottom: 4px;
+        }
+        
+        a {
+            color: #007acc;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        blockquote {
+            border-left: 4px solid #007acc;
+            padding-left: 16px;
+            margin-left: 0;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5e5;
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-title"></div>
+            <nav>
+                <ul class="sidebar-nav">
+
+
+                    <li class="group-title">文档</li>
+
+                    <li>
+                        <a href="#"{% if item.link == current_path %} class="active"{% endif %}>链接</a>
+                    </li>
+
+
+
+                </ul>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <nav class="navbar">
+                <ul class="nav-links">
+
+                    <li><a href="#">链接</a></li>
+
+                </ul>
+            </nav>
+            
+            <div class="content-wrapper">
+<h1>MkDocs - Rust Reimplementation</h1>
+<p></p>
+<h2>Overview</h2>
+<p></p>
+<p>MkDocs is a fast, simple, and downright gorgeous static site generator for creating documentation, now reimplemented in Rust for even better performance and reliability. It's designed to help you build beautiful, documentation-focused websites with ease, using Markdown.</p>
+<p></p>
+<h3>🎯 Key Features</h3>
+<li>🚀 **Fast Builds**: Compile your site in seconds, not minutes</li>
+<li>🎨 **Beautiful Themes**: Use MkDocs's stunning themes</li>
+<li>📦 **Easy Deployment**: Generate static files that work anywhere</li>
+<li>🔧 **Extensible**: Customize with plugins and extensions</li>
+<li>🛠 **Developer Friendly**: Great tooling and developer experience</li>
+<li>📝 **Markdown Support**: Write content in Markdown with ease</li>
+<li>🌍 **Cross-Platform**: Works on Windows, macOS, and Linux</li>
+<li>📱 **100% Compatible**: Full compatibility when using static features</li>
+<p></p>
+<h2>Installation</h2>
+<p></p>
+<h3>From Crates.io</h3>
+<p></p>
+<pre><code>cargo install mkdocs
+</code></pre>
+<p></p>
+<h3>From Source</h3>
+<p></p>
+<pre><code># Clone the repository
+git clone https://github.com/doki-land/rusty-ssg.git
+
+# Build and install
+cd rusty-ssg/compilers/mkdocs
+git checkout dev
+cargo install --path .
+</code></pre>
+<p></p>
+<h2>Usage</h2>
+<p></p>
+<h3>Create a New Project</h3>
+<p></p>
+<pre><code>mkdocs new my-project
+cd my-project
+</code></pre>
+<p></p>
+<h3>Develop Locally</h3>
+<p></p>
+<pre><code>mkdocs serve
+</code></pre>
+<p></p>
+<p>This will start a local development server with hot reloading, so you can see your changes in real-time.</p>
+<p></p>
+<h3>Build for Production</h3>
+<p></p>
+<pre><code>mkdocs build
+</code></pre>
+<p></p>
+<p>This will generate optimized static files in the `site` directory, ready for deployment.</p>
+<p></p>
+<h2>Architecture</h2>
+<p></p>
+<p>MkDocs follows a modular architecture designed for performance and extensibility, leveraging external libraries for enhanced functionality:</p>
+<p></p>
+<pre><code>flowchart TD
+A[CLI] --&gt; B[Config Loader]
+B --&gt; C[Content Scanner]
+C --&gt; D[Parser]
+D --&gt; E[Renderer]
+E --&gt; F[Output Generator]
+G[Plugins] --&gt; E
+H[Themes] --&gt; E
+I[nargo] --&gt; E
+J[oak] --&gt; D
+K[IPC] --&gt; G
+</code></pre>
+<p></p>
+<h3>Core Components</h3>
+<p></p>
+<li>**CLI**: Command-line interface for interacting with the compiler</li>
+<li>**Config Loader**: Reads and parses MkDocs configuration files (YAML)</li>
+<li>**Content Scanner**: Discovers and processes content files</li>
+<li>**Parser**: Converts Markdown to HTML (uses oak)</li>
+<li>**Renderer**: Renders content using theme templates</li>
+<li>**Output Generator**: Writes final static files</li>
+<li>**Plugins**: Extend functionality with custom plugins (uses IPC mode)</li>
+<li>**Themes**: Provide reusable templates and styles</li>
+<li>**nargo**: External library with analysis engines and bundlers</li>
+<li>**oak**: External library for parsing</li>
+<li>**IPC**: Inter-process communication for plugin system</li>
+<p></p>
+<h2>Configuration</h2>
+<p></p>
+<p>Here's an example `mkdocs.yml` file:</p>
+<p></p>
+<pre><code># Project information
+site_name: My Docs
+site_url: https://example.com
+site_author: Your Name
+site_description: A documentation site built with Rusty MkDocs
+
+# Repository
+repo_name: rusty-ssg/mkdocs
+repo_url: https://github.com/rusty-ssg/mkdocs
+
+# Configuration
+nav:
+- Home: index.md
+- Getting Started: getting-started.md
+- Configuration: configuration.md
+- Plugins: plugins.md
+- Themes: themes.md
+
+# Theme
+theme:
+name: material
+features:
+- navigation.tabs
+- navigation.sections
+- toc.integrate
+palette:
+primary: indigo
+accent: teal
+
+# Plugins
+plugins:
+- search
+- mkdocstrings
+- minify:
+minify_html: true
+
+# Markdown extensions
+markdown_extensions:
+- toc:
+permalink: true
+- codehilite:
+linenums: true
+- admonition
+- pymdownx.details
+- pymdownx.superfences
+</code></pre>
+<p></p>
+<h2>Examples</h2>
+<p></p>
+<h3>Example Documentation Page</h3>
+<p></p>
+<p>Here's an example of a documentation page in MkDocs:</p>
+<p></p>
+<pre><code># Getting Started
+
+Welcome to the MkDocs documentation!
+
+## Installation
+
+Install MkDocs using Cargo:
+
+</code></pre>
+<p>cargo install mkdocs</p>
+<pre><code>
+## Creating a New Project
+
+Create a new MkDocs project:
+
+</code></pre>
+<p>mkdocs new my-project</p>
+<p>cd my-project</p>
+<pre><code>
+## Project Structure
+
+A typical MkDocs project structure looks like this:
+
+</code></pre>
+<p>my-project/</p>
+<p>├── mkdocs.yml    # Configuration file</p>
+<p>└── docs/</p>
+<p>├── index.md  # Home page</p>
+<p>└── ...       # Other documentation pages</p>
+<pre><code>
+## Why Use MkDocs?
+
+- It&#39;s blazingly fast
+- It has beautiful themes out of the box
+- It&#39;s easy to configure and use
+- It&#39;s 100% compatible with static features
+
+Happy documenting! 🎉
+</code></pre>
+<p></p>
+<h3>Example Navigation Configuration</h3>
+<p></p>
+<p>Here's an example of a more complex navigation configuration:</p>
+<p></p>
+<pre><code>nav:
+- Home: index.md
+- User Guide:
+- Getting Started: user-guide/getting-started.md
+- Installation: user-guide/installation.md
+- Usage: user-guide/usage.md
+- API Reference:
+- Overview: api-reference/overview.md
+- Endpoints: api-reference/endpoints.md
+- Models: api-reference/models.md
+- Contributing: contributing.md
+- Changelog: changelog.md
+</code></pre>
+<p></p>
+<h2>Compatibility Note</h2>
+<p></p>
+<p>⚠️ **Important**: MkDocs provides 100% compatibility only when using static features. Dynamic features may have limited support or require additional configuration.</p>
+<p></p>
+<h2>Plugins</h2>
+<p></p>
+<p>MkDocs supports a wide range of plugins to extend functionality (using IPC mode):</p>
+<p></p>
+<li>🔍 **search**: Built-in search functionality</li>
+<li>📚 **mkdocstrings**: Generate documentation from code</li>
+<li>🎨 **minify**: Minify HTML and CSS</li>
+<li>🗺️ **sitemap**: Generate sitemap.xml</li>
+<li>📱 **responsive-images**: Responsive image support</li>
+<p></p>
+<h2>Themes</h2>
+<p></p>
+<p>Choose from a variety of MkDocs themes or create your own:</p>
+<p></p>
+<li>🎨 **material**: Modern, responsive theme (default)</li>
+<li>📦 **readthedocs**: ReadTheDocs-style theme</li>
+<li>🌙 **mkdocs-bootstrap**: Bootstrap-based theme</li>
+<li>📝 **mkdocs-cinder**: Clean, minimal theme</li>
+<li>💼 **mkdocs-simple**: Simple, lightweight theme</li>
+<p></p>
+<h2>Deployment</h2>
+<p></p>
+<p>MkDocs generates static files that can be deployed anywhere:</p>
+<p></p>
+<h3>Netlify</h3>
+<p></p>
+<pre><code># netlify.toml
+[build]
+command = &quot;mkdocs build&quot;
+publish = &quot;site&quot;
+</code></pre>
+<p></p>
+<h3>Vercel</h3>
+<p></p>
+<pre><code>// vercel.json
+{
+&quot;buildCommand&quot;: &quot;mkdocs build&quot;,
+&quot;outputDirectory&quot;: &quot;site&quot;
+}
+</code></pre>
+<p></p>
+<h3>GitHub Pages</h3>
+<p></p>
+<pre><code># .github/workflows/deploy.yml
+name: Deploy
+on: [push]
+jobs:
+deploy:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v3
+- uses: actions-rs/toolchain@v1
+with:
+toolchain: stable
+- run: cargo install mkdocs
+- run: mkdocs build
+- uses: peaceiris/actions-gh-pages@v3
+with:
+github_token: ${{ secrets.GITHUB_TOKEN }}
+publish_dir: ./site
+</code></pre>
+<p></p>
+<h2>Contribution Guidelines</h2>
+<p></p>
+<p>We welcome contributions to MkDocs! 🤝</p>
+<p></p>
+<h3>Reporting Issues</h3>
+<p></p>
+<p>If you find a bug or have a feature request, please [open an issue](https://github.com/rusty-ssg/mkdocs/issues).</p>
+<p></p>
+<h3>Pull Requests</h3>
+<p></p>
+<p>1. Fork the repository</p>
+<p>2. Create a new branch</p>
+<p>3. Make your changes</p>
+<p>4. Run tests</p>
+<p>5. Submit a pull request</p>
+<p></p>
+<h3>Code Style</h3>
+<p></p>
+<p>Please follow the Rust style guide and use `cargo fmt` to format your code.</p>
+<p></p>
+<h2>Acknowledgements</h2>
+<p></p>
+<p>MkDocs is inspired by the original MkDocs project and benefits from the Rust ecosystem, including the nargo and oak libraries.</p>
+<p></p>
+<h2>License</h2>
+<p></p>
+<p>MkDocs is licensed under the terms specified in the LICENSE file. See [LICENSE](https://github.com/doki-land/rusty-ssg/blob/dev/License.md) for more information.</p>
+<p></p>
+<p></p>
+<p>Happy documenting with MkDocs! 🚀</p>
+
+                
+
+                <footer class="footer">
+
+                    <p></p>
+
+
+                    <p></p>
+
+                </footer>
+
+            </div>
+        </main>
+    </div>
+</body>
+</html>

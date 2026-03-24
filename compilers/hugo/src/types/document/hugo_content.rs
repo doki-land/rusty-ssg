@@ -853,7 +853,7 @@ impl HugoContentLoader {
         use regex::Regex;
 
         // 匹配 Markdown 标题
-        let re = Regex::new(r"^(#{1,6})\s+(.+)$").unwrap();
+        let re = Regex::new(r"^\s*(#{1,6})\s+(.+)$").unwrap();
         let mut items = Vec::new();
         let mut levels = Vec::new();
 
@@ -863,10 +863,9 @@ impl HugoContentLoader {
                 let text = captures[2].trim();
 
                 // 生成锚点 ID
-                let id =
-                    text.to_lowercase().replace(|c: char| !c.is_alphanumeric() && c != ' ', "-").trim_matches('-').to_string();
+                let id = format!("heading-{}", levels.len() + 1);
 
-                let mut item = TableOfContentsItem { text: text.to_string(), level, id, children: Vec::new() };
+                let item = TableOfContentsItem { text: text.to_string(), level, id, children: Vec::new() };
 
                 // 维护目录层级
                 while !levels.is_empty() && levels.last().unwrap() >= &level {
@@ -964,10 +963,7 @@ impl HugoContentLoader {
         let mut permalink = "/".to_string();
         if !parts.is_empty() {
             permalink.push_str(&parts.join("/"));
-        }
-
-        // 对于非索引页面，添加尾部斜杠
-        if file_name != "_index.md" && file_name != "index.md" {
+            // 对于非根路径，添加尾部斜杠
             permalink.push('/');
         }
 

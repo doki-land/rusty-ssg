@@ -9,8 +9,8 @@ use regex::Regex;
 lazy_static! {
     /// 匹配块级公式 `$$...$$` 的正则表达式
     static ref BLOCK_MATH_RE: Regex = Regex::new(r"\$\$([\s\S]*?)\$\$").unwrap();
-    /// 匹配行内公式 `$...$` 的正则表达式，排除行内公式被块级公式包含的情况
-    static ref INLINE_MATH_RE: Regex = Regex::new(r"(?<!\$)\$(?!\$)([^$\n]+?)(?<!\$)\$(?!\$)").unwrap();
+    /// 匹配行内公式 `$...$` 的正则表达式
+    static ref INLINE_MATH_RE: Regex = Regex::new(r"\$([^$\n]+?)\$").unwrap();
 }
 
 /// KaTeX 数学公式渲染插件
@@ -59,6 +59,8 @@ impl KaTeXPlugin {
     ///
     /// 替换后的文本内容
     fn process_inline_math(&self, content: &str) -> String {
+        // 直接处理行内公式，避免与块级公式冲突
+        // 由于我们先处理块级公式，所以这里可以安全地处理行内公式
         INLINE_MATH_RE
             .replace_all(content, |caps: &regex::Captures| {
                 let math = &caps[1];
@@ -92,7 +94,9 @@ impl VutexPlugin for KaTeXPlugin {
     fn before_render(&self, context: PluginContext) -> PluginContext {
         let mut content = context.content;
 
+        // 处理块级公式
         content = self.process_block_math(&content);
+        // 处理行内公式
         content = self.process_inline_math(&content);
 
         PluginContext { content, frontmatter: context.frontmatter, path: context.path }

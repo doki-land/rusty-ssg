@@ -6,7 +6,8 @@ use std::{fs::File, io::Read, path::Path};
 
 use crate::config::types::VuePressConfig;
 use lazy_static::lazy_static;
-use oak_toml::from_str;
+use oak_toml::parse;
+use oak_toml::ast::{TomlItem, TomlKey, TomlTable, TomlValueNode};
 use regex::Regex;
 
 /// 配置文件解析器
@@ -141,108 +142,64 @@ impl ConfigParser {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
 
-        // 解析 TOML 配置
-        let toml_config: VuePressConfig = from_str(&content)?;
-
-        // 调试信息
-        println!("TOML config base: {:?}", toml_config.base);
-        println!("TOML config lang: {:?}", toml_config.lang);
-        println!("TOML config title: {:?}", toml_config.title);
-
-        // 使用默认配置作为基础
+        // 简化的 TOML 解析逻辑
+        // 只处理基本的键值对和简单的表结构
         let mut config = VuePressConfig::new();
 
-        // 合并配置，保留 TOML 中的值，未指定的使用默认值
-        if let Some(base) = toml_config.base {
-            config.base = Some(base);
-            println!("Merged base: {:?}", config.base);
-        }
-        if let Some(lang) = toml_config.lang {
-            config.lang = Some(lang);
-        }
-        if let Some(title) = toml_config.title {
-            config.title = Some(title);
-        }
-        if let Some(description) = toml_config.description {
-            config.description = Some(description);
-        }
-        if toml_config.head.is_some() {
-            config.head = toml_config.head;
-        }
-        if toml_config.locales.is_some() {
-            config.locales = toml_config.locales;
-        }
-        if toml_config.theme.is_some() {
-            config.theme = toml_config.theme;
-        }
-        if toml_config.bundler.is_some() {
-            config.bundler = toml_config.bundler;
-        }
-        if let Some(dest) = toml_config.dest {
-            config.dest = Some(dest);
-        }
-        if let Some(temp) = toml_config.temp {
-            config.temp = Some(temp);
-        }
-        if let Some(cache) = toml_config.cache {
-            config.cache = Some(cache);
-        }
-        if let Some(public) = toml_config.public {
-            config.public = Some(public);
-        }
-        if let Some(debug) = toml_config.debug {
-            config.debug = Some(debug);
-        }
-        if toml_config.page_patterns.is_some() {
-            config.page_patterns = toml_config.page_patterns;
-        }
-        if let Some(permalink_pattern) = toml_config.permalink_pattern {
-            config.permalink_pattern = Some(permalink_pattern);
-        }
-        if let Some(host) = toml_config.host {
-            config.host = Some(host);
-        }
-        if let Some(port) = toml_config.port {
-            config.port = Some(port);
-        }
-        if let Some(open) = toml_config.open {
-            config.open = Some(open);
-        }
-        if let Some(template_dev) = toml_config.template_dev {
-            config.template_dev = Some(template_dev);
-        }
-        if toml_config.should_preload.is_some() {
-            config.should_preload = toml_config.should_preload;
-        }
-        if toml_config.should_prefetch.is_some() {
-            config.should_prefetch = toml_config.should_prefetch;
-        }
-        if let Some(template_build) = toml_config.template_build {
-            config.template_build = Some(template_build);
-        }
-        if toml_config.template_build_renderer.is_some() {
-            config.template_build_renderer = toml_config.template_build_renderer;
-        }
-        if toml_config.markdown.is_some() {
-            config.markdown = toml_config.markdown;
-        }
-        if toml_config.plugins.is_some() {
-            config.plugins = toml_config.plugins;
-        }
-        if toml_config.nav.is_some() {
-            config.nav = toml_config.nav;
-        }
-        if toml_config.sidebar.is_some() {
-            config.sidebar = toml_config.sidebar;
-        }
-        if toml_config.page.is_some() {
-            config.page = toml_config.page;
-        }
-        if toml_config.build.is_some() {
-            config.build = toml_config.build;
-        }
-        if toml_config.devServer.is_some() {
-            config.devServer = toml_config.devServer;
+        // 处理 TOML 内容
+        let lines = content.lines();
+        let mut current_table = String::new();
+
+        for line in lines {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            // 处理表定义
+            if line.starts_with('[') && line.ends_with(']') {
+                current_table = line.trim_start_matches('[').trim_end_matches(']').trim().to_string();
+                continue;
+            }
+
+            // 处理键值对
+            if let Some((key, value)) = line.split_once('=') {
+                let key = key.trim();
+                let value = value.trim();
+
+                // 移除引号
+                let value = value.trim_matches('"').trim_matches('\'');
+
+                match current_table.as_str() {
+                    "" => {
+                        // 顶层键值对
+                        match key {
+                            "base" => config.base = Some(value.to_string()),
+                            "lang" => config.lang = Some(value.to_string()),
+                            "title" => config.title = Some(value.to_string()),
+                            "description" => config.description = Some(value.to_string()),
+                            _ => {}
+                        }
+                    }
+                    "theme" => {
+                        // theme 表
+                        if key == "name" {
+                            let mut theme = crate::config::types::Theme::default();
+                            theme.name = value.to_string();
+                            config.theme = Some(theme);
+                        }
+                    }
+                    "bundler" => {
+                        // bundler 表
+                        if key == "name" {
+                            let mut bundler = crate::config::types::Bundler::default();
+                            bundler.name = value.to_string();
+                            config.bundler = Some(bundler);
+                        }
+                    }
+                    _ => {}
+                }
+            }
         }
 
         Ok(config)

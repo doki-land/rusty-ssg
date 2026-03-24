@@ -26,7 +26,7 @@ pub use collection::{Collection, CollectionConfig, CollectionItem, CollectionMan
 pub use config::{JekyllConfig, JekyllConfigLoader};
 pub use front_matter::FrontMatterParser;
 pub use liquid::{LiquidEngine, LiquidFilter, LiquidTag};
-pub use markdown::{MarkdownConverter, MarkdownProcessor};
+pub use markdown::MarkdownConverter;
 pub use post::{Post, PostManager};
 pub use static_file::{StaticFile, StaticFileManager};
 pub use structure::{JekyllDirectory, JekyllStructure};

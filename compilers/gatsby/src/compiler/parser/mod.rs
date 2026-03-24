@@ -1,6 +1,7 @@
 //! 解析器模块
 //! 提供 Markdown 文档解析功能
 
+use crate::compiler::renderer::HtmlRenderer;
 use oak_core::{Builder, ParseSession};
 use oak_markdown::{MarkdownBuilder, MarkdownLanguage, ast::MarkdownRoot};
 use nargo_types::Document;
@@ -87,11 +88,14 @@ impl ParserConfig {
 /// Markdown 解析器
 ///
 /// 负责将 Markdown 内容解析为文档对象
+#[derive(Clone)]
 pub struct MarkdownParser {
     /// 解析器配置
     config: ParserConfig,
     /// Markdown 语言配置
     lang_config: MarkdownLanguage,
+    /// HTML 渲染器
+    html_renderer: HtmlRenderer,
     /// 自定义解析选项
     options: HashMap<String, String>,
 }
@@ -113,7 +117,9 @@ impl MarkdownParser {
         lang_config.allow_task_lists = config.tasklists;
         lang_config.allow_strikethrough = config.strikethrough;
 
-        Self { config, lang_config, options: HashMap::new() }
+        let html_renderer = HtmlRenderer::new();
+
+        Self { config, lang_config, html_renderer, options: HashMap::new() }
     }
 
     /// 获取解析器配置
@@ -179,6 +185,11 @@ impl MarkdownParser {
         // 解析 body 为 AST
         let ast = self.parse_ast(&body)?;
 
+        // 渲染为 HTML
+        let html_content = self.html_renderer.render(&body);
+
+
+
         // 创建文档对象
         let mut doc = Document::new();
         doc.meta.path = path.to_string();
@@ -190,6 +201,7 @@ impl MarkdownParser {
 
         // 设置内容
         doc.content = body;
+        doc.rendered_content = Some(html_content);
 
         Ok(doc)
     }
@@ -206,10 +218,17 @@ impl MarkdownParser {
     fn extract_frontmatter(&self, content: &str) -> (Option<String>, String) {
         let lines: Vec<&str> = content.lines().collect();
 
-        if lines.len() >= 3 && lines[0] == "---" {
-            for (i, line) in lines.iter().enumerate().skip(1) {
-                if *line == "---" {
-                    let frontmatter = lines[1..i].join("\n");
+        // 跳过开头的空白行
+        let mut start_index = 0;
+        while start_index < lines.len() && lines[start_index].trim().is_empty() {
+            start_index += 1;
+        }
+
+        // 检查是否有 frontmatter
+        if start_index < lines.len() && lines[start_index].trim() == "---" {
+            for (i, line) in lines.iter().enumerate().skip(start_index + 1) {
+                if line.trim() == "---" {
+                    let frontmatter = lines[start_index + 1..i].join("\n");
                     let body = lines[i+1..].join("\n");
                     return (Some(frontmatter), body);
                 }
@@ -228,12 +247,133 @@ impl MarkdownParser {
     /// # Returns
     ///
     /// 解析后的 frontmatter
-    fn parse_frontmatter(&self, content: &str) -> Result<nargo_types::Frontmatter, String> {
-        use oak_yaml::language::from_str;
-
-        let frontmatter: nargo_types::Frontmatter = from_str(content)
-            .map_err(|e| format!("Frontmatter parse error: {:?}", e))?;
-
+    fn parse_frontmatter(&self, content: &str) -> Result<nargo_types::FrontMatter, String> {
+        // 使用 toml 库解析 frontmatter
+        use toml::Value;
+        
+        let mut frontmatter = nargo_types::FrontMatter::new();
+        
+        match toml::from_str::<Value>(content) {
+            Ok(value) => {
+                // 解析基本字段
+                if let Some(title) = value.get("title").and_then(|v| v.as_str()) {
+                    frontmatter.title = Some(title.to_string());
+                }
+                
+                if let Some(description) = value.get("description").and_then(|v| v.as_str()) {
+                    frontmatter.description = Some(description.to_string());
+                }
+                
+                if let Some(layout) = value.get("layout").and_then(|v| v.as_str()) {
+                    frontmatter.layout = Some(layout.to_string());
+                }
+                
+                // 解析 tags
+                if let Some(tags) = value.get("tags") {
+                    match tags {
+                        Value::Array(arr) => {
+                            frontmatter.tags = arr
+                                .iter()
+                                .filter_map(|v| v.as_str())
+                                .map(|s| s.to_string())
+                                .collect();
+                        }
+                        Value::String(s) => {
+                            // 处理逗号分隔的字符串
+                            frontmatter.tags = s
+                                .split(',')
+                                .map(|tag| tag.trim().to_string())
+                                .collect();
+                        }
+                        _ => {}
+                    }
+                }
+                
+                // 解析其他字段到 custom
+                for (key, val) in value.as_table().unwrap_or(&toml::value::Table::new()) {
+                    if !["title", "description", "layout", "tags"].contains(&key.as_str()) {
+                        if let Some(s) = val.as_str() {
+                            frontmatter.custom.insert(key.clone(), nargo_types::NargoValue::String(s.to_string()));
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                // 如果 toml 解析失败，回退到手动解析
+                return self.parse_frontmatter_manual(content);
+            }
+        }
+        
+        Ok(frontmatter)
+    }
+    
+    /// 手动解析 frontmatter（作为 toml 解析失败的回退）
+    fn parse_frontmatter_manual(&self, content: &str) -> Result<nargo_types::FrontMatter, String> {
+        let mut frontmatter = nargo_types::FrontMatter::new();
+        
+        let mut lines = content.lines().peekable();
+        
+        while let Some(line) = lines.next() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            
+            if let Some((key, value)) = line.split_once(':') {
+                let key = key.trim();
+                let value = value.trim();
+                
+                // 移除引号
+                let value = value.trim_matches('"').trim_matches('\'');
+                
+                match key {
+                    "title" => frontmatter.title = Some(value.to_string()),
+                    "description" => frontmatter.description = Some(value.to_string()),
+                    "layout" => frontmatter.layout = Some(value.to_string()),
+                    "tags" => {
+                        // 解析 tags 数组，支持多行格式
+                        let mut tags = Vec::new();
+                        
+                        // 检查当前行是否有值
+                        if !value.is_empty() {
+                            // 单行格式: tags: ["test", "gatsby"]
+                            let tags_str = value.trim_matches('[').trim_matches(']').trim();
+                            if !tags_str.is_empty() {
+                                tags.extend(
+                                    tags_str.split(',')
+                                        .map(|tag| tag.trim().trim_matches('"').trim_matches('\'').to_string())
+                                );
+                            }
+                        } else {
+                            // 多行格式:
+                            // tags:
+                            //   - test
+                            //   - gatsby
+                            while let Some(next_line) = lines.peek() {
+                                let next_line = next_line.trim();
+                                if next_line.starts_with('-') {
+                                    // 移除破折号和空格
+                                    let tag = next_line.trim_start_matches('-').trim().trim_matches('"').trim_matches('\'');
+                                    if !tag.is_empty() {
+                                        tags.push(tag.to_string());
+                                    }
+                                    lines.next(); // 消费当前行
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        frontmatter.tags = tags;
+                    }
+                    _ => {
+                        // 其他字段添加到 custom
+                        frontmatter.custom.insert(key.to_string(), nargo_types::NargoValue::String(value.to_string()));
+                    }
+                }
+            }
+        }
+        
         Ok(frontmatter)
     }
 }

@@ -82,21 +82,35 @@ impl ShortcodeParser {
                         if end_type == start_type && end_name == name {
                             let match_start = end_capture.get(0).unwrap().start();
                             let match_end = end_capture.get(0).unwrap().end();
-                            found_end = Some((match_start, match_end));
+                            let match_len = match_end - match_start;
+                            found_end = Some((match_start, match_len));
                             break;
                         }
                     }
 
                     if let Some((end_idx, end_match_len)) = found_end {
-                        let inner = remaining[end..end + end_idx].to_string();
+                        let inner = remaining_text[..end_idx].to_string();
+                        let shortcode_name = name.clone();
                         fragments.push(TextFragment::Shortcode(Shortcode { name, shortcode_type, params, inner: Some(inner) }));
-                        remaining = &remaining[end + end_idx + end_match_len..];
+                        // 计算新的剩余文本起始位置
+                        let new_start = end + end_idx + end_match_len;
+                        println!("Processing shortcode: name={}, end={}, end_idx={}, end_match_len={}, new_start={}, remaining.len()={}", shortcode_name, end, end_idx, end_match_len, new_start, remaining.len());
+                        println!("Remaining before: {:?}", remaining);
+                        if new_start < remaining.len() {
+                            remaining = &remaining[new_start..];
+                            println!("Remaining after: {:?}", remaining);
+                        } else {
+                            remaining = "";
+                            println!("Remaining set to empty");
+                        }
                     }
                     else {
                         fragments.push(TextFragment::Shortcode(Shortcode { name, shortcode_type, params, inner: None }));
                         remaining = &remaining[end..];
                     }
                 }
+                
+
             }
             else {
                 fragments.push(TextFragment::Text(remaining.to_string()));

@@ -4,5 +4,5 @@
 pub mod default_theme;
 
 pub use default_theme::{
-    DefaultTheme, PageContext, ThemeNavItem as NavItem, ThemeSidebarGroup as SidebarGroup, ThemeSidebarLink as SidebarLink,
+    DefaultTheme, PageContext, Theme, ThemeManager, ThemeNavItem as NavItem, ThemeSidebarGroup as SidebarGroup, ThemeSidebarLink as SidebarLink,
 };

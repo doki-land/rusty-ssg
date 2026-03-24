@@ -8,7 +8,8 @@ fn test_compiler_creation() {
     let compiler = VutexCompiler::new();
 
     // 验证编译器配置
-    assert!(compiler.config().is_some());
+    // 检查编译器是否成功创建
+    assert!(compiler.config().base_url.is_none());
 }
 
 #[test]

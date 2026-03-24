@@ -174,7 +174,7 @@ impl DevServer {
                         let file_path = if path == "/" { output_dir.join("index.html") } else { output_dir.join(&path[1..]) };
 
                         if file_path.exists() && file_path.is_file() {
-                            let mut file = File::open(file_path)?;
+                            let mut file = File::open(&file_path)?;
                             let mut content = Vec::new();
                             file.read_to_end(&mut content)?;
 
@@ -183,16 +183,16 @@ impl DevServer {
                             let response = Response::builder()
                                 .status(StatusCode::OK)
                                 .header(CONTENT_TYPE, content_type.to_string())
-                                .body(Full::from(content))
+                                .body(Full::<bytes::Bytes>::from(content))
                                 .unwrap();
-                            Ok(response)
+                            Ok::<Response<Full<bytes::Bytes>>, std::io::Error>(response)
                         }
                         else {
                             let response = Response::builder()
                                 .status(StatusCode::NOT_FOUND)
-                                .body(Full::from("404 Not Found"))
+                                .body(Full::<bytes::Bytes>::from("404 Not Found"))
                                 .unwrap();
-                            Ok(response)
+                            Ok::<Response<Full<bytes::Bytes>>, std::io::Error>(response)
                         }
                     }
                 });

@@ -98,6 +98,8 @@ fn test_parser_self_closing() {
 fn test_parser_mixed_text_and_shortcodes() {
     let parser = ShortcodeParser::new();
     let result = parser.parse_text("Before {{< tip >}}Inside{{< /tip >}} After").unwrap();
+    println!("Result: {:?}", result);
+    println!("Result length: {}", result.len());
 
     assert_eq!(result.len(), 3);
     if let TextFragment::Text(t) = &result[0] {

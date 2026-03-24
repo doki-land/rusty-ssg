@@ -1,7 +1,7 @@
 //! 数据处理模块
 //! 提供 Gatsby 数据层的核心功能
 
-use crate::types::{Node, NodeId, NodeType};
+use crate::{Parser, types::{Node, NodeId, NodeType}};
 use async_graphql_value::ConstValue;
 use nargo_types::Document;
 use sha2::{Digest, Sha256};

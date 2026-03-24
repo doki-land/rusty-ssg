@@ -89,6 +89,7 @@ impl HtmlRendererConfig {
 /// HTML 渲染器
 ///
 /// 负责将 Markdown 内容渲染为 HTML
+#[derive(Clone)]
 pub struct HtmlRenderer {
     /// 渲染配置
     config: HtmlRendererConfig,
@@ -223,7 +224,18 @@ impl HtmlRenderer {
     /// 渲染后的 HTML 字符串
     fn render_heading(&self, heading: &Heading) -> String {
         let tag = format!("h{}", heading.level);
-        let escaped_content = self.escape_html(&heading.content);
+        // 移除开头的标题标记
+        let mut content = heading.content.trim().to_string();
+        // 移除开头的 # 标记和空格
+        if content.starts_with('#') {
+            // 计算标题级别对应的 # 数量
+            let expected_hashes = "#".repeat(heading.level as usize);
+            if content.starts_with(&expected_hashes) {
+                // 移除 # 标记和后面的空格
+                content = content[expected_hashes.len()..].trim().to_string();
+            }
+        }
+        let escaped_content = self.escape_html(&content);
         format!("<{}>{}</{}>\n", tag, escaped_content, tag)
     }
 

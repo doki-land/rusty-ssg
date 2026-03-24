@@ -21,7 +21,7 @@ fn test_parse_json_config() {
   }
 }"#;
 
-    let mut temp_file = NamedTempFile::new().unwrap();
+    let mut temp_file = NamedTempFile::with_suffix(".json").unwrap();
     temp_file.write_all(json_content.as_bytes()).unwrap();
     let temp_path = temp_file.path().to_str().unwrap();
 
@@ -54,7 +54,7 @@ name = "default"
 name = "vite"
 "#;
 
-    let mut temp_file = NamedTempFile::new().unwrap();
+    let mut temp_file = NamedTempFile::with_suffix(".toml").unwrap();
     temp_file.write_all(toml_content.as_bytes()).unwrap();
     let temp_path = temp_file.path().to_str().unwrap();
 

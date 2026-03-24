@@ -15,16 +15,16 @@ use std::{collections::HashMap, fs, path::PathBuf};
 pub struct StaticSiteGenerator {
     /// 配置
     config: MkDocsConfig,
-    /// 默认主题
-    theme: DefaultTheme,
+    /// 主题管理器
+    theme_manager: ThemeManager,
 }
 
 impl StaticSiteGenerator {
     /// 创建新的静态站点生成器
     pub fn new(config: MkDocsConfig) -> Result<Self> {
-        let theme = DefaultTheme::new(config.clone())?;
+        let theme_manager = ThemeManager::new(config.clone())?;
 
-        Ok(Self { config, theme })
+        Ok(Self { config, theme_manager })
     }
 
     /// 生成静态站点
@@ -33,6 +33,10 @@ impl StaticSiteGenerator {
             fs::create_dir_all(output_dir)?;
         }
 
+        // 验证配置（严格模式下会检查更多内容）
+        self.validate_config()?;
+
+        // 收集所有文档信息用于侧边栏
         let mut all_sidebar_links = Vec::new();
 
         for (path, content) in documents {
@@ -41,6 +45,7 @@ impl StaticSiteGenerator {
             all_sidebar_links.push((title, html_path.clone()));
         }
 
+        // 编译所有文档
         for (path, content) in documents {
             let html_path = self.generate_html_path(path);
             let output_path = output_dir.join(&html_path);
@@ -54,6 +59,7 @@ impl StaticSiteGenerator {
             let depth = html_path.matches('/').count();
             let root_path = if depth == 0 { "./".to_string() } else { "../".repeat(depth) };
 
+            // 生成侧边栏
             let mut sidebar_links = Vec::new();
             for (title, link) in &all_sidebar_links {
                 let relative_link = format!("{}{}", root_path, link);
@@ -63,13 +69,137 @@ impl StaticSiteGenerator {
             let sidebar_group = ThemeSidebarGroup { text: "文档".to_string(), items: sidebar_links };
             let sidebar_groups = vec![sidebar_group];
 
+            // 生成导航栏
             let nav_items = Self::generate_nav_items(&self.config);
 
+            // 渲染页面
             let html_content = self.render_page_for_file(content, path, &nav_items, &sidebar_groups, html_path.clone())?;
 
+            // 写入文件
             fs::write(&output_path, html_content)?;
         }
 
+        // 复制静态资源
+        self.copy_static_files(output_dir)?;
+
+        // 验证链接
+        self.validate_links(documents)?;
+
+        Ok(())
+    }
+
+    /// 验证配置
+    fn validate_config(&self) -> Result<()> {
+        // 检查必填字段
+        if self.config.site_name().is_empty() {
+            return Err(crate::types::MkDocsError::ConfigValidationError {
+                message: "site_name cannot be empty".to_string(),
+            });
+        }
+
+        // 严格模式下的额外验证
+        if self.config.strict {
+            // 检查文档目录是否存在
+            let docs_dir = PathBuf::from(self.config.docs_dir());
+            if !docs_dir.exists() {
+                return Err(crate::types::MkDocsError::ConfigValidationError {
+                    message: format!("docs_dir '{}' does not exist", self.config.docs_dir()),
+                });
+            }
+
+            // 检查主题配置
+            if self.config.theme.name().is_empty() {
+                return Err(crate::types::MkDocsError::ConfigValidationError {
+                    message: "theme name cannot be empty in strict mode".to_string(),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 验证链接
+    fn validate_links(&self, documents: &HashMap<String, String>) -> Result<()> {
+        // 创建链接验证器
+        let mut validator = crate::tools::link_validator::LinkValidator::new(self.config.clone());
+
+        // 添加所有文档
+        for path in documents.keys() {
+            validator.add_file(path);
+        }
+
+        // 验证所有链接
+        validator.validate_all(documents);
+
+        // 获取验证结果
+        let result = validator.result();
+
+        // 严格模式下，任何错误或警告都会导致构建失败
+        if self.config.strict {
+            if result.has_errors() || result.has_warnings() {
+                result.print();
+                return Err(crate::types::MkDocsError::LinkValidationError {
+                    message: "Link validation failed in strict mode".to_string(),
+                });
+            }
+        }
+        // 非严格模式下，只打印警告和错误
+        else {
+            result.print();
+        }
+
+        Ok(())
+    }
+
+    /// 复制静态资源文件
+    fn copy_static_files(&self, output_dir: &PathBuf) -> Result<()> {
+        // 复制主题静态资源
+        self.copy_theme_static_files(output_dir)?;
+        
+        // 复制配置中指定的额外静态资源
+        self.copy_extra_static_files(output_dir)?;
+        
+        Ok(())
+    }
+
+    /// 复制主题静态资源
+    fn copy_theme_static_files(&self, output_dir: &PathBuf) -> Result<()> {
+        // 这里可以实现主题静态资源的复制逻辑
+        Ok(())
+    }
+
+    /// 复制额外的静态资源
+    fn copy_extra_static_files(&self, output_dir: &PathBuf) -> Result<()> {
+        // 复制额外的 CSS 文件
+        for css_file in &self.config.extra_css {
+            self.copy_static_file(css_file, output_dir, "css")?;
+        }
+        
+        // 复制额外的 JavaScript 文件
+        for js_file in &self.config.extra_javascript {
+            match js_file {
+                crate::types::ExtraJavaScript::String(path) => {
+                    self.copy_static_file(path, output_dir, "js")?;
+                }
+                crate::types::ExtraJavaScript::Object(config) => {
+                    self.copy_static_file(&config.path, output_dir, "js")?;
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// 复制单个静态文件
+    fn copy_static_file(&self, file_path: &str, output_dir: &PathBuf, subdir: &str) -> Result<()> {
+        let src_path = PathBuf::from(file_path);
+        if src_path.exists() {
+            let dest_dir = output_dir.join(subdir);
+            fs::create_dir_all(&dest_dir)?;
+            
+            let dest_path = dest_dir.join(src_path.file_name().unwrap());
+            fs::copy(&src_path, &dest_path)?;
+        }
         Ok(())
     }
 
@@ -198,11 +328,17 @@ impl StaticSiteGenerator {
         current_html_path: String,
     ) -> Result<String> {
         let doc_title = Self::extract_title(content, current_full_path);
-        let site_title = self.theme.site_title();
+        let site_title = self.theme_manager.site_title();
 
         let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
 
-        let html_content = Self::simple_markdown_to_html(content);
+        // 使用 nargo-document 渲染 Markdown 内容
+        use nargo_document::MarkdownRenderer;
+        let renderer = MarkdownRenderer::new();
+        let html_content = match renderer.render(content) {
+            Ok(html) => html,
+            Err(_) => Self::simple_markdown_to_html(content),
+        };
 
         let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
             (false, false, String::new(), false, String::new());
@@ -224,7 +360,7 @@ impl StaticSiteGenerator {
             root_path: "".to_string(),
         };
 
-        self.theme.render_page(&context)
+        self.theme_manager.render_page(&context)
     }
 
     /// 简单的 Markdown 到 HTML 转换

@@ -278,6 +278,42 @@ pub trait Plugin: Send + Sync {
     fn on_post_process_source(&mut self, _context: &mut PluginContext) -> Result<()> {
         Ok(())
     }
+
+    /// onPreDeleteCache 钩子
+    /// 在删除缓存前调用
+    fn on_pre_delete_cache(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPostDeleteCache 钩子
+    /// 在删除缓存后调用
+    fn on_post_delete_cache(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPreInit 钩子
+    /// 在初始化前调用
+    fn on_pre_init(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onPostInit 钩子
+    /// 在初始化后调用
+    fn on_post_init(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onRouteUpdateDelayed 钩子
+    /// 在路由更新延迟时调用
+    fn on_route_update_delayed(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
+
+    /// onServiceWorkerUpdateFound 钩子
+    /// 在发现 Service Worker 更新时调用
+    fn on_service_worker_update_found(&mut self, _context: &mut PluginContext) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// 插件注册表
@@ -578,6 +614,54 @@ impl PluginRegistry {
     pub fn on_post_process_source_all(&mut self, context: &mut PluginContext) -> Result<()> {
         for plugin in &mut self.plugins {
             plugin.on_post_process_source(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_pre_delete_cache 钩子
+    pub fn on_pre_delete_cache_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_pre_delete_cache(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_post_delete_cache 钩子
+    pub fn on_post_delete_cache_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_post_delete_cache(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_pre_init 钩子
+    pub fn on_pre_init_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_pre_init(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_post_init 钩子
+    pub fn on_post_init_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_post_init(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_route_update_delayed 钩子
+    pub fn on_route_update_delayed_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_route_update_delayed(context)?;
+        }
+        Ok(())
+    }
+
+    /// 调用所有插件的 on_service_worker_update_found 钩子
+    pub fn on_service_worker_update_found_all(&mut self, context: &mut PluginContext) -> Result<()> {
+        for plugin in &mut self.plugins {
+            plugin.on_service_worker_update_found(context)?;
         }
         Ok(())
     }
