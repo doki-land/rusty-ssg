@@ -5,18 +5,18 @@ use std::{iter::Peekable, str::Chars};
 use super::tokens::{InterpolationType, Token};
 
 /// 词法分析器
-pub struct Lexer {
+pub struct Lexer<'a> {
     /// 输入字符迭代器
-    chars: Peekable<Chars<'static>>,
+    chars: Peekable<Chars<'a>>,
     /// 当前行号
     line: usize,
     /// 当前列号
     column: usize,
 }
 
-impl Lexer {
+impl<'a> Lexer<'a> {
     /// 创建新的词法分析器
-    pub fn new(input: &'static str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self { chars: input.chars().peekable(), line: 1, column: 1 }
     }
 
@@ -119,40 +119,43 @@ impl Lexer {
             }
             // 处理标签开始: <
             '<' => {
+                self.chars.next();
                 if let Some(&'/') = self.chars.peek() {
                     // 处理标签结束开始: </
-                    self.chars.next();
                     self.chars.next();
                     Token::TagEndStart
                 }
                 else if let Some(&'!') = self.chars.peek() {
                     // 处理 HTML 注释: <!-- -->
                     self.chars.next(); // 消费 '!'
-                    if let Some(&'-') = self.chars.peek() && let Some('-') = self.chars.nth(1) {
+                    if let Some(&'-') = self.chars.peek() {
                         self.chars.next(); // 消费 '-'
-                        self.chars.next(); // 消费 '-'
-                        
-                        let mut comment_content = String::new();
-                        while let Some(&c) = self.chars.peek() {
-                            if c == '-' && self.chars.nth(1) == Some('-') && self.chars.nth(2) == Some('>') {
-                                self.chars.next(); // 消费 '-'
-                                self.chars.next(); // 消费 '-'
-                                self.chars.next(); // 消费 '>'
-                                break;
+                        if let Some(&'-') = self.chars.peek() {
+                            self.chars.next(); // 消费 '-'
+                            
+                            let mut comment_content = String::new();
+                            while let Some(&c) = self.chars.peek() {
+                                if c == '-' && self.chars.nth(1) == Some('-') && self.chars.nth(2) == Some('>') {
+                                    self.chars.next(); // 消费 '-'
+                                    self.chars.next(); // 消费 '-'
+                                    self.chars.next(); // 消费 '>'
+                                    break;
+                                }
+                                comment_content.push(c);
+                                self.chars.next();
                             }
-                            comment_content.push(c);
-                            self.chars.next();
+                            
+                            Token::Comment(comment_content)
                         }
-                        
-                        Token::Comment(comment_content)
+                        else {
+                            Token::Text("<!-".to_string())
+                        }
                     }
                     else {
-                        self.chars.next();
                         Token::Text("<!".to_string())
                     }
                 }
                 else {
-                    self.chars.next();
                     Token::TagStart
                 }
             }
@@ -270,28 +273,7 @@ impl Lexer {
                 self.chars.next();
                 Token::Multiply
             }
-            // 处理除号
-            '/' => {
-                self.chars.next();
-                Token::Divide
-            }
-            // 处理模运算
-            '%' => {
-                self.chars.next();
-                Token::Modulo
-            }
-            // 处理等于
-            '=' => {
-                if let Some(&'=') = self.chars.peek() {
-                    self.chars.next();
-                    self.chars.next();
-                    Token::Equal
-                }
-                else {
-                    self.chars.next();
-                    Token::Equals
-                }
-            }
+
             // 处理不等于
             '!' => {
                 if let Some(&'=') = self.chars.peek() {
@@ -304,30 +286,7 @@ impl Lexer {
                     Token::Not
                 }
             }
-            // 处理大于
-            '>' => {
-                if let Some(&'=') = self.chars.peek() {
-                    self.chars.next();
-                    self.chars.next();
-                    Token::GreaterThanOrEqual
-                }
-                else {
-                    self.chars.next();
-                    Token::GreaterThan
-                }
-            }
-            // 处理小于
-            '<' => {
-                if let Some(&'=') = self.chars.peek() {
-                    self.chars.next();
-                    self.chars.next();
-                    Token::LessThanOrEqual
-                }
-                else {
-                    self.chars.next();
-                    Token::LessThan
-                }
-            }
+
             // 处理逻辑与
             '&' => {
                 if let Some(&'&') = self.chars.peek() {

@@ -56,83 +56,37 @@ impl MarkdownConverter {
         // 使用处理后的内容进行 Markdown 到 HTML 转换
         let processed_content = context.content;
         
-        // 简单的 Markdown 到 HTML 转换
-        // 注意：这是一个临时实现，稍后会使用 oak-markdown 的完整 AST 渲染
-        let mut html = String::new();
-        html.push_str(r#"<div class="markdown-body">"#);
-        
-        let lines: Vec<&str> = processed_content.lines().collect();
-        let mut i = 0;
-        
-        while i < lines.len() {
-            let line = lines[i].trim();
-            
-            // 处理标题
-            if line.starts_with('#') {
-                let level = line.chars().take_while(|&c| c == '#').count();
-                if level <= 6 {
-                    let text = line[level..].trim();
-                    html.push_str(&format!(r#"<h{}>{}</h{}>"#, level, text, level));
-                    i += 1;
-                    continue;
-                }
-            }
-            
-            // 处理代码块
-            if line.starts_with("```") {
-                let lang = line[3..].trim();
-                html.push_str(&format!(r#"<pre><code class="language-{}">"#, lang));
-                i += 1;
-                
-                while i < lines.len() && !lines[i].starts_with("```") {
-                    html.push_str(lines[i]);
-                    html.push('\n');
-                    i += 1;
-                }
-                
-                if i < lines.len() {
-                    i += 1;
-                }
-                
-                html.push_str(r#"</code></pre>"#);
-                continue;
-            }
-            
-            // 处理段落
-            if !line.is_empty() {
-                let mut paragraph = String::new();
-                paragraph.push_str(r#"<p>"#);
-                
-                // 处理粗体和斜体
-                let mut processed_line = line.to_string();
-                
-                // 处理粗体 **text**
-                processed_line = regex::Regex::new(r"\*\*(.*?)\*\*")
-                    .unwrap()
-                    .replace_all(&processed_line, r#"<strong>$1</strong>"#)
-                    .to_string();
-                
-                // 处理斜体 *text*
-                processed_line = regex::Regex::new(r"\*(.*?)\*")
-                    .unwrap()
-                    .replace_all(&processed_line, r#"<em>$1</em>"#)
-                    .to_string();
-                
-                paragraph.push_str(&processed_line);
-                paragraph.push_str(r#"</p>"#);
-                html.push_str(&paragraph);
-            }
-            
-            i += 1;
-        }
-        
-        html.push_str(r#"</div>"#);
+        // 使用 oak-markdown 进行完整的 AST 渲染
+        let html = self.render_markdown_with_oak(&processed_content)?;
 
         // 应用插件的渲染后钩子
         context.content = html;
         context = self.plugin_registry.after_render_all(context);
 
         Ok(context.content)
+    }
+
+    /// 使用 oak-markdown 渲染 Markdown
+    fn render_markdown_with_oak(&self, markdown: &str) -> Result<String> {
+        let source = SourceText::from_string(markdown.to_string());
+        let session = ParseSession::new(source);
+        let mut builder = MarkdownBuilder::new();
+
+        let ast = builder.parse(&session).map_err(|e| crate::errors::JekyllError::MarkdownParseError(e.to_string()))?;
+
+        let html = self.render_ast(&ast);
+        Ok(format!(r#"<div class="markdown-body">{}</div>"#, html))
+    }
+
+    /// 渲染 Markdown AST
+    fn render_ast(&self, ast: &oak_markdown::ast::Document) -> String {
+        let mut html = String::new();
+
+        for block in &ast.blocks {
+            html.push_str(&self.render_block(block));
+        }
+
+        html
     }
 
     /// 渲染块级元素
@@ -151,8 +105,78 @@ impl MarkdownConverter {
             oak_markdown::ast::Block::List(list) => self.render_list(list),
             oak_markdown::ast::Block::CodeBlock(code_block) => self.render_code_block(code_block),
             oak_markdown::ast::Block::Blockquote(blockquote) => self.render_blockquote(blockquote),
+            oak_markdown::ast::Block::HorizontalRule => self.render_horizontal_rule(),
+            oak_markdown::ast::Block::Table(table) => self.render_table(table),
+            oak_markdown::ast::Block::Footnotes(footnotes) => self.render_footnotes(footnotes),
+            oak_markdown::ast::Block::DefinitionList(def_list) => self.render_definition_list(def_list),
+            oak_markdown::ast::Block::HtmlBlock(html_block) => self.render_html_block(html_block),
             _ => String::new(),
         }
+    }
+
+    /// 渲染水平线
+    fn render_horizontal_rule(&self) -> String {
+        r#"<hr />"#.to_string()
+    }
+
+    /// 渲染表格
+    fn render_table(&self, table: &oak_markdown::ast::Table) -> String {
+        let mut html = String::from(r#"<table>"#);
+
+        // 渲染表头
+        if let Some(header) = &table.header {
+            html.push_str(r#"<thead><tr>"#);
+            for cell in header {
+                html.push_str(&format!(r#"<th>{}</th>"#, self.escape_html(cell)));
+            }
+            html.push_str(r#"</tr></thead>"#);
+        }
+
+        // 渲染表体
+        html.push_str(r#"<tbody>"#);
+        for row in &table.rows {
+            html.push_str(r#"<tr>"#);
+            for cell in row {
+                html.push_str(&format!(r#"<td>{}</td>"#, self.escape_html(cell)));
+            }
+            html.push_str(r#"</tr>"#);
+        }
+        html.push_str(r#"</tbody>"#);
+
+        html.push_str(r#"</table>"#);
+        html
+    }
+
+    /// 渲染脚注
+    fn render_footnotes(&self, footnotes: &oak_markdown::ast::Footnotes) -> String {
+        let mut html = String::from(r#"<div class="footnotes">"#);
+
+        for (id, content) in &footnotes.notes {
+            html.push_str(&format!(r#"<div id="fn-{}" class="footnote"><p>{}</p></div>"#, id, self.escape_html(content)));
+        }
+
+        html.push_str(r#"</div>"#);
+        html
+    }
+
+    /// 渲染定义列表
+    fn render_definition_list(&self, def_list: &oak_markdown::ast::DefinitionList) -> String {
+        let mut html = String::from(r#"<dl>"#);
+
+        for (term, definitions) in def_list {
+            html.push_str(&format!(r#"<dt>{}</dt>"#, self.escape_html(term)));
+            for def in definitions {
+                html.push_str(&format!(r#"<dd>{}</dd>"#, self.escape_html(def)));
+            }
+        }
+
+        html.push_str(r#"</dl>"#);
+        html
+    }
+
+    /// 渲染 HTML 块
+    fn render_html_block(&self, html_block: &oak_markdown::ast::HtmlBlock) -> String {
+        html_block.content.to_string()
     }
 
     /// 渲染标题

@@ -73,6 +73,18 @@ pub enum PluginLifecycleEvent {
     ServerStart,
     /// 服务器停止
     ServerStop,
+    /// 文件处理前
+    FileProcessStart,
+    /// 文件处理后
+    FileProcessEnd,
+    /// 资产处理前
+    AssetProcessStart,
+    /// 资产处理后
+    AssetProcessEnd,
+    /// 插件加载完成
+    PluginsLoaded,
+    /// 配置加载完成
+    ConfigLoaded,
 }
 
 /// 插件 trait

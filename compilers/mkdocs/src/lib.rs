@@ -85,7 +85,10 @@ impl CompileResult {
 /// 编译后的 HTML 内容
 pub fn compile_single(source: &str) -> Result<String> {
     let renderer = HtmlRenderer::new();
-    Ok(renderer.render(source))
+    let html = renderer.render(source);
+    // 打印渲染结果用于调试
+    println!("Rendered HTML: {}", html);
+    Ok(html)
 }
 
 /// 编译多个文档

@@ -10,6 +10,7 @@ pub mod errors;
 pub mod plugin;
 pub mod plugin_host;
 pub mod router;
+pub mod server;
 pub mod tools;
 pub mod types;
 pub mod watcher;

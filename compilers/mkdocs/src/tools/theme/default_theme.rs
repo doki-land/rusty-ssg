@@ -204,7 +204,7 @@ pub struct DefaultTheme {
     /// 模板引擎类型
     engine_type: TemplateEngineType,
     /// 模板管理器
-    template_manager: UnifiedTemplateManager,
+    pub template_manager: UnifiedTemplateManager,
     /// 自定义主题目录
     custom_dir: Option<String>,
 }
@@ -239,15 +239,15 @@ impl ThemeManager {
         let custom_dir = config.theme.custom_dir.clone();
         
         // 创建默认主题实例
-        let default_theme = DefaultTheme::new(config.clone())?;
+        let theme = Box::new(DefaultTheme::new(config.clone())?);
         
         Ok(Self {
             config,
             theme_type,
             engine_type: TemplateEngineType::DejaVu, // 默认使用 DejaVu 引擎
-            template_manager: default_theme.template_manager,
+            template_manager: UnifiedTemplateManager::new(),
             custom_dir,
-            theme: Box::new(default_theme),
+            theme,
         })
     }
     

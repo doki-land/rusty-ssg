@@ -69,12 +69,20 @@ pub struct CollectionItem {
     pub collection: String,
     /// 内容
     pub content: String,
+    /// 摘要
+    pub excerpt: Option<String>,
     /// Front Matter 变量
     pub front_matter: Value,
     /// 永久链接
     pub permalink: String,
+    /// 布局名称
+    pub layout: Option<String>,
     /// 原始文件路径
     pub path: String,
+    /// 上一个项目
+    pub previous: Option<Box<CollectionItem>>,
+    /// 下一个项目
+    pub next: Option<Box<CollectionItem>>,
 }
 
 impl CollectionItem {
@@ -106,14 +114,24 @@ impl CollectionItem {
             format!("/{}/{}/", collection, slug)
         };
 
+        // 提取摘要
+        let excerpt = super::Post::extract_excerpt(front_matter.content());
+
+        // 获取布局
+        let layout = front_matter.get_str("layout").map(|s| s.to_string());
+
         Ok(Self {
             name,
             slug,
             collection: collection.to_string(),
             content: front_matter.content().to_string(),
+            excerpt,
             front_matter: front_matter.variables().clone(),
             permalink,
+            layout,
             path: path.display().to_string(),
+            previous: None,
+            next: None,
         })
     }
 }
@@ -179,7 +197,50 @@ impl Collection {
             }
         }
 
+        // 对项目进行排序
+        self.sort_items();
+
         Ok(count)
+    }
+
+    /// 对项目进行排序
+    pub fn sort_items(&mut self) {
+        // 首先尝试按日期排序（如果有日期字段）
+        self.items.sort_by(|a, b| {
+            let date_a = a.front_matter.get("date").and_then(|v| v.as_str());
+            let date_b = b.front_matter.get("date").and_then(|v| v.as_str());
+
+            match (date_a, date_b) {
+                (Some(d1), Some(d2)) => {
+                    // 按日期降序排序
+                    d2.cmp(d1)
+                }
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => {
+                    // 按名称排序
+                    a.name.cmp(&b.name)
+                }
+            }
+        });
+
+        // 设置前一个和后一个项目
+        self.set_previous_next_items();
+    }
+
+    /// 设置前一个和后一个项目
+    fn set_previous_next_items(&mut self) {
+        for i in 0..self.items.len() {
+            // 设置前一个项目
+            if i > 0 {
+                self.items[i].previous = Some(Box::new(self.items[i-1].clone()));
+            }
+            
+            // 设置后一个项目
+            if i < self.items.len() - 1 {
+                self.items[i].next = Some(Box::new(self.items[i+1].clone()));
+            }
+        }
     }
 
     /// 获取集合名称
@@ -210,6 +271,88 @@ impl Collection {
     /// 检查是否需要输出为独立页面
     pub fn should_output(&self) -> bool {
         self.config.output
+    }
+
+    /// 按字段排序项目
+    pub fn sort_items_by(&mut self, field: &str) {
+        self.items.sort_by(|a, b| {
+            let value_a = a.front_matter.get(field);
+            let value_b = b.front_matter.get(field);
+
+            match (value_a, value_b) {
+                (Some(v1), Some(v2)) => {
+                    // 尝试比较不同类型的值
+                    match (v1, v2) {
+                        (Value::String(s1), Value::String(s2)) => s1.cmp(s2),
+                        (Value::Number(n1), Value::Number(n2)) => n1.to_f64().unwrap_or(0.0).cmp(&n2.to_f64().unwrap_or(0.0)),
+                        (Value::Bool(b1), Value::Bool(b2)) => b1.cmp(b2),
+                        _ => std::cmp::Ordering::Equal,
+                    }
+                }
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => std::cmp::Ordering::Equal,
+            }
+        });
+
+        // 重新设置前一个和后一个项目
+        self.set_previous_next_items();
+    }
+
+    /// 过滤项目
+    pub fn filter_items<F>(&self, predicate: F) -> Vec<&CollectionItem>
+    where
+        F: Fn(&&CollectionItem) -> bool,
+    {
+        self.items.iter().filter(predicate).collect()
+    }
+
+    /// 按字段过滤项目
+    pub fn filter_items_by_field(&self, field: &str, value: &str) -> Vec<&CollectionItem> {
+        self.items
+            .iter()
+            .filter(|item| {
+                if let Some(v) = item.front_matter.get(field) {
+                    if let Some(s) = v.as_str() {
+                        s == value
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            })
+            .collect()
+    }
+
+    /// 搜索项目
+    pub fn search_items(&self, query: &str) -> Vec<&CollectionItem> {
+        let query_lower = query.to_lowercase();
+        self.items
+            .iter()
+            .filter(|item| {
+                item.name.to_lowercase().contains(&query_lower)
+                    || item.content.to_lowercase().contains(&query_lower)
+                    || item.front_matter.to_string().to_lowercase().contains(&query_lower)
+            })
+            .collect()
+    }
+
+    /// 分页获取项目
+    pub fn paginate_items(&self, page: usize, per_page: usize) -> Vec<&CollectionItem> {
+        let start = (page - 1) * per_page;
+        let end = start + per_page;
+        self.items.iter().skip(start).take(per_page).collect()
+    }
+
+    /// 获取项目总数
+    pub fn total_items(&self) -> usize {
+        self.items.len()
+    }
+
+    /// 获取总页数
+    pub fn total_pages(&self, per_page: usize) -> usize {
+        (self.items.len() + per_page - 1) / per_page
     }
 }
 

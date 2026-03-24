@@ -195,6 +195,124 @@ impl LiquidEngine {
             }),
         );
 
+        self.filters.insert(
+            "append".to_string(),
+            LiquidFilter::new("append", |args| {
+                if let (Some(Value::String(s)), Some(Value::String(append))) = (args.first(), args.get(1)) {
+                    Value::String(s.clone() + append)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "prepend".to_string(),
+            LiquidFilter::new("prepend", |args| {
+                if let (Some(Value::String(s)), Some(Value::String(prepend))) = (args.first(), args.get(1)) {
+                    Value::String(prepend.clone() + s)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "remove".to_string(),
+            LiquidFilter::new("remove", |args| {
+                if let (Some(Value::String(s)), Some(Value::String(remove))) = (args.first(), args.get(1)) {
+                    Value::String(s.replace(remove, ""))
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "remove_first".to_string(),
+            LiquidFilter::new("remove_first", |args| {
+                if let (Some(Value::String(s)), Some(Value::String(remove))) = (args.first(), args.get(1)) {
+                    Value::String(s.replacen(remove, "", 1))
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "replace_first".to_string(),
+            LiquidFilter::new("replace_first", |args| {
+                if let (Some(Value::String(s)), Some(Value::String(from)), Some(Value::String(to))) =
+                    (args.first(), args.get(1), args.get(2))
+                {
+                    Value::String(s.replacen(from, to, 1))
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "strip_html".to_string(),
+            LiquidFilter::new("strip_html", |args| {
+                if let Some(Value::String(s)) = args.first() {
+                    // 简单的 HTML 标签移除
+                    let stripped = regex::Regex::new(r"<[^>]*>")
+                        .unwrap()
+                        .replace_all(s, "")
+                        .to_string();
+                    Value::String(stripped)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "strip_newlines".to_string(),
+            LiquidFilter::new("strip_newlines", |args| {
+                if let Some(Value::String(s)) = args.first() {
+                    let stripped = s.replace(['\n', '\r'], "");
+                    Value::String(stripped)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "newline_to_br".to_string(),
+            LiquidFilter::new("newline_to_br", |args| {
+                if let Some(Value::String(s)) = args.first() {
+                    let converted = s.replace('\n', "<br />");
+                    Value::String(converted)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "url_encode".to_string(),
+            LiquidFilter::new("url_encode", |args| {
+                if let Some(Value::String(s)) = args.first() {
+                    let encoded = urlencoding::encode(s).to_string();
+                    Value::String(encoded)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
         // 数组过滤器
         self.filters.insert(
             "join".to_string(),
@@ -223,6 +341,133 @@ impl LiquidEngine {
             }),
         );
 
+        self.filters.insert(
+            "first".to_string(),
+            LiquidFilter::new("first", |args| {
+                if let Some(Value::Array(arr)) = args.first() {
+                    arr.first().cloned().unwrap_or(Value::Null)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "last".to_string(),
+            LiquidFilter::new("last", |args| {
+                if let Some(Value::Array(arr)) = args.first() {
+                    arr.last().cloned().unwrap_or(Value::Null)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "size".to_string(),
+            LiquidFilter::new("size", |args| {
+                match args.first() {
+                    Some(Value::Array(arr)) => Value::Number(serde_json::Number::from(arr.len())),
+                    Some(Value::String(s)) => Value::Number(serde_json::Number::from(s.len())),
+                    _ => Value::Null,
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "reverse".to_string(),
+            LiquidFilter::new("reverse", |args| {
+                if let Some(Value::Array(arr)) = args.first() {
+                    let mut reversed = arr.clone();
+                    reversed.reverse();
+                    Value::Array(reversed)
+                }
+                else if let Some(Value::String(s)) = args.first() {
+                    let reversed: String = s.chars().rev().collect();
+                    Value::String(reversed)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "split".to_string(),
+            LiquidFilter::new("split", |args| {
+                if let (Some(Value::String(s)), Some(Value::String(sep))) = (args.first(), args.get(1)) {
+                    let parts: Vec<Value> = s.split(sep).map(|part| Value::String(part.to_string())).collect();
+                    Value::Array(parts)
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        // 数字过滤器
+        self.filters.insert(
+            "plus".to_string(),
+            LiquidFilter::new("plus", |args| {
+                if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
+                    let num1 = n1.to_f64().unwrap_or(0.0);
+                    let num2 = n2.to_f64().unwrap_or(0.0);
+                    Value::Number(serde_json::Number::from_f64(num1 + num2).unwrap())
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "minus".to_string(),
+            LiquidFilter::new("minus", |args| {
+                if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
+                    let num1 = n1.to_f64().unwrap_or(0.0);
+                    let num2 = n2.to_f64().unwrap_or(0.0);
+                    Value::Number(serde_json::Number::from_f64(num1 - num2).unwrap())
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "times".to_string(),
+            LiquidFilter::new("times", |args| {
+                if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
+                    let num1 = n1.to_f64().unwrap_or(0.0);
+                    let num2 = n2.to_f64().unwrap_or(0.0);
+                    Value::Number(serde_json::Number::from_f64(num1 * num2).unwrap())
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        self.filters.insert(
+            "divided_by".to_string(),
+            LiquidFilter::new("divided_by", |args| {
+                if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
+                    let num1 = n1.to_f64().unwrap_or(0.0);
+                    let num2 = n2.to_f64().unwrap_or(1.0);
+                    if num2 != 0.0 {
+                        Value::Number(serde_json::Number::from_f64(num1 / num2).unwrap())
+                    } else {
+                        Value::Null
+                    }
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
         // 日期过滤器
         self.filters.insert(
             "date".to_string(),
@@ -230,6 +475,24 @@ impl LiquidEngine {
                 if let (Some(Value::String(date_str)), Some(Value::String(format_str))) = (args.first(), args.get(1)) {
                     // 简单的日期格式化实现
                     Value::String(format!("{}", date_str))
+                }
+                else {
+                    Value::Null
+                }
+            }),
+        );
+
+        // 其他过滤器
+        self.filters.insert(
+            "default".to_string(),
+            LiquidFilter::new("default", |args| {
+                if let (Some(value), Some(default_val)) = (args.first(), args.get(1)) {
+                    match value {
+                        Value::Null | Value::String(s) if s.is_empty() | Value::Array(arr) if arr.is_empty() | Value::Object(obj) if obj.is_empty() => {
+                            default_val.clone()
+                        }
+                        _ => value.clone(),
+                    }
                 }
                 else {
                     Value::Null
@@ -401,9 +664,154 @@ impl LiquidEngine {
     fn render_tags(&mut self, template: &str, context: &Value) -> Result<String> {
         let mut result = template.to_string();
 
+        result = self.render_comment_tags(&result)?;
+        result = self.render_raw_tags(&result)?;
+        result = self.render_assign_tags(&result, context)?;
+        result = self.render_capture_tags(&result, context)?;
         result = self.render_if_tags(&result, context)?;
+        result = self.render_unless_tags(&result, context)?;
+        result = self.render_case_tags(&result, context)?;
         result = self.render_for_tags(&result, context)?;
+        result = self.render_cycle_tags(&result, context)?;
         result = self.render_include_tags(&result, context)?;
+        result = self.render_layout_tags(&result, context)?;
+        result = self.render_render_tags(&result, context)?;
+
+        Ok(result)
+    }
+
+    /// 渲染 {% comment %} 标签
+    fn render_comment_tags(&self, template: &str) -> Result<String> {
+        let mut result = template.to_string();
+        let comment_regex = regex::Regex::new(r"\{%\s*comment\s*%\}([\s\S]*?)\{%\s*endcomment\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        result = comment_regex.replace_all(&result, "").to_string();
+        Ok(result)
+    }
+
+    /// 渲染 {% raw %} 标签
+    fn render_raw_tags(&self, template: &str) -> Result<String> {
+        let mut result = template.to_string();
+        let raw_regex = regex::Regex::new(r"\{%\s*raw\s*%\}([\s\S]*?)\{%\s*endraw\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        result = raw_regex.replace_all(&result, "$1").to_string();
+        Ok(result)
+    }
+
+    /// 渲染 {% assign %} 标签
+    fn render_assign_tags(&self, template: &str, context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let assign_regex = regex::Regex::new(r"\{%\s*assign\s+([\w]+)\s*=\s*(.+?)\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        // 简单实现：移除 assign 标签，因为我们没有变量存储机制
+        result = assign_regex.replace_all(&result, "").to_string();
+        Ok(result)
+    }
+
+    /// 渲染 {% capture %} 标签
+    fn render_capture_tags(&self, template: &str, context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let capture_regex = regex::Regex::new(r"\{%\s*capture\s+([\w]+)\s*%\}([\s\S]*?)\{%\s*endcapture\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        // 简单实现：移除 capture 标签，因为我们没有变量存储机制
+        result = capture_regex.replace_all(&result, "").to_string();
+        Ok(result)
+    }
+
+    /// 渲染 {% unless %} 标签
+    fn render_unless_tags(&self, template: &str, _context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let unless_regex = regex::Regex::new(r"\{%\s*unless\s+([^%]+)\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+        let endunless_regex = regex::Regex::new(r"\{%\s*endunless\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        let unless_matches: Vec<_> = unless_regex.find_iter(template).collect();
+        let endunless_matches: Vec<_> = endunless_regex.find_iter(template).collect();
+
+        if unless_matches.len() != endunless_matches.len() {
+            return Ok(result);
+        }
+
+        for (i, unless_match) in unless_matches.iter().enumerate() {
+            let start = unless_match.start();
+            let end = endunless_matches[i].end();
+
+            let tag_content = &template[start..end];
+            result = result.replace(tag_content, "");
+        }
+
+        Ok(result)
+    }
+
+    /// 渲染 {% case %} 标签
+    fn render_case_tags(&self, template: &str, _context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let case_regex = regex::Regex::new(r"\{%\s*case\s+([^%]+)\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+        let endcase_regex = regex::Regex::new(r"\{%\s*endcase\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        let case_matches: Vec<_> = case_regex.find_iter(template).collect();
+        let endcase_matches: Vec<_> = endcase_regex.find_iter(template).collect();
+
+        if case_matches.len() != endcase_matches.len() {
+            return Ok(result);
+        }
+
+        for (i, case_match) in case_matches.iter().enumerate() {
+            let start = case_match.start();
+            let end = endcase_matches[i].end();
+
+            let tag_content = &template[start..end];
+            result = result.replace(tag_content, "");
+        }
+
+        Ok(result)
+    }
+
+    /// 渲染 {% cycle %} 标签
+    fn render_cycle_tags(&self, template: &str, _context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let cycle_regex = regex::Regex::new(r"\{%\s*cycle\s+(.+?)\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        // 简单实现：移除 cycle 标签，因为我们没有循环状态存储机制
+        result = cycle_regex.replace_all(&result, "").to_string();
+        Ok(result)
+    }
+
+    /// 渲染 {% layout %} 标签
+    fn render_layout_tags(&self, template: &str, _context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let layout_regex = regex::Regex::new(r"\{%\s*layout\s+(.+?)\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        // 简单实现：移除 layout 标签，因为布局处理在其他地方完成
+        result = layout_regex.replace_all(&result, "").to_string();
+        Ok(result)
+    }
+
+    /// 渲染 {% render %} 标签
+    fn render_render_tags(&mut self, template: &str, context: &Value) -> Result<String> {
+        let mut result = template.to_string();
+        let render_regex = regex::Regex::new(r"\{%\s*render\s+([^\s]+)(?:\s+(.*?))?\s*%\}")
+            .map_err(|e| LiquidError::parse_error(e.to_string()))?;
+
+        for cap in render_regex.captures_iter(template) {
+            if let Some(full_match) = cap.get(0) {
+                if let Some(render_name) = cap.get(1) {
+                    let render_name = render_name.as_str().trim_matches('"');
+
+                    // 简单实现：移除 render 标签，因为我们没有 render 功能
+                    result = result.replace(full_match.as_str(), "");
+                }
+            }
+        }
 
         Ok(result)
     }

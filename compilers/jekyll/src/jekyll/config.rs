@@ -389,6 +389,27 @@ impl JekyllConfig {
         if let Some(plugins) = &self.plugins {
             map.insert("plugins".to_string(), Value::Array(plugins.iter().map(|s| Value::String(s.clone())).collect()));
         }
+        if let Some(theme) = &self.theme {
+            map.insert("theme".to_string(), Value::String(theme.clone()));
+        }
+        if let Some(build) = &self.build {
+            map.insert("build".to_string(), Value::Object(build.clone()));
+        }
+        if let Some(development) = &self.development {
+            map.insert("development".to_string(), Value::Object(development.clone()));
+        }
+        if let Some(production) = &self.production {
+            map.insert("production".to_string(), Value::Object(production.clone()));
+        }
+        if let Some(timezone) = &self.timezone {
+            map.insert("timezone".to_string(), Value::String(timezone.clone()));
+        }
+        if let Some(lang) = &self.lang {
+            map.insert("lang".to_string(), Value::String(lang.clone()));
+        }
+        if let Some(encoding) = &self.encoding {
+            map.insert("encoding".to_string(), Value::String(encoding.clone()));
+        }
 
         for (key, value) in &self.custom {
             map.insert(key.clone(), value.clone());

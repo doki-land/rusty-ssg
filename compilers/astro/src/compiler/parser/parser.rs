@@ -9,16 +9,16 @@ use super::{
 };
 
 /// 语法分析器
-pub struct Parser {
+pub struct Parser<'a> {
     /// 词法分析器
-    lexer: Lexer,
+    lexer: Lexer<'a>,
     /// 当前 token
     current_token: Token,
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     /// 创建新的语法分析器
-    pub fn new(input: &'static str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         let mut lexer = Lexer::new(input);
         let current_token = lexer.next_token();
         Self { lexer, current_token }
@@ -229,6 +229,10 @@ impl Parser {
                             _ => {}
                         }
                     }
+                    else {
+                        // 处理布尔属性，如 <Component active />
+                        attributes.insert(name, "true".to_string());
+                    }
                 }
                 _ => self.next_token(),
             }
@@ -283,6 +287,128 @@ impl Parser {
                             content_nodes.push(self.parse_directive());
                         }
                         Token::TagStart => {
+                            // 检查是否是插槽
+                            if let Token::Identifier(id) = &self.current_token {
+                                if id == "Slot" {
+                                    content_nodes.push(self.parse_slot());
+                                }
+                                else {
+                                    content_nodes.push(self.parse_component());
+                                }
+                            }
+                            else {
+                                content_nodes.push(self.parse_component());
+                            }
+                        }
+                        _ => {
+                            // 跳过未知 token
+                            self.next_token();
+                        }
+                    }
+                }
+            }
+            
+            Some(content_nodes)
+        }
+        else {
+            None
+        };
+
+        // 检查是否是布局组件
+        if component_name == "Layout" {
+            AstNode::layout(&component_name, attributes, content.unwrap_or_default())
+        }
+        else {
+            AstNode::component(&component_name, attributes, content, self_closing)
+        }
+    }
+
+    /// 解析插槽
+    fn parse_slot(&mut self) -> AstNode {
+        // 跳过 TagStart
+        self.next_token();
+
+        // 解析插槽名称
+        let slot_name = match &self.current_token {
+            Token::Identifier(id) => id.to_string(),
+            _ => "default".to_string(),
+        };
+        self.next_token();
+
+        // 解析插槽属性
+        let mut attributes = HashMap::new();
+        while self.current_token != Token::TagEnd && self.current_token != Token::TagClose {
+            match self.current_token.clone() {
+                Token::Identifier(name) => {
+                    self.next_token();
+                    if let Token::Equals = self.current_token {
+                        self.next_token();
+                        match self.current_token.clone() {
+                            Token::String(value) => {
+                                attributes.insert(name, value);
+                                self.next_token();
+                            }
+                            Token::Identifier(value) => {
+                                attributes.insert(name, value);
+                                self.next_token();
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                _ => self.next_token(),
+            }
+        }
+
+        // 检查是否是自闭合标签
+        let self_closing = if self.current_token == Token::TagClose {
+            self.next_token();
+            true
+        }
+        else {
+            // 跳过 TagEnd
+            self.next_token();
+            false
+        };
+
+        // 解析插槽内容（如果不是自闭合标签）
+        let content = if !self_closing {
+            let mut content_nodes = Vec::new();
+            
+            // 解析内容直到遇到结束标签
+            while self.current_token != Token::Eof {
+                if let Token::TagEndStart = self.current_token {
+                    // 检查是否是当前插槽的结束标签
+                    self.next_token();
+                    if let Token::Identifier(id) = &self.current_token {
+                        if id == &slot_name {
+                            self.next_token();
+                            if let Token::TagEnd = self.current_token {
+                                self.next_token();
+                            }
+                            break;
+                        }
+                    }
+                    // 如果不是当前插槽的结束标签，跳过
+                    while self.current_token != Token::TagEnd && self.current_token != Token::Eof {
+                        self.next_token();
+                    }
+                    if let Token::TagEnd = self.current_token {
+                        self.next_token();
+                    }
+                } else {
+                    match &self.current_token {
+                        Token::Text(text) => {
+                            content_nodes.push(AstNode::text(text));
+                            self.next_token();
+                        }
+                        Token::InterpolationStart(interpolation_type) => {
+                            content_nodes.push(self.parse_interpolation(interpolation_type.clone()));
+                        }
+                        Token::DirectiveStart => {
+                            content_nodes.push(self.parse_directive());
+                        }
+                        Token::TagStart => {
                             content_nodes.push(self.parse_component());
                         }
                         _ => {
@@ -299,7 +425,7 @@ impl Parser {
             None
         };
 
-        AstNode::component(&component_name, attributes, content, self_closing)
+        AstNode::slot(&slot_name, content.unwrap_or_default())
     }
 
     /// 获取下一个 token

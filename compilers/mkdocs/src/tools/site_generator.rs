@@ -3,10 +3,8 @@
 
 use crate::{
     Result,
-    tools::theme::{
-        DefaultTheme, PageContext,
-        default_theme::{ThemeNavItem, ThemeSidebarGroup, ThemeSidebarLink},
-    },
+    tools::theme::{ThemeManager, PageContext},
+    tools::theme::default_theme::{ThemeNavItem, ThemeSidebarGroup, ThemeSidebarLink},
     types::MkDocsConfig,
 };
 use std::{collections::HashMap, fs, path::PathBuf};
@@ -138,7 +136,7 @@ impl StaticSiteGenerator {
         if self.config.strict {
             if result.has_errors() || result.has_warnings() {
                 result.print();
-                return Err(crate::types::MkDocsError::LinkValidationError {
+                return Err(crate::types::MkDocsError::ConfigValidationError {
                     message: "Link validation failed in strict mode".to_string(),
                 });
             }

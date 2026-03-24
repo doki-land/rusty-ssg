@@ -104,7 +104,7 @@ pub fn build(path: &str, outdir: &str) {
 }
 
 /// 处理项目文件
-fn process_files(project_path: &Path, cache_manager: &CacheManager) -> (ComponentParser, DependencyAnalyzer) {
+pub fn process_files(project_path: &Path, cache_manager: &CacheManager) -> (ComponentParser, DependencyAnalyzer) {
     let parser = ComponentParser::new();
     let analyzer = DependencyAnalyzer::new();
 
@@ -174,7 +174,7 @@ fn process_files(project_path: &Path, cache_manager: &CacheManager) -> (Componen
 }
 
 /// 生成静态文件
-fn generate_static_files(
+pub fn generate_static_files(
     _parser: &ComponentParser,
     _analyzer: &DependencyAnalyzer,
     project_path: &Path,
@@ -193,7 +193,7 @@ fn generate_static_files(
     }
 
     // 渲染组件
-    let renderer = HtmlRenderer::new();
+    let renderer = std::sync::Arc::new(std::sync::Mutex::new(HtmlRenderer::new()));
     let markdown_renderer = MarkdownRenderer::new();
     let context = Context::new();
 
@@ -251,7 +251,7 @@ fn optimize_build(output_dir: &Path, config: &AstroConfig) {
 fn process_pages(
     project_path: &Path,
     out_path: &Path,
-    renderer: &HtmlRenderer,
+    renderer: &std::sync::Arc<std::sync::Mutex<HtmlRenderer>>,
     markdown_renderer: &MarkdownRenderer,
     context: &Context,
     plugin_manager: &PluginManager,
@@ -314,6 +314,7 @@ fn process_pages(
                             }
                         };
 
+                        let mut renderer = renderer.lock().unwrap();
                         let rendered = renderer.render_astro(&processed_content, context);
 
                         // 对渲染结果再次执行插件
@@ -600,11 +601,14 @@ pub fn dev(path: &str, port: u16) {
         eprintln!("Warning: Failed to trigger ServerStart event: {}", err);
     }
 
-    // TODO: 实现实际的开发服务器逻辑
-    // 1. 启动本地服务器
-    // 2. 监听文件变化
-    // 3. 自动重新构建
-    // 4. 实时刷新浏览器
+    // 启动开发服务器
+    let server = crate::server::DevServer::new(&format!("127.0.0.1:{}", port), path, &config.out_dir);
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(server.start())
+        .unwrap();
 
     // 触发服务器停止事件
     if let Err(err) = plugin_manager.trigger_event(&PluginLifecycleEvent::ServerStop) {
@@ -629,8 +633,12 @@ pub fn preview(path: &str, port: u16) {
         return;
     }
 
-    // TODO: 实现实际的预览服务器逻辑
-    // 1. 启动本地服务器
-    // 2. 提供静态文件服务
-    // 3. 处理路由
+    // 启动预览服务器
+    let server = crate::server::PreviewServer::new(&format!("127.0.0.1:{}", port), path);
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(server.start())
+        .unwrap();
 }

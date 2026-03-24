@@ -28,6 +28,8 @@ pub struct Post {
     pub tags: Vec<String>,
     /// 帖子内容
     pub content: String,
+    /// 摘要
+    pub excerpt: Option<String>,
     /// Front Matter 变量
     pub front_matter: Value,
     /// 永久链接
@@ -38,6 +40,10 @@ pub struct Post {
     pub path: String,
     /// 是否为草稿
     pub draft: bool,
+    /// 上一篇帖子
+    pub previous: Option<Box<Post>>,
+    /// 下一篇帖子
+    pub next: Option<Box<Post>>,
 }
 
 impl Post {
@@ -78,6 +84,9 @@ impl Post {
         let permalink = Self::generate_permalink(&title, &date, &categories, config)?;
 
         let layout = front_matter.get_str("layout").map(|s| s.to_string());
+        
+        // 提取摘要
+        let excerpt = Self::extract_excerpt(front_matter.content());
 
         Ok(Self {
             title,
@@ -87,11 +96,14 @@ impl Post {
             categories,
             tags,
             content: front_matter.content().to_string(),
+            excerpt,
             front_matter: front_matter.variables().clone(),
             permalink,
             layout,
             path: path.display().to_string(),
             draft: is_draft,
+            previous: None,
+            next: None,
         })
     }
 
@@ -306,6 +318,36 @@ impl Post {
     pub fn has_category(&self, category: &str) -> bool {
         self.categories.iter().any(|c| c.eq_ignore_ascii_case(category))
     }
+
+    /// 提取摘要
+    ///
+    /// # Arguments
+    ///
+    /// * `content` - 帖子内容
+    ///
+    /// # Returns
+    ///
+    /// 返回摘要或 None
+    pub fn extract_excerpt(content: &str) -> Option<String> {
+        // 检查是否有 <!-- more --> 分隔符
+        if let Some(index) = content.find("<!-- more -->") {
+            let excerpt = content[0..index].trim().to_string();
+            if !excerpt.is_empty() {
+                return Some(excerpt);
+            }
+        }
+
+        // 否则，提取前 200 个字符作为摘要
+        let trimmed = content.trim();
+        if trimmed.len() > 200 {
+            let excerpt = trimmed[0..200].to_string() + "...";
+            Some(excerpt)
+        } else if !trimmed.is_empty() {
+            Some(trimmed.to_string())
+        } else {
+            None
+        }
+    }
 }
 
 /// 帖子管理器
@@ -404,6 +446,22 @@ impl PostManager {
     /// 对帖子按日期排序（降序）
     fn sort_posts(&mut self) {
         self.posts.sort_by(|a, b| b.date.cmp(&a.date));
+        self.set_previous_next_posts();
+    }
+
+    /// 设置前一篇和后一篇帖子
+    fn set_previous_next_posts(&mut self) {
+        for i in 0..self.posts.len() {
+            // 设置前一篇帖子
+            if i > 0 {
+                self.posts[i].previous = Some(Box::new(self.posts[i-1].clone()));
+            }
+            
+            // 设置后一篇帖子
+            if i < self.posts.len() - 1 {
+                self.posts[i].next = Some(Box::new(self.posts[i+1].clone()));
+            }
+        }
     }
 
     /// 获取所有帖子
@@ -460,5 +518,77 @@ impl PostManager {
     /// 清除所有帖子
     pub fn clear(&mut self) {
         self.posts.clear();
+    }
+
+    /// 按年份和月份分组帖子
+    pub fn posts_by_year_month(&self) -> std::collections::HashMap<i32, std::collections::HashMap<u32, Vec<&Post>>> {
+        let mut result = std::collections::HashMap::new();
+
+        for post in &self.posts {
+            let year = post.date.year();
+            let month = post.date.month();
+
+            let month_map = result.entry(year).or_insert(std::collections::HashMap::new());
+            month_map.entry(month).or_insert(Vec::new()).push(post);
+        }
+
+        result
+    }
+
+    /// 按标签分组帖子
+    pub fn posts_by_tag(&self) -> std::collections::HashMap<String, Vec<&Post>> {
+        let mut result = std::collections::HashMap::new();
+
+        for post in &self.posts {
+            for tag in &post.tags {
+                result.entry(tag.clone()).or_insert(Vec::new()).push(post);
+            }
+        }
+
+        result
+    }
+
+    /// 按分类分组帖子
+    pub fn posts_by_category(&self) -> std::collections::HashMap<String, Vec<&Post>> {
+        let mut result = std::collections::HashMap::new();
+
+        for post in &self.posts {
+            for category in &post.categories {
+                result.entry(category.clone()).or_insert(Vec::new()).push(post);
+            }
+        }
+
+        result
+    }
+
+    /// 搜索帖子
+    pub fn search_posts(&self, query: &str) -> Vec<&Post> {
+        let query_lower = query.to_lowercase();
+        self.posts
+            .iter()
+            .filter(|post| {
+                post.title.to_lowercase().contains(&query_lower)
+                    || post.content.to_lowercase().contains(&query_lower)
+                    || post.tags.iter().any(|tag| tag.to_lowercase().contains(&query_lower))
+                    || post.categories.iter().any(|cat| cat.to_lowercase().contains(&query_lower))
+            })
+            .collect()
+    }
+
+    /// 分页获取帖子
+    pub fn paginate_posts(&self, page: usize, per_page: usize) -> Vec<&Post> {
+        let start = (page - 1) * per_page;
+        let end = start + per_page;
+        self.posts.iter().skip(start).take(per_page).collect()
+    }
+
+    /// 获取帖子总数
+    pub fn total_posts(&self) -> usize {
+        self.posts.len()
+    }
+
+    /// 获取总页数
+    pub fn total_pages(&self, per_page: usize) -> usize {
+        (self.posts.len() + per_page - 1) / per_page
     }
 }

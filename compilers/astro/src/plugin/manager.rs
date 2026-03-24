@@ -15,6 +15,10 @@ pub struct PluginManager {
     context: PluginContext,
     /// 插件工厂
     factories: HashMap<String, Box<dyn PluginFactory>>,
+    /// 插件依赖关系
+    dependencies: HashMap<String, Vec<String>>,
+    /// 插件加载顺序
+    load_order: Vec<String>,
 }
 
 impl PluginManager {
@@ -84,8 +88,48 @@ impl PluginManager {
         if self.plugins.contains_key(&name) {
             return Err(PluginError::LoadError(format!("Plugin with name '{}' already registered", name)));
         }
-        self.plugins.insert(name, plugin);
+        self.plugins.insert(name.clone(), plugin);
+        self.load_order.push(name);
         Ok(())
+    }
+
+    /// 添加插件依赖关系
+    ///
+    /// # 参数
+    /// - `plugin_name`: 插件名称
+    /// - `dependencies`: 依赖的插件名称列表
+    pub fn add_dependency(&mut self, plugin_name: &str, dependencies: &[String]) {
+        self.dependencies.insert(plugin_name.to_string(), dependencies.to_vec());
+    }
+
+    /// 排序插件加载顺序
+    pub fn sort_plugins(&mut self) {
+        // 简单的拓扑排序实现
+        let mut visited = HashMap::new();
+        let mut sorted = Vec::new();
+        
+        for plugin_name in self.plugins.keys() {
+            if !visited.contains_key(plugin_name) {
+                self.visit_plugin(plugin_name, &mut visited, &mut sorted);
+            }
+        }
+        
+        self.load_order = sorted;
+    }
+
+    /// 访问插件并递归处理其依赖
+    fn visit_plugin(&self, plugin_name: &str, visited: &mut HashMap<String, bool>, sorted: &mut Vec<String>) {
+        visited.insert(plugin_name.to_string(), true);
+        
+        if let Some(deps) = self.dependencies.get(plugin_name) {
+            for dep in deps {
+                if !visited.contains_key(dep) {
+                    self.visit_plugin(dep, visited, sorted);
+                }
+            }
+        }
+        
+        sorted.push(plugin_name.to_string());
     }
 
     /// 注册插件工厂
@@ -128,8 +172,10 @@ impl PluginManager {
     /// # 返回值
     /// - `Result<(), PluginError>`: 初始化结果
     pub fn init_all(&self) -> Result<(), PluginError> {
-        for plugin in self.plugins.values() {
-            plugin.init(&self.context)?;
+        for plugin_name in &self.load_order {
+            if let Some(plugin) = self.plugins.get(plugin_name) {
+                plugin.init(&self.context)?;
+            }
         }
         Ok(())
     }
@@ -143,8 +189,10 @@ impl PluginManager {
     /// - `Result<String, PluginError>`: 处理后的内容
     pub fn execute_all(&self, content: &str) -> Result<String, PluginError> {
         let mut result = content.to_string();
-        for plugin in self.plugins.values() {
-            result = plugin.execute(&result, &self.context)?;
+        for plugin_name in &self.load_order {
+            if let Some(plugin) = self.plugins.get(plugin_name) {
+                result = plugin.execute(&result, &self.context)?;
+            }
         }
         Ok(result)
     }
@@ -157,10 +205,20 @@ impl PluginManager {
     /// # 返回值
     /// - `Result<(), PluginError>`: 执行结果
     pub fn trigger_event(&mut self, event: &PluginLifecycleEvent) -> Result<(), PluginError> {
-        for plugin in self.plugins.values() {
-            plugin.on_event(event, &mut self.context)?;
+        for plugin_name in &self.load_order {
+            if let Some(plugin) = self.plugins.get(plugin_name) {
+                plugin.on_event(event, &mut self.context)?;
+            }
         }
         Ok(())
+    }
+
+    /// 清理插件
+    pub fn cleanup(&mut self) {
+        self.plugins.clear();
+        self.factories.clear();
+        self.dependencies.clear();
+        self.load_order.clear();
     }
 
     /// 设置插件上下文
