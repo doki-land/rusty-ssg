@@ -5,7 +5,7 @@ use crate::compiler::{ComponentParser, DependencyAnalyzer};
 use crate::config::{AstroConfig, ConfigManager};
 use crate::watcher::FileWatcher;
 use hyper::body::Incoming;
-use hyper::body::Bytes;
+use hyper::body::Body;
 use hyper::Request;
 use hyper::Response;
 use hyper::StatusCode;
@@ -71,24 +71,13 @@ impl DevServer {
             }
         });
 
-        let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+        let server = hyper::Server::bind(&addr).serve(make_svc);
         println!("Dev server running at http://{}", addr);
-        
-        loop {
-            let (socket, _) = listener.accept().await.unwrap();
-            let svc = make_svc.clone();
-            
-            tokio::spawn(async move {
-                let conn = hyper::server::conn::Http::new().serve_connection(socket, svc);
-                if let Err(e) = conn.await {
-                    eprintln!("Error serving connection: {}", e);
-                }
-            });
-        }
+        server.await
     }
 
     /// 处理 HTTP 请求
-    async fn handle_request(req: Request<Incoming>, project_path: &str, out_dir: &str) -> Result<Response<Bytes>, hyper::Error> {
+    async fn handle_request(req: Request<Incoming>, project_path: &str, out_dir: &str) -> Result<Response<Body>, hyper::Error> {
         let path = req.uri().path();
         
         // 处理根路径
@@ -118,14 +107,14 @@ impl DevServer {
                 Ok(Response::builder()
                     .status(StatusCode::OK)
                     .header("Content-Type", content_type)
-                    .body(Bytes::from(content))
+                    .body(Body::from(content))
                     .unwrap())
             }
             Err(_) => {
                 // 如果文件不存在，返回 404
                 Ok(Response::builder()
                     .status(StatusCode::NOT_FOUND)
-                    .body(Bytes::from("404 Not Found"))
+                    .body(Body::from("404 Not Found"))
                     .unwrap())
             }
         }
@@ -243,24 +232,13 @@ impl PreviewServer {
             }
         });
 
-        let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+        let server = hyper::Server::bind(&addr).serve(make_svc);
         println!("Preview server running at http://{}", addr);
-        
-        loop {
-            let (socket, _) = listener.accept().await.unwrap();
-            let svc = make_svc.clone();
-            
-            tokio::spawn(async move {
-                let conn = hyper::server::conn::Http::new().serve_connection(socket, svc);
-                if let Err(e) = conn.await {
-                    eprintln!("Error serving connection: {}", e);
-                }
-            });
-        }
+        server.await
     }
 
     /// 处理 HTTP 请求
-    async fn handle_request(req: Request<Incoming>, build_path: &str) -> Result<Response<Bytes>, hyper::Error> {
+    async fn handle_request(req: Request<Incoming>, build_path: &str) -> Result<Response<Body>, hyper::Error> {
         let path = req.uri().path();
         
         // 处理根路径
@@ -290,14 +268,14 @@ impl PreviewServer {
                 Ok(Response::builder()
                     .status(StatusCode::OK)
                     .header("Content-Type", content_type)
-                    .body(Bytes::from(content))
+                    .body(Body::from(content))
                     .unwrap())
             }
             Err(_) => {
                 // 如果文件不存在，返回 404
                 Ok(Response::builder()
                     .status(StatusCode::NOT_FOUND)
-                    .body(Bytes::from("404 Not Found"))
+                    .body(Body::from("404 Not Found"))
                     .unwrap())
             }
         }

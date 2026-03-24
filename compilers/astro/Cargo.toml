@@ -23,7 +23,7 @@ chrono.workspace = true
 rayon.workspace = true
 hashbrown = { workspace = true, features = ["serde"] }
 notify = "5.0.0"
-hyper = { version = "1.0.0", features = ["full"] }
+hyper = { version = "1.8.1", features = ["full"] }
 regex = "1.10.5"
 
 [dev-dependencies]
