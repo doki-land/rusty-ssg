@@ -104,7 +104,7 @@ pub fn compile_batch(documents: &HashMap<String, String>) -> CompileResult {
     let start_time = std::time::Instant::now();
     let renderer = HtmlRenderer::new();
     let mut result_documents = HashMap::new();
-    let mut errors = Vec::new();
+    let errors = Vec::new();
 
     for (path, content) in documents {
         use nargo_types::{DocumentMeta, FrontMatter};

@@ -79,7 +79,7 @@ impl BuildCommand {
 
         println!("  {} Compiling documents...", style("→").blue());
 
-        let mut compiler = MkDocsCompiler::new(config.clone(), &source_dir, &output_dir);
+        let compiler = MkDocsCompiler::new(config.clone(), &source_dir, &output_dir);
         let compile_results = compiler.compile_all()?;
 
         if !compile_results.is_empty() {

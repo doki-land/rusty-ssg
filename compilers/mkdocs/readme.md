@@ -10,9 +10,13 @@ MkDocs is a fast, simple, and downright gorgeous static site generator for creat
 - 📦 **Easy Deployment**: Generate static files that work anywhere
 - 🔧 **Extensible**: Customize with plugins and extensions
 - 🛠 **Developer Friendly**: Great tooling and developer experience
-- 📝 **Markdown Support**: Write content in Markdown with ease
+- 📝 **Markdown Support**: Write content in Markdown with ease, including tables, footnotes, and code highlighting
 - 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
 - 📱 **100% Compatible**: Full compatibility when using static features
+- 🔗 **Link Validation**: Ensure all internal links are valid
+- 📁 **Directory URLs**: Support for clean, extensionless URLs
+- 📋 **Strict Mode**: Validate configuration and content for correctness
+- 🧩 **Configuration Inheritance**: Inherit settings from parent configurations
 
 ## Installation
 
@@ -141,6 +145,12 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+
+# Advanced configuration
+strict: true  # Enable strict mode for validation
+docs_dir: docs  # Directory containing documentation files
+site_dir: site  # Directory for generated site
+use_directory_urls: true  # Use clean, extensionless URLs
 ```
 
 ## Examples
@@ -225,6 +235,10 @@ MkDocs supports a wide range of plugins to extend functionality (using IPC mode)
 - 🎨 **minify**: Minify HTML and CSS
 - 🗺️ **sitemap**: Generate sitemap.xml
 - 📱 **responsive-images**: Responsive image support
+- 💻 **prism**: Syntax highlighting for code blocks
+- 📊 **katex**: Mathematical formula rendering
+- 📈 **mermaid**: Diagram and flowchart rendering
+- 📊 **google-analytics**: Google Analytics integration
 
 ## Themes
 

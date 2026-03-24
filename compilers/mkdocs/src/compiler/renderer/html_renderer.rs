@@ -103,9 +103,10 @@ impl HtmlRenderer {
         let mut in_ol = false;
 
         for line in content.lines() {
-            let line = line.trim();
+            // 对于代码块，我们需要保留原始行内容（包括缩进）
+            let trimmed_line = line.trim();
 
-            if line.starts_with("```") {
+            if trimmed_line.starts_with("```") {
                 // 关闭之前的列表
                 if in_ul {
                     html.push_str("</ul>\n");
@@ -118,7 +119,9 @@ impl HtmlRenderer {
 
                 in_code_block = !in_code_block;
                 if in_code_block {
-                    let lang = line.strip_prefix("```").unwrap_or("").trim();
+                    let lang = trimmed_line.strip_prefix("```").unwrap_or("").trim();
+                    // 处理 language- 前缀
+                    let lang = lang.strip_prefix("language-").unwrap_or(lang);
                     if !lang.is_empty() {
                         html.push_str(&format!("<pre><code class=\"language-{}\">\n", lang));
                     } else {
@@ -136,6 +139,8 @@ impl HtmlRenderer {
                 html.push('\n');
                 continue;
             }
+
+            let line = trimmed_line;
 
             if line.is_empty() {
                 // 关闭之前的列表
@@ -295,20 +300,13 @@ impl HtmlRenderer {
         let mut processed_content = content.to_string();
 
         // 处理表格扩展
-        if self.markdown_extensions.contains(&"tables".to_string()) {
-            processed_content = self.process_tables(&processed_content);
-        }
+        processed_content = self.process_tables(&processed_content);
 
         // 处理脚注扩展
-        if self.markdown_extensions.contains(&"footnotes".to_string()) {
-            processed_content = self.process_footnotes(&processed_content);
-        }
+        processed_content = self.process_footnotes(&processed_content);
 
         // 处理代码高亮扩展
-        if self.markdown_extensions.contains(&"codehilite".to_string()) || 
-           self.markdown_extensions.contains(&"prism".to_string()) {
-            processed_content = self.process_code_highlight(&processed_content);
-        }
+        processed_content = self.process_code_highlight(&processed_content);
 
         processed_content
     }

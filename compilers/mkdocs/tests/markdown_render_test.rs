@@ -140,3 +140,64 @@ fn test_empty_markdown() {
     let html = renderer.render("");
     assert!(!html.is_empty());
 }
+
+#[test]
+fn test_markdown_render_tables() {
+    let renderer = HtmlRenderer::new();
+
+    let markdown = r#"
+| 表头1 | 表头2 | 表头3 |
+| ----- | ----- | ----- |
+| 单元格1 | 单元格2 | 单元格3 |
+| 单元格4 | 单元格5 | 单元格6 |
+"#;
+
+    let html = renderer.render(markdown);
+
+    assert!(html.contains("<table>"));
+    assert!(html.contains("<thead>"));
+    assert!(html.contains("<tbody>"));
+    assert!(html.contains("<th>"));
+    assert!(html.contains("<td>"));
+    assert!(html.contains("表头1"));
+    assert!(html.contains("单元格1"));
+}
+
+#[test]
+fn test_markdown_render_footnotes() {
+    let renderer = HtmlRenderer::new();
+
+    let markdown = r#"
+这是一个带有脚注的文本[^1]。
+
+[^1]: 这是脚注的内容。
+"#;
+
+    let html = renderer.render(markdown);
+
+    assert!(html.contains("<sup"));
+    assert!(html.contains("footnote-ref"));
+    assert!(html.contains("<div class=\"footnotes\">"));
+    assert!(html.contains("<li id=\"fn:1\">"));
+    assert!(html.contains("这是脚注的内容"));
+}
+
+#[test]
+fn test_markdown_render_code_highlight() {
+    let renderer = HtmlRenderer::new();
+
+    let markdown = r#"
+```python
+print("Hello, world!")
+```
+"#;
+
+    let html = renderer.render(markdown);
+
+    assert!(html.contains("<pre>"));
+    assert!(html.contains("<code class=\"language-python\""));
+    assert!(html.contains("print(&quot;Hello, world!&quot;)"));
+    // 或者检查未转义的版本，因为 html_escape 会转义双引号
+    assert!(html.contains("print("));
+    assert!(html.contains("Hello, world!"));
+}

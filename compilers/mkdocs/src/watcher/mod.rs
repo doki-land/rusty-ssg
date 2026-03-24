@@ -61,7 +61,7 @@ impl FileWatcher {
     {
         let rx = self.rx.clone();
         loop {
-            let mut rx_guard = rx.lock().unwrap();
+            let rx_guard = rx.lock().unwrap();
             match rx_guard.recv_timeout(Duration::from_secs(1)) {
                 Ok(Ok(event)) => {
                     for path in event.paths {
@@ -146,13 +146,12 @@ impl DevServer {
 
     /// 启动 HTTP 服务器
     async fn start_http_server(&self) -> Result<()> {
-        use http_body_util::{BodyExt, Full};
+        use http_body_util::Full;
         use hyper::{
             Request, Response, StatusCode,
-            body::{Bytes, Incoming as IncomingBody},
+            body::{Incoming as IncomingBody},
             header::CONTENT_TYPE,
         };
-        use hyper_util::rt::tokio::TokioIo;
         use std::{fs::File, io::Read, net::SocketAddr};
 
         let output_dir = self.output_dir.clone();

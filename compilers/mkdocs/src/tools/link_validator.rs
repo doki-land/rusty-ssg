@@ -1,13 +1,9 @@
 //! 链接验证模块
 //! 提供链接验证功能，确保站点中的链接都能正常工作
 
-use crate::types::{MkDocsConfig, ValidationConfig, ValidationLevel};
+use crate::types::{MkDocsConfig, ValidationLevel};
 use regex;
-use std::{
-    collections::HashSet,
-    path::{Path, PathBuf},
-    result::Result,
-};
+use std::collections::HashSet;
 
 /// 链接验证错误
 #[derive(Debug, Clone, PartialEq, Eq)]

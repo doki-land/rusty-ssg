@@ -3,8 +3,6 @@
 
 use crate::{Result, tools::UnifiedTemplateManager, types::MkDocsConfig};
 use nargo_template::{TemplateEngine, ToJsonValue};
-use serde_json::json;
-use std::collections::HashMap;
 
 /// 主题类型
 /// 支持多种内置主题
