@@ -1,10 +1,9 @@
 //! 默认主题实现
 //! 提供完整的文档站点主题和样式
 
-use crate::{Result, types::VuePressConfig};
-use nargo_template::{TemplateEngine, TemplateManager, ToJsonValue};
+use crate::{Result, tools::UnifiedTemplateManager, types::VuePressConfig};
+use nargo_template::ToJsonValue;
 use serde_json::json;
-use std::collections::HashMap;
 
 /// 模板引擎类型
 /// 支持 Askama 和 Dejavu 两种模板引擎
@@ -161,17 +160,16 @@ pub struct DefaultTheme {
     /// 模板引擎类型
     engine_type: TemplateEngineType,
     /// 模板管理器
-    template_manager: TemplateManager,
+    template_manager: UnifiedTemplateManager,
 }
 
 impl Theme for DefaultTheme {
     /// 渲染页面
     fn render_page(&self, context: &PageContext) -> Result<String> {
-        // 使用 Dejavu 渲染
         let json_context = context.to_json_value();
         self.template_manager
-            .render(TemplateEngine::DejaVu, "page", &json_context)
-            .map_err(|e| crate::types::VutexError::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
+            .render("page", &json_context)
+            .map_err(|e| crate::types::VutexError::from(e))
     }
 
     /// 获取站点标题
@@ -197,11 +195,10 @@ impl DefaultTheme {
     ///
     /// 新的默认主题实例
     pub fn with_engine(config: VuePressConfig, engine_type: TemplateEngineType) -> Result<Self> {
-        let mut template_manager = TemplateManager::new();
+        let mut template_manager = UnifiedTemplateManager::new();
 
-        // 注册 Dejavu 模板
         let template_content = include_str!("../templates/page.dejavu");
-        template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
+        template_manager.register_template("page", template_content)?;
 
         Ok(Self { config, engine_type, template_manager })
     }
@@ -226,18 +223,16 @@ impl DefaultTheme {
     ///
     /// 新的主题实例
     pub fn from_path(config: VuePressConfig, theme_path: &std::path::Path) -> Result<Self> {
-        let mut template_manager = TemplateManager::new();
+        let mut template_manager = UnifiedTemplateManager::new();
 
-        // 加载主题模板文件
         let page_template_path = theme_path.join("templates").join("page.dejavu");
         if page_template_path.exists() {
             let template_content = std::fs::read_to_string(page_template_path)?;
-            template_manager.register_template(TemplateEngine::DejaVu, "page", &template_content)?;
+            template_manager.register_template("page", &template_content)?;
         }
         else {
-            // 使用默认模板
             let template_content = include_str!("../templates/page.dejavu");
-            template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
+            template_manager.register_template("page", template_content)?;
         }
 
         Ok(Self { config, engine_type: TemplateEngineType::Dejavu, template_manager })

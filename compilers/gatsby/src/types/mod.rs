@@ -8,14 +8,13 @@ pub mod graphql_service;
 
 use std::{collections::HashMap, error::Error, fmt};
 
-use nargo_types::Document;
 use serde::{Deserialize, Serialize};
 
 /// 编译结果
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompileResult {
     /// 编译后的文档
-    pub documents: HashMap<String, Document>,
+    pub documents: HashMap<String, String>,
     /// 编译时间（毫秒）
     pub compile_time_ms: u64,
     /// 是否成功
@@ -31,7 +30,7 @@ impl CompileResult {
     ///
     /// * `documents` - 编译后的文档映射
     /// * `compile_time_ms` - 编译时间（毫秒）
-    pub fn success(documents: HashMap<String, Document>, compile_time_ms: u64) -> Self {
+    pub fn success(documents: HashMap<String, String>, compile_time_ms: u64) -> Self {
         Self { documents, compile_time_ms, success: true, errors: Vec::new() }
     }
 

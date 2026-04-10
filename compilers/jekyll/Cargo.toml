@@ -33,6 +33,7 @@ http = { workspace = true }
 nargo-template.workspace = true
 nargo-types.workspace = true
 nargo-document.workspace = true
+urlencoding = "2.1"
 
 [dev-dependencies]
 ntest = "0.9.5"

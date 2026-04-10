@@ -6,8 +6,8 @@ use crate::{
     types::{CompileResult, Result},
 };
 use nargo_document::generator::markdown::MarkdownRenderer;
-use nargo_types::Document;
 use rayon::prelude::*;
+use nargo_types::{Document, NargoValue};
 use std::{collections::HashMap, sync::Arc, time::Instant};
 
 mod parser;
@@ -26,7 +26,7 @@ pub struct GatsbyCompiler {
     /// Markdown 渲染器
     markdown_renderer: MarkdownRenderer,
     /// 编译缓存
-    cache: HashMap<String, Document>,
+    cache: HashMap<String, String>,
 }
 
 impl GatsbyCompiler {
@@ -93,23 +93,23 @@ impl GatsbyCompiler {
     /// # Returns
     ///
     /// 编译后的文档
-    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<Document> {
+    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
         if let Some(cached) = self.cache.get(path) {
             return Ok(cached.clone());
         }
 
         let mut doc = self.markdown_parser.parse(source, path).map_err(|e| crate::types::GatsbyError::CompileError { message: e })?;
 
-        // 直接使用 doc.content 而不是克隆
         let rendered_html = self
             .markdown_renderer
             .render(&doc.content)
             .map_err(|e| crate::types::GatsbyError::ConfigError { message: format!("Markdown render error: {:?}", e) })?;
 
         doc.rendered_content = Some(rendered_html);
-        self.cache.insert(path.to_string(), doc.clone());
+        let html = doc.rendered_content.clone().unwrap_or_default();
+        self.cache.insert(path.to_string(), html.clone());
 
-        Ok(doc)
+        Ok(html)
     }
 
     /// 批量编译文档
@@ -124,7 +124,6 @@ impl GatsbyCompiler {
     pub fn compile_batch(&mut self, documents: &HashMap<String, String>) -> CompileResult {
         let start_time = Instant::now();
 
-        // 首先检查缓存，收集需要编译的文档
         let mut to_compile = Vec::new();
         let mut compiled_docs = HashMap::with_capacity(documents.len());
 
@@ -137,7 +136,6 @@ impl GatsbyCompiler {
             }
         }
 
-        // 并行编译需要编译的文档
         let markdown_renderer = Arc::new(self.markdown_renderer.clone());
         let markdown_parser = Arc::new(self.markdown_parser.clone());
         let compile_results: Vec<_> = to_compile
@@ -148,7 +146,6 @@ impl GatsbyCompiler {
                     Err(e) => return Err((path.clone(), crate::types::GatsbyError::CompileError { message: e })),
                 };
 
-                // 直接使用 doc.content 而不是克隆
                 let rendered_html = match markdown_renderer.render(&doc.content) {
                     Ok(html) => html,
                     Err(e) => {
@@ -160,17 +157,17 @@ impl GatsbyCompiler {
                 };
 
                 doc.rendered_content = Some(rendered_html);
-                Ok((path.clone(), doc))
+                let html = doc.rendered_content.clone().unwrap_or_default();
+                Ok((path.clone(), html))
             })
             .collect();
 
-        // 处理编译结果
         let mut errors = Vec::new();
         for result in compile_results {
             match result {
-                Ok((path, doc)) => {
-                    compiled_docs.insert(path.clone(), doc.clone());
-                    self.cache.insert(path, doc);
+                Ok((path, html)) => {
+                    compiled_docs.insert(path.clone(), html.clone());
+                    self.cache.insert(path, html);
                 }
                 Err((_path, error)) => {
                     errors.push(error);

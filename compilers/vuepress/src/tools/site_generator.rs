@@ -2,7 +2,6 @@
 //! 提供静态站点生成的核心功能，支持多语言文档
 
 use crate::{
-    Document,
     config::types::{SiteLocaleData, Theme},
     tools::{
         Result,

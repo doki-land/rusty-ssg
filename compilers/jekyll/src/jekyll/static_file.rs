@@ -81,7 +81,7 @@ impl StaticFile {
         let modified_time = path.metadata().map_err(JekyllError::from)?.modified().map_err(JekyllError::from)?;
 
         let dest_path = dest_dir.join(path.file_name().unwrap());
-        let relative_path = path.file_name().unwrap_or_default().to_path_buf();
+        let relative_path = PathBuf::from(path.file_name().unwrap_or_default());
         let file_type = path.extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("")

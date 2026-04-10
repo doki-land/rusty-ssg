@@ -2,7 +2,7 @@
 #![doc = "VuePress 文档系统 CLI 工具库"]
 
 pub use crate::{
-    CompileResult, CompileSession, Document, PluginHost,
+    CompileResult, CompileSession, PluginHost,
     compiler::VuePressCompiler,
     types::{Result, VuePressConfig, VutexError},
 };

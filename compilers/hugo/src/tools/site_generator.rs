@@ -2,7 +2,7 @@
 //! 提供静态站点生成的核心功能，支持多语言文档
 
 use crate::{
-    Document, Result,
+    Result,
     theme::{DefaultTheme, LocaleInfo, NavItem, PageContext, SidebarGroup, SidebarLink},
     tools::taxonomy_generator::TaxonomyPageGenerator,
     types::{HugoConfig, HugoContentLoader, taxonomies::TaxonomyBuilder},
@@ -10,7 +10,7 @@ use crate::{
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射
-pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
+pub type LanguageDocuments = HashMap<String, HashMap<String, String>>;
 
 /// 静态站点生成器
 pub struct StaticSiteGenerator {
@@ -29,7 +29,7 @@ impl StaticSiteGenerator {
     }
 
     /// 生成静态站点
-    pub fn generate(&mut self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
+    pub fn generate(&mut self, documents: &HashMap<String, String>, output_dir: &PathBuf) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
         }
@@ -37,11 +37,11 @@ impl StaticSiteGenerator {
         let locales = self.get_available_locales();
         let default_lang = self.get_default_language();
 
-        let mut all_docs_by_lang: HashMap<String, Vec<(String, Document)>> = HashMap::new();
+        let mut all_docs_by_lang: HashMap<String, Vec<(String, String)>> = HashMap::new();
 
-        for (path, doc) in documents {
+        for (path, content) in documents {
             let (lang, _) = self.extract_language_from_path(path, &default_lang);
-            all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
+            all_docs_by_lang.entry(lang).or_default().push((path.clone(), content.clone()));
         }
 
         for (lang, docs) in all_docs_by_lang {
@@ -49,21 +49,18 @@ impl StaticSiteGenerator {
 
             let mut all_sidebar_links = Vec::new();
 
-            for (path, doc) in &docs {
-                let title = doc
-                    .title()
-                    .unwrap_or_else(|| {
-                        let file_name = path.split('/').last().unwrap_or(path);
-                        file_name.strip_suffix(".md").unwrap_or(file_name)
-                    })
-                    .to_string();
+            for (path, _content) in &docs {
+                let title = {
+                    let file_name = path.split('/').last().unwrap_or(path);
+                    file_name.strip_suffix(".md").unwrap_or(file_name)
+                }.to_string();
 
                 let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
                 let html_path = normalized_path.replace(".md", ".html");
                 all_sidebar_links.push((title, html_path));
             }
 
-            for (path, doc) in &docs {
+            for (path, content) in &docs {
                 let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
                 let html_path = normalized_path.replace(".md", ".html");
                 let full_html_path = format!("{}/{}", lang, html_path);
@@ -88,7 +85,7 @@ impl StaticSiteGenerator {
                 let sidebar_groups = vec![sidebar_group];
 
                 let html_content = self.render_page_for_file(
-                    doc,
+                    content,
                     &lang,
                     &nav_items,
                     &sidebar_groups,
@@ -112,7 +109,7 @@ impl StaticSiteGenerator {
     }
 
     /// 生成分类法相关页面
-    fn generate_taxonomy_pages(&self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
+    fn generate_taxonomy_pages(&self, documents: &HashMap<String, String>, output_dir: &PathBuf) -> Result<()> {
         let content_dir = output_dir
             .parent()
             .and_then(|p| p.join("content").canonicalize().ok())
@@ -164,14 +161,14 @@ impl StaticSiteGenerator {
     }
 
     /// 按语言分组文档
-    fn group_documents_by_language(&self, documents: &HashMap<String, Document>) -> LanguageDocuments {
+    fn group_documents_by_language(&self, documents: &HashMap<String, String>) -> LanguageDocuments {
         let mut result = LanguageDocuments::new();
         let default_lang = self.get_default_language();
 
-        for (path, document) in documents {
+        for (path, content) in documents {
             let (lang, normalized_path) = self.extract_language_from_path(path, &default_lang);
 
-            result.entry(lang).or_insert_with(HashMap::new).insert(normalized_path, document.clone());
+            result.entry(lang).or_insert_with(HashMap::new).insert(normalized_path, content.clone());
         }
 
         result
@@ -230,19 +227,16 @@ impl StaticSiteGenerator {
     /// 渲染单个页面
     fn render_page(
         &self,
-        document: &Document,
+        html_content: &str,
         current_lang: &str,
         nav_items: &[NavItem],
         sidebar_groups: &[SidebarGroup],
         locales: &[(String, crate::compiler::hugo_template::context::LanguageConfig)],
         current_path: String,
     ) -> Result<String> {
-        let doc_title = document.title().unwrap_or("");
         let site_title = self.theme.site_title();
 
-        let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
-
-        let content = document.rendered_content.as_deref().unwrap_or("");
+        let page_title = site_title.to_string();
 
         let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
             (false, false, String::new(), false, String::new());
@@ -262,7 +256,7 @@ impl StaticSiteGenerator {
         let context = PageContext {
             page_title,
             site_title: site_title.to_string(),
-            content: content.to_string(),
+            content: html_content.to_string(),
             nav_items: nav_items.to_vec(),
             sidebar_groups: sidebar_groups.to_vec(),
             current_path,
@@ -314,13 +308,13 @@ impl StaticSiteGenerator {
     }
 
     /// 生成侧边栏组
-    fn generate_sidebar_groups(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups(&self, documents: &HashMap<String, String>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
 
         let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
-        for (path, doc) in documents {
-            let title = doc.title().unwrap_or(path).to_string();
+        for (path, _content) in documents {
+            let title = path.split('/').last().unwrap_or(path).to_string();
             let full_path = format!("{}/{}", lang, path).replace(".md", ".html");
             default_group.items.push(SidebarLink { text: title, link: full_path });
         }
@@ -341,12 +335,12 @@ impl StaticSiteGenerator {
     }
 
     /// 简单版本的侧边栏生成
-    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, String>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
         let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
-        for (path, doc) in documents {
-            let title = doc.title().unwrap_or(path).to_string();
+        for (path, _content) in documents {
+            let title = path.split('/').last().unwrap_or(path).to_string();
             let link = format!("{}/{}", lang, path).replace(".md", ".html");
             default_group.items.push(SidebarLink { text: title, link });
         }
@@ -358,20 +352,17 @@ impl StaticSiteGenerator {
     /// 为单个文件渲染页面
     fn render_page_for_file(
         &self,
-        document: &Document,
+        html_content: &str,
         current_lang: &str,
         nav_items: &[NavItem],
         sidebar_groups: &[SidebarGroup],
         locales: &[(String, crate::compiler::hugo_template::context::LanguageConfig)],
         current_full_path: String,
-        current_html_path: String,
+        _current_html_path: String,
     ) -> Result<String> {
-        let doc_title = document.title().unwrap_or("");
         let site_title = self.theme.site_title();
 
-        let page_title = if !doc_title.is_empty() { format!("{} | {}", doc_title, site_title) } else { site_title.to_string() };
-
-        let content = document.rendered_content.as_deref().unwrap_or("");
+        let page_title = site_title.to_string();
 
         let (has_footer, has_footer_message, footer_message, has_footer_copyright, footer_copyright) =
             (false, false, String::new(), false, String::new());
@@ -388,7 +379,7 @@ impl StaticSiteGenerator {
         let context = PageContext {
             page_title,
             site_title: site_title.to_string(),
-            content: content.to_string(),
+            content: html_content.to_string(),
             nav_items: nav_items.to_vec(),
             sidebar_groups: sidebar_groups.to_vec(),
             current_path: current_full_path,

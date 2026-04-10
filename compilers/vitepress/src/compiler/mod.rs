@@ -29,7 +29,7 @@ pub struct VitePressCompiler {
     /// HTML 渲染器
     html_renderer: HtmlRenderer,
     /// 编译缓存
-    cache: HashMap<String, Document>,
+    cache: HashMap<String, String>,
     /// 插件宿主（可选）
     plugin_host: Option<PluginHost>,
 }
@@ -155,7 +155,7 @@ impl VitePressCompiler {
     /// # Returns
     ///
     /// 编译后的文档
-    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<Document> {
+    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
         if let Some(cached) = self.cache.get(path) {
             return Ok(cached.clone());
         }
@@ -184,9 +184,10 @@ impl VitePressCompiler {
         }
 
         doc.rendered_content = Some(final_html);
-        self.cache.insert(path.to_string(), doc.clone());
+        let html = doc.rendered_content.clone().unwrap_or_default();
+        self.cache.insert(path.to_string(), html.clone());
 
-        Ok(doc)
+        Ok(html)
     }
 
     /// 调用插件钩子
@@ -259,7 +260,7 @@ impl VitePressCompiler {
     }
 
     /// 从缓存中获取文档
-    pub fn get_cached(&self, path: &str) -> Option<&Document> {
+    pub fn get_cached(&self, path: &str) -> Option<&String> {
         self.cache.get(path)
     }
 }

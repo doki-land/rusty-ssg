@@ -2,7 +2,7 @@
 //! 提供完整的文档站点主题和样式
 
 use crate::{GatsbyConfig, tools::UnifiedTemplateManager, types::Result};
-use nargo_template::{TemplateEngine, ToJsonValue};
+use nargo_template::ToJsonValue;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -174,16 +174,11 @@ impl DefaultTheme {
     pub fn with_engine(config: GatsbyConfig, engine_type: TemplateEngineType) -> Result<Self> {
         let mut template_manager = UnifiedTemplateManager::new();
 
-        match engine_type {
-            TemplateEngineType::DejaVu => {
-                let template_content = include_str!("../templates/page.dejavu");
-                template_manager.register_template(TemplateEngine::DejaVu, "page", template_content)?;
-            }
-            TemplateEngineType::Handlebars => {
-                let template_content = include_str!("../templates/page.html");
-                template_manager.register_template(TemplateEngine::Handlebars, "page", template_content)?;
-            }
-        }
+        let template_content = match engine_type {
+            TemplateEngineType::DejaVu => include_str!("../templates/page.dejavu"),
+            TemplateEngineType::Handlebars => include_str!("../templates/page.html"),
+        };
+        template_manager.register_template("page", template_content)?;
 
         Ok(Self { config, engine_type, template_manager })
     }
@@ -198,16 +193,10 @@ impl DefaultTheme {
     ///
     /// 渲染后的 HTML 字符串
     pub fn render_page(&self, context: &PageContext) -> Result<String> {
-        match self.engine_type {
-            TemplateEngineType::DejaVu => self
-                .template_manager
-                .render(TemplateEngine::DejaVu, "page", context)
-                .map_err(|e| crate::types::GatsbyError::IoError { source: e }),
-            TemplateEngineType::Handlebars => self
-                .template_manager
-                .render(TemplateEngine::Handlebars, "page", context)
-                .map_err(|e| crate::types::GatsbyError::IoError { source: e }),
-        }
+        let context_value = context.to_json_value();
+        self.template_manager
+            .render("page", &context_value)
+            .map_err(|e| crate::types::GatsbyError::IoError { source: e })
     }
 
     /// 获取站点标题

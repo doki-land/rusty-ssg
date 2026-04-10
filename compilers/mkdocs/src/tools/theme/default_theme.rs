@@ -2,7 +2,7 @@
 //! 提供完整的文档站点主题和样式
 
 use crate::{Result, tools::UnifiedTemplateManager, types::MkDocsConfig};
-use nargo_template::{TemplateEngine, ToJsonValue};
+use nargo_template::ToJsonValue;
 
 /// 主题类型
 /// 支持多种内置主题
@@ -321,26 +321,16 @@ impl DefaultTheme {
         }
     }
 
-    /// 转换模板引擎类型
-    fn to_template_engine(engine_type: &TemplateEngineType) -> TemplateEngine {
-        match engine_type {
-            TemplateEngineType::DejaVu => TemplateEngine::DejaVu,
-            TemplateEngineType::Handlebars => TemplateEngine::Handlebars,
-            TemplateEngineType::Jinja2 => TemplateEngine::Jinja2,
-        }
-    }
-
     /// 从自定义目录加载模板
     fn load_templates_from_custom_dir(
         template_manager: &mut UnifiedTemplateManager,
-        engine_type: &TemplateEngineType,
+        _engine_type: &TemplateEngineType,
         dir: &str,
     ) -> std::io::Result<()> {
         use std::path::Path;
         let template_dir = Path::new(dir).join("templates");
         if template_dir.exists() {
-            let engine = Self::to_template_engine(engine_type);
-            template_manager.register_templates_from_dir(engine, &template_dir)?;
+            template_manager.register_templates_from_dir(&template_dir)?;
         }
         Ok(())
     }
@@ -348,18 +338,17 @@ impl DefaultTheme {
     /// 加载内置模板
     fn load_builtin_templates(
         template_manager: &mut UnifiedTemplateManager,
-        engine_type: &TemplateEngineType,
+        _engine_type: &TemplateEngineType,
         theme_type: &ThemeType,
     ) -> std::io::Result<()> {
         let template_content = match theme_type {
             ThemeType::Default => include_str!("../templates/page.dejavu"),
-            ThemeType::Dark => include_str!("../templates/page.dejavu"), // 后续添加暗黑主题模板
-            ThemeType::Tech => include_str!("../templates/page.dejavu"), // 后续添加技术主题模板
-            ThemeType::Custom(_) => include_str!("../templates/page.dejavu"), // 自定义主题回退到默认模板
+            ThemeType::Dark => include_str!("../templates/page.dejavu"),
+            ThemeType::Tech => include_str!("../templates/page.dejavu"),
+            ThemeType::Custom(_) => include_str!("../templates/page.dejavu"),
         };
 
-        let engine = Self::to_template_engine(engine_type);
-        template_manager.register_template(engine, "page", template_content)?;
+        template_manager.register_template("page", template_content)?;
         Ok(())
     }
 
@@ -373,25 +362,11 @@ impl DefaultTheme {
     ///
     /// 渲染后的 HTML 字符串
     fn render_page_impl(&self, context: &PageContext) -> Result<String> {
-        match self.engine_type {
-            TemplateEngineType::DejaVu => {
-                let result = self.template_manager.render(TemplateEngine::DejaVu, "page", context);
-                match result {
-                    Ok(html) => Ok(html),
-                    Err(e) => {
-                        // 回退到简单的 HTML 渲染
-                        Ok(self.render_fallback_page(context))
-                    }
-                }
-            }
-            TemplateEngineType::Handlebars => self
-                .template_manager
-                .render(TemplateEngine::Handlebars, "page", context)
-                .map_err(|e| crate::types::MkDocsError::from(e)),
-            TemplateEngineType::Jinja2 => self
-                .template_manager
-                .render(TemplateEngine::Jinja2, "page", context)
-                .map_err(|e| crate::types::MkDocsError::from(e)),
+        let context_value = context.to_json_value();
+        let result = self.template_manager.render("page", &context_value);
+        match result {
+            Ok(html) => Ok(html),
+            Err(_) => Ok(self.render_fallback_page(context)),
         }
     }
 

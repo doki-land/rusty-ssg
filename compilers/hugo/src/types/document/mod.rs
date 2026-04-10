@@ -109,6 +109,22 @@ pub struct FrontMatter {
     pub layout: Option<String>,
     /// 页面标签
     pub tags: Vec<String>,
+    /// 页面分类
+    pub categories: Vec<String>,
+    /// 发布日期
+    pub date: Option<String>,
+    /// 是否为草稿
+    pub draft: Option<bool>,
+    /// 作者
+    pub author: Option<String>,
+    /// 权重（用于排序）
+    pub weight: Option<i32>,
+    /// 菜单配置
+    pub menu: Option<HashMap<String, serde_json::Value>>,
+    /// 别名
+    pub aliases: Vec<String>,
+    /// 自定义 URL 片段
+    pub slug: Option<String>,
     /// 是否在侧边栏中隐藏
     pub sidebar: Option<bool>,
     /// 侧边栏顺序
@@ -144,6 +160,48 @@ impl FrontMatter {
     /// 添加标签
     pub fn add_tag(mut self, tag: String) -> Self {
         self.tags.push(tag);
+        self
+    }
+
+    /// 添加分类
+    pub fn add_category(mut self, category: String) -> Self {
+        self.categories.push(category);
+        self
+    }
+
+    /// 设置日期
+    pub fn with_date(mut self, date: String) -> Self {
+        self.date = Some(date);
+        self
+    }
+
+    /// 设置是否为草稿
+    pub fn with_draft(mut self, draft: bool) -> Self {
+        self.draft = Some(draft);
+        self
+    }
+
+    /// 设置作者
+    pub fn with_author(mut self, author: String) -> Self {
+        self.author = Some(author);
+        self
+    }
+
+    /// 设置权重
+    pub fn with_weight(mut self, weight: i32) -> Self {
+        self.weight = Some(weight);
+        self
+    }
+
+    /// 添加别名
+    pub fn add_alias(mut self, alias: String) -> Self {
+        self.aliases.push(alias);
+        self
+    }
+
+    /// 设置 slug
+    pub fn with_slug(mut self, slug: String) -> Self {
+        self.slug = Some(slug);
         self
     }
 }

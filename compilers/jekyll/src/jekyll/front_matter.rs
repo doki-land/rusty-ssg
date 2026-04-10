@@ -7,7 +7,6 @@
 use crate::errors::{JekyllError, Result};
 use serde_json::Value;
 use oak_yaml;
-use oak_toml;
 
 /// Front Matter 解析结果
 #[derive(Debug, Clone)]
@@ -244,7 +243,7 @@ impl FrontMatterParser {
         let variables = if toml_content.trim().is_empty() {
             Value::Object(serde_json::Map::new())
         } else {
-            let value: Value = oak_toml::from_str(&toml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
+            let value: Value = oak_yaml::from_str(&toml_content).map_err(|e| JekyllError::YamlParseError(e.to_string()))?;
             value
         };
 

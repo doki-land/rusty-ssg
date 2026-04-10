@@ -57,7 +57,7 @@ impl ServerCommand {
     }
 
     /// 构建站点
-    async fn build_site(source_dir: &PathBuf) -> Result<(HashMap<String, crate::Document>, HugoConfig)> {
+    async fn build_site(source_dir: &PathBuf) -> Result<(HashMap<String, String>, HugoConfig)> {
         println!("  {} Loading configuration...", style("→").blue());
         let config = ConfigLoader::load_from_dir(source_dir)?;
         println!("  {} Configuration loaded", style("✓").green());

@@ -284,7 +284,7 @@ impl Collection {
                     // 尝试比较不同类型的值
                     match (v1, v2) {
                         (Value::String(s1), Value::String(s2)) => s1.cmp(s2),
-                        (Value::Number(n1), Value::Number(n2)) => n1.to_f64().unwrap_or(0.0).cmp(&n2.to_f64().unwrap_or(0.0)),
+                        (Value::Number(n1), Value::Number(n2)) => n1.as_f64().unwrap_or(0.0).partial_cmp(&n2.as_f64().unwrap_or(0.0)).unwrap_or(std::cmp::Ordering::Equal),
                         (Value::Bool(b1), Value::Bool(b2)) => b1.cmp(b2),
                         _ => std::cmp::Ordering::Equal,
                     }

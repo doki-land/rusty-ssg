@@ -28,7 +28,6 @@ pub use plugin::{
 pub use types::{InvokePluginRequest, InvokePluginResponse, IpcMessage};
 
 pub use compiler::VuePressCompiler;
-pub use nargo_types::Document;
 pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 pub use tools::*;
@@ -40,7 +39,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompileResult {
     /// 编译后的文档
-    pub documents: HashMap<String, Document>,
+    pub documents: HashMap<String, String>,
     /// 编译时间（毫秒）
     pub compile_time_ms: u64,
     /// 是否成功
@@ -51,7 +50,7 @@ pub struct CompileResult {
 
 impl CompileResult {
     /// 创建成功的编译结果
-    pub fn success(documents: HashMap<String, Document>, compile_time_ms: u64) -> Self {
+    pub fn success(documents: HashMap<String, String>, compile_time_ms: u64) -> Self {
         Self { documents, compile_time_ms, success: true, errors: Vec::new() }
     }
 
@@ -87,9 +86,9 @@ impl CompileResult {
 /// # Returns
 ///
 /// 编译后的文档
-pub fn compile_single(source: &str, path: &str) -> Result<Document> {
+pub fn compile_single(source: &str, path: &str) -> Result<String> {
     let mut compiler = VuePressCompiler::new();
-    compiler.compile_document(source, path)
+    compiler.compile_document(source, path).map(|doc| doc.content)
 }
 
 /// 编译多个文档

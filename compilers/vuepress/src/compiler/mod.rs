@@ -34,7 +34,7 @@ pub struct VuePressCompiler {
     /// HTML 渲染器
     html_renderer: HtmlRenderer,
     /// 编译缓存
-    cache: HashMap<String, Document>,
+    cache: HashMap<String, String>,
     /// 插件宿主（可选）
     plugin_host: Option<PluginHost>,
     /// 插件注册表
@@ -310,7 +310,7 @@ impl VuePressCompiler {
     /// # Returns
     ///
     /// 编译后的文档
-    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<Document> {
+    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
         if let Some(cached) = self.cache.get(path) {
             return Ok(cached.clone());
         }
@@ -321,22 +321,18 @@ impl VuePressCompiler {
 
         let mut content = doc.content.clone();
 
-        // 将 frontmatter_map 转换为 HashMap<String, NargoValue>
         use nargo_types::NargoValue;
         let mut plugin_frontmatter = std::collections::HashMap::new();
         for (key, value) in &frontmatter_map {
             plugin_frontmatter.insert(key.clone(), NargoValue::String(value.clone()));
         }
 
-        // 创建插件上下文
         let mut plugin_context =
             crate::plugin::PluginContext::new(content.clone(), plugin_frontmatter.clone(), path.to_string());
 
-        // 调用插件的渲染前钩子
         plugin_context = self.plugin_registry.before_render_all(plugin_context);
         content = plugin_context.content;
 
-        // 调用 Node.js 插件的渲染前钩子
         if let Some(ref mut plugin_host) = self.plugin_host {
             let context = PluginContext::new(content.clone(), frontmatter_map.clone(), path.to_string());
             content = Self::invoke_hook(plugin_host, "before_render", context)?;
@@ -345,28 +341,25 @@ impl VuePressCompiler {
         let rendered_html = self.html_renderer.render(&content)?;
         let mut final_html = rendered_html;
 
-        // 创建渲染后的插件上下文
         let mut post_render_context =
             crate::plugin::PluginContext::new(final_html.clone(), plugin_frontmatter.clone(), path.to_string());
 
-        // 调用插件的渲染后钩子
         post_render_context = self.plugin_registry.after_render_all(post_render_context);
         final_html = post_render_context.content;
 
-        // 调用 Node.js 插件的渲染后钩子
         if let Some(ref mut plugin_host) = self.plugin_host {
             let context = PluginContext::new(final_html.clone(), frontmatter_map, path.to_string());
             final_html = Self::invoke_hook(plugin_host, "after_render", context)?;
         }
 
-        // 应用主题模板
         let page_title = path.split('/').last().unwrap_or(path).replace(".md", "").replace(".vue", "");
         let templated_html = self.apply_theme_template(&final_html, &page_title);
 
         doc.rendered_content = Some(templated_html);
-        self.cache.insert(path.to_string(), doc.clone());
+        let html = doc.rendered_content.clone().unwrap_or_default();
+        self.cache.insert(path.to_string(), html.clone());
 
-        Ok(doc)
+        Ok(html)
     }
 
     /// 调用插件钩子
@@ -435,7 +428,7 @@ impl VuePressCompiler {
     }
 
     /// 从缓存中获取文档
-    pub fn get_cached(&self, path: &str) -> Option<&Document> {
+    pub fn get_cached(&self, path: &str) -> Option<&String> {
         self.cache.get(path)
     }
 }

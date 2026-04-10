@@ -412,8 +412,8 @@ impl LiquidEngine {
             "plus".to_string(),
             LiquidFilter::new("plus", |args| {
                 if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
-                    let num1 = n1.to_f64().unwrap_or(0.0);
-                    let num2 = n2.to_f64().unwrap_or(0.0);
+                    let num1 = n1.as_f64().unwrap_or(0.0);
+                    let num2 = n2.as_f64().unwrap_or(0.0);
                     Value::Number(serde_json::Number::from_f64(num1 + num2).unwrap())
                 }
                 else {
@@ -426,8 +426,8 @@ impl LiquidEngine {
             "minus".to_string(),
             LiquidFilter::new("minus", |args| {
                 if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
-                    let num1 = n1.to_f64().unwrap_or(0.0);
-                    let num2 = n2.to_f64().unwrap_or(0.0);
+                    let num1 = n1.as_f64().unwrap_or(0.0);
+                    let num2 = n2.as_f64().unwrap_or(0.0);
                     Value::Number(serde_json::Number::from_f64(num1 - num2).unwrap())
                 }
                 else {
@@ -440,8 +440,8 @@ impl LiquidEngine {
             "times".to_string(),
             LiquidFilter::new("times", |args| {
                 if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
-                    let num1 = n1.to_f64().unwrap_or(0.0);
-                    let num2 = n2.to_f64().unwrap_or(0.0);
+                    let num1 = n1.as_f64().unwrap_or(0.0);
+                    let num2 = n2.as_f64().unwrap_or(0.0);
                     Value::Number(serde_json::Number::from_f64(num1 * num2).unwrap())
                 }
                 else {
@@ -454,8 +454,8 @@ impl LiquidEngine {
             "divided_by".to_string(),
             LiquidFilter::new("divided_by", |args| {
                 if let (Some(Value::Number(n1)), Some(Value::Number(n2))) = (args.first(), args.get(1)) {
-                    let num1 = n1.to_f64().unwrap_or(0.0);
-                    let num2 = n2.to_f64().unwrap_or(1.0);
+                    let num1 = n1.as_f64().unwrap_or(0.0);
+                    let num2 = n2.as_f64().unwrap_or(1.0);
                     if num2 != 0.0 {
                         Value::Number(serde_json::Number::from_f64(num1 / num2).unwrap())
                     } else {
@@ -488,7 +488,16 @@ impl LiquidEngine {
             LiquidFilter::new("default", |args| {
                 if let (Some(value), Some(default_val)) = (args.first(), args.get(1)) {
                     match value {
-                        Value::Null | Value::String(s) if s.is_empty() | Value::Array(arr) if arr.is_empty() | Value::Object(obj) if obj.is_empty() => {
+                        Value::Null => {
+                            default_val.clone()
+                        }
+                        Value::String(s) if s.is_empty() => {
+                            default_val.clone()
+                        }
+                        Value::Array(arr) if arr.is_empty() => {
+                            default_val.clone()
+                        }
+                        Value::Object(obj) if obj.is_empty() => {
                             default_val.clone()
                         }
                         _ => value.clone(),
