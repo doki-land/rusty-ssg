@@ -33,7 +33,7 @@ http = { workspace = true }
 nargo-document = { workspace = true }
 nargo-template = { workspace = true }
 nargo-types = { workspace = true }
-serde_yaml = { version = "0.9.34", features = ["preserve_order"] }
+serde_yaml = { version = "0.9.34" }
 
 [dev-dependencies]
 criterion = { version = "0.8.2", features = ["html_reports"] }
