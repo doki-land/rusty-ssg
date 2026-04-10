@@ -33,7 +33,7 @@ pub struct VutexCompiler {
     /// Markdown 渲染器
     markdown_renderer: MarkdownRenderer,
     /// 编译缓存
-    cache: HashMap<String, String>,
+    cache: HashMap<String, Document>,
     /// 短代码注册表
     shortcode_registry: ShortcodeRegistry,
 }
@@ -93,8 +93,8 @@ impl VutexCompiler {
     /// # Returns
     ///
     /// 编译后的文档
-    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
-        if let Some(cached) = self.cache.get(path) {
+    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<Document> {
+        if let Some(cached) = self.get_cached(path) {
             return Ok(cached.clone());
         }
 
@@ -111,10 +111,9 @@ impl VutexCompiler {
             .map_err(|e| crate::types::VutexError::ConfigError { message: format!("Markdown render error: {:?}", e) })?;
 
         doc.rendered_content = Some(rendered_html);
-        let html = doc.rendered_content.clone().unwrap_or_default();
-        self.cache.insert(path.to_string(), html.clone());
+        self.cache.insert(path.to_string(), doc.clone());
 
-        Ok(html)
+        Ok(doc)
     }
 
     /// 处理文档中的短代码

@@ -7,10 +7,11 @@ use crate::{
     tools::taxonomy_generator::TaxonomyPageGenerator,
     types::{HugoConfig, HugoContentLoader, taxonomies::TaxonomyBuilder},
 };
+use nargo_types::Document;
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射
-pub type LanguageDocuments = HashMap<String, HashMap<String, String>>;
+pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
 
 /// 静态站点生成器
 pub struct StaticSiteGenerator {
@@ -29,7 +30,7 @@ impl StaticSiteGenerator {
     }
 
     /// 生成静态站点
-    pub fn generate(&mut self, documents: &HashMap<String, String>, output_dir: &PathBuf) -> Result<()> {
+    pub fn generate(&mut self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
         }
@@ -37,11 +38,11 @@ impl StaticSiteGenerator {
         let locales = self.get_available_locales();
         let default_lang = self.get_default_language();
 
-        let mut all_docs_by_lang: HashMap<String, Vec<(String, String)>> = HashMap::new();
+        let mut all_docs_by_lang: HashMap<String, Vec<(String, Document)>> = HashMap::new();
 
-        for (path, content) in documents {
+        for (path, doc) in documents {
             let (lang, _) = self.extract_language_from_path(path, &default_lang);
-            all_docs_by_lang.entry(lang).or_default().push((path.clone(), content.clone()));
+            all_docs_by_lang.entry(lang).or_default().push((path.clone(), doc.clone()));
         }
 
         for (lang, docs) in all_docs_by_lang {
@@ -49,7 +50,7 @@ impl StaticSiteGenerator {
 
             let mut all_sidebar_links = Vec::new();
 
-            for (path, _content) in &docs {
+            for (path, _doc) in &docs {
                 let title = {
                     let file_name = path.split('/').last().unwrap_or(path);
                     file_name.strip_suffix(".md").unwrap_or(file_name)
@@ -60,7 +61,7 @@ impl StaticSiteGenerator {
                 all_sidebar_links.push((title, html_path));
             }
 
-            for (path, content) in &docs {
+            for (path, doc) in &docs {
                 let (_, normalized_path) = self.extract_language_from_path(path, &default_lang);
                 let html_path = normalized_path.replace(".md", ".html");
                 let full_html_path = format!("{}/{}", lang, html_path);
@@ -85,7 +86,7 @@ impl StaticSiteGenerator {
                 let sidebar_groups = vec![sidebar_group];
 
                 let html_content = self.render_page_for_file(
-                    content,
+                    doc.rendered_content.as_deref().unwrap_or(&doc.content),
                     &lang,
                     &nav_items,
                     &sidebar_groups,
@@ -109,7 +110,7 @@ impl StaticSiteGenerator {
     }
 
     /// 生成分类法相关页面
-    fn generate_taxonomy_pages(&self, documents: &HashMap<String, String>, output_dir: &PathBuf) -> Result<()> {
+    fn generate_taxonomy_pages(&self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
         let content_dir = output_dir
             .parent()
             .and_then(|p| p.join("content").canonicalize().ok())

@@ -32,6 +32,7 @@ pub use plugin_host::{PluginHost, PluginHostError};
 pub use session::CompileSession;
 pub use tools::*;
 
+use nargo_types::Document;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -39,7 +40,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompileResult {
     /// 编译后的文档
-    pub documents: HashMap<String, String>,
+    pub documents: HashMap<String, Document>,
     /// 编译时间（毫秒）
     pub compile_time_ms: u64,
     /// 是否成功
@@ -50,7 +51,7 @@ pub struct CompileResult {
 
 impl CompileResult {
     /// 创建成功的编译结果
-    pub fn success(documents: HashMap<String, String>, compile_time_ms: u64) -> Self {
+    pub fn success(documents: HashMap<String, Document>, compile_time_ms: u64) -> Self {
         Self { documents, compile_time_ms, success: true, errors: Vec::new() }
     }
 

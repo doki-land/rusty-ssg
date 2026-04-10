@@ -26,7 +26,7 @@ pub struct GatsbyCompiler {
     /// Markdown 渲染器
     markdown_renderer: MarkdownRenderer,
     /// 编译缓存
-    cache: HashMap<String, String>,
+    cache: HashMap<String, Document>,
 }
 
 impl GatsbyCompiler {
@@ -93,8 +93,8 @@ impl GatsbyCompiler {
     /// # Returns
     ///
     /// 编译后的文档
-    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
-        if let Some(cached) = self.cache.get(path) {
+    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<Document> {
+        if let Some(cached) = self.get_cached(path) {
             return Ok(cached.clone());
         }
 
@@ -107,9 +107,9 @@ impl GatsbyCompiler {
 
         doc.rendered_content = Some(rendered_html);
         let html = doc.rendered_content.clone().unwrap_or_default();
-        self.cache.insert(path.to_string(), html.clone());
+        self.cache.insert(path.to_string(), doc.clone());
 
-        Ok(html)
+        Ok(doc)
     }
 
     /// 批量编译文档
@@ -157,17 +157,16 @@ impl GatsbyCompiler {
                 };
 
                 doc.rendered_content = Some(rendered_html);
-                let html = doc.rendered_content.clone().unwrap_or_default();
-                Ok((path.clone(), html))
+                Ok((path.clone(), doc))
             })
             .collect();
 
         let mut errors = Vec::new();
         for result in compile_results {
             match result {
-                Ok((path, html)) => {
-                    compiled_docs.insert(path.clone(), html.clone());
-                    self.cache.insert(path, html);
+                Ok((path, doc)) => {
+                    compiled_docs.insert(path.clone(), doc.clone());
+                    self.cache.insert(path, doc);
                 }
                 Err((_path, error)) => {
                     errors.push(error);

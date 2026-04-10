@@ -9,6 +9,7 @@ use crate::{
     },
     types::VuePressConfig,
 };
+use nargo_types::Document;
 use std::{collections::HashMap, fs, path::PathBuf};
 
 /// 语言分组的文档映射

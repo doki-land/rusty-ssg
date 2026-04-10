@@ -34,7 +34,7 @@ pub struct VuePressCompiler {
     /// HTML 渲染器
     html_renderer: HtmlRenderer,
     /// 编译缓存
-    cache: HashMap<String, String>,
+    cache: HashMap<String, Document>,
     /// 插件宿主（可选）
     plugin_host: Option<PluginHost>,
     /// 插件注册表
@@ -310,8 +310,8 @@ impl VuePressCompiler {
     /// # Returns
     ///
     /// 编译后的文档
-    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<String> {
-        if let Some(cached) = self.cache.get(path) {
+    pub fn compile_document(&mut self, source: &str, path: &str) -> Result<Document> {
+        if let Some(cached) = self.get_cached(path) {
             return Ok(cached.clone());
         }
 
@@ -357,9 +357,9 @@ impl VuePressCompiler {
 
         doc.rendered_content = Some(templated_html);
         let html = doc.rendered_content.clone().unwrap_or_default();
-        self.cache.insert(path.to_string(), html.clone());
+        self.cache.insert(path.to_string(), doc.clone());
 
-        Ok(html)
+        Ok(doc)
     }
 
     /// 调用插件钩子
@@ -428,7 +428,7 @@ impl VuePressCompiler {
     }
 
     /// 从缓存中获取文档
-    pub fn get_cached(&self, path: &str) -> Option<&String> {
+    pub fn get_cached(&self, path: &str) -> Option<&Document> {
         self.cache.get(path)
     }
 }

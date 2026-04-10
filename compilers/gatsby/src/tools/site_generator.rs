@@ -7,6 +7,7 @@ use crate::{
     types::Result,
 };
 use rayon::prelude::*;
+use nargo_types::Document;
 use std::{
     collections::HashMap,
     fs,
@@ -15,7 +16,7 @@ use std::{
 };
 
 /// 语言分组的文档映射
-pub type LanguageDocuments = HashMap<String, HashMap<String, String>>;
+pub type LanguageDocuments = HashMap<String, HashMap<String, Document>>;
 
 /// 静态站点生成器
 pub struct StaticSiteGenerator {
@@ -34,7 +35,7 @@ impl StaticSiteGenerator {
     }
 
     /// 生成静态站点
-    pub fn generate(&mut self, documents: &HashMap<String, String>, output_dir: &PathBuf) -> Result<()> {
+    pub fn generate(&mut self, documents: &HashMap<String, Document>, output_dir: &PathBuf) -> Result<()> {
         if !output_dir.exists() {
             fs::create_dir_all(output_dir)?;
         }
@@ -67,7 +68,7 @@ impl StaticSiteGenerator {
 
                 // 渲染页面
                 let html_content = self.render_page(
-                    doc,
+                    doc.rendered_content.as_deref().unwrap_or(&doc.content),
                     "zh-hans",
                     &nav_items,
                     &sidebar_groups,
@@ -292,14 +293,14 @@ Sitemap: {}
     }
 
     /// 按语言分组文档
-    fn group_documents_by_language(&self, documents: &HashMap<String, String>) -> LanguageDocuments {
+    fn group_documents_by_language(&self, documents: &HashMap<String, Document>) -> LanguageDocuments {
         let mut result = LanguageDocuments::new();
         let default_lang = self.get_default_language();
 
-        for (path, content) in documents {
+        for (path, doc) in documents {
             let (lang, normalized_path) = self.extract_language_from_path(path, &default_lang);
 
-            result.entry(lang).or_insert_with(HashMap::new).insert(normalized_path, content.clone());
+            result.entry(lang).or_insert_with(HashMap::new).insert(normalized_path, doc.clone());
         }
 
         result
@@ -394,11 +395,11 @@ Sitemap: {}
     }
 
     /// 生成侧边栏分组
-    fn generate_sidebar_groups(&self, documents: &HashMap<String, String>, lang: &str) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
         let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
-        for (path, _content) in documents {
+        for (path, _doc) in documents {
             let title = {
                 let file_name = path.split('/').last().unwrap_or(path);
                 file_name.strip_suffix(".md").unwrap_or(file_name)
@@ -424,11 +425,11 @@ Sitemap: {}
     }
 
     /// 简单版本的侧边栏生成
-    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, String>, lang: &str) -> Vec<SidebarGroup> {
+    fn generate_sidebar_groups_simple(&self, documents: &HashMap<String, Document>, lang: &str) -> Vec<SidebarGroup> {
         let mut groups = Vec::new();
         let mut default_group = SidebarGroup { text: "文档".to_string(), items: Vec::new() };
 
-        for (path, _content) in documents {
+        for (path, _doc) in documents {
             let title = path.split('/').last().unwrap_or(path).to_string();
             let link = format!("{}/{}", lang, path).replace(".md", ".html");
             default_group.items.push(SidebarLink { text: title, link });
